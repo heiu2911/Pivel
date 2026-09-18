@@ -1,0 +1,7412 @@
+"use client";
+
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import Map from "../components/Map";
+
+import { supabase } from "../lib/supabase";
+
+import {
+  calculateDistance,
+  getCurrentLocation,
+  watchCurrentLocation,
+  stopWatchingLocation,
+} from "../lib/gps";
+
+import type { GPSLocation } from "../lib/gps";
+import type { User } from "@supabase/supabase-js";
+
+type Checkpoint = {
+  id: number;
+  name: string;
+  description: string | null;
+  icon: string | null;
+  badge: string | null;
+  longitude: number;
+  latitude: number;
+};
+
+type Checkin = {
+  checkpoint_id: number;
+  user_id: string | null;
+  created_at?: string | null;
+};
+
+type Post = {
+  id: number;
+  device_id: string;
+  user_id: string | null;
+  checkpoint_id: number | null;
+  content: string;
+  likes: number;
+  created_at: string;
+  image_url: string | null;
+  checkpoint: Checkpoint | null;
+};
+
+type PostQueryRow = Omit<Post, "checkpoint" | "likes"> & {
+  likes: number | null;
+  checkpoint: Checkpoint | Checkpoint[] | null;
+};
+
+type PostComment = {
+  id: number;
+  post_id: number;
+  user_id: string;
+  content: string;
+  created_at: string;
+};
+
+type LeaderboardEntry = {
+  user_id: string;
+  display_name: string;
+  checkpoint_count: number;
+  xp: number;
+  level: number;
+};
+
+type PublicProfile = {
+  user_id: string;
+  display_name: string;
+  checkpoint_count: number;
+  post_count: number;
+  follower_count: number;
+  following_count: number;
+  xp: number;
+  level: number;
+};
+
+type Notification = {
+  id: number;
+  recipient_id: string;
+  actor_id: string | null;
+  type: "follow" | "like" | "comment";
+  post_id: number | null;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
+type ReportTargetType = "post" | "comment" | "user";
+
+type ReportReason =
+  | "spam"
+  | "harassment"
+  | "inappropriate"
+  | "misinformation"
+  | "other";
+
+type WeatherData = {
+  current: {
+    temperature: number;
+    apparentTemperature: number;
+    humidity: number;
+    windSpeed: number;
+    weatherCode: number;
+  };
+  daily: Array<{
+    date: string;
+    weatherCode: number;
+    temperatureMax: number;
+    temperatureMin: number;
+  }>;
+};
+
+const DEVICE_KEY = "travelquest-device-id";
+
+const CHECKIN_RADIUS = 150;
+
+const GEOFENCE_EXIT_RADIUS = 200;
+
+const GPS_DISTANCE_UNAVAILABLE =
+  "📍 GPS chưa xác định được khoảng cách.";
+
+function getValidGpsDistance(
+  location: GPSLocation,
+  checkpoint: Pick<Checkpoint, "latitude" | "longitude">
+): number | null {
+  const {
+    latitude: userLatitude,
+    longitude: userLongitude,
+  } = location;
+
+  const {
+    latitude: checkpointLatitude,
+    longitude: checkpointLongitude,
+  } = checkpoint;
+
+  const coordinates = [
+    userLatitude,
+    userLongitude,
+    checkpointLatitude,
+    checkpointLongitude,
+  ];
+
+  if (
+    !coordinates.every(Number.isFinite) ||
+    userLatitude < -90 ||
+    userLatitude > 90 ||
+    checkpointLatitude < -90 ||
+    checkpointLatitude > 90 ||
+    userLongitude < -180 ||
+    userLongitude > 180 ||
+    checkpointLongitude < -180 ||
+    checkpointLongitude > 180
+  ) {
+    return null;
+  }
+
+  const distance = calculateDistance(
+    userLatitude,
+    userLongitude,
+    checkpointLatitude,
+    checkpointLongitude
+  );
+
+  return Number.isFinite(distance) && distance >= 0
+    ? distance
+    : null;
+}
+
+function getDeviceId() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const existingId =
+    window.localStorage.getItem(DEVICE_KEY);
+
+  if (existingId) {
+    return existingId;
+  }
+
+  const newId =
+    typeof crypto !== "undefined" &&
+    crypto.randomUUID
+      ? crypto.randomUUID()
+      : `device-${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2)}`;
+
+  window.localStorage.setItem(
+    DEVICE_KEY,
+    newId
+  );
+
+  return newId;
+}
+
+function formatPostTime(
+  createdAt: string
+) {
+  const createdDate =
+    new Date(createdAt);
+
+  const now = new Date();
+
+  const diff =
+    now.getTime() -
+    createdDate.getTime();
+
+  const minutes =
+    Math.floor(diff / 60000);
+
+  const hours =
+    Math.floor(diff / 3600000);
+
+  const days =
+    Math.floor(diff / 86400000);
+
+  if (minutes < 1) {
+    return "Vừa xong";
+  }
+
+  if (minutes < 60) {
+    return `${minutes} phút trước`;
+  }
+
+  if (hours < 24) {
+    return `${hours} giờ trước`;
+  }
+
+  if (days < 7) {
+    return `${days} ngày trước`;
+  }
+
+  return createdDate.toLocaleDateString(
+    "vi-VN"
+  );
+}
+
+export default function Home() {
+  const [activeTab, setActiveTab] =
+    useState("map");
+
+  const [checkpoints, setCheckpoints] =
+    useState<Checkpoint[]>([]);
+
+  const [checkins, setCheckins] =
+    useState<Checkin[]>([]);
+
+  const [
+    selectedCheckpoint,
+    setSelectedCheckpoint,
+  ] = useState<Checkpoint | null>(
+    null
+  );
+
+  // ============================================
+  // ACCOUNT SETTINGS
+  // ============================================
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [gpsEnabled, setGpsEnabled] = useState(true);
+  const [settingsMessage, setSettingsMessage] = useState("");
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const notifications = window.localStorage.getItem("travelquest-notifications-enabled");
+        const gps = window.localStorage.getItem("travelquest-gps-enabled");
+
+        if (notifications !== null) {
+          setNotificationsEnabled(notifications !== "false");
+        }
+
+        if (gps !== null) {
+          setGpsEnabled(gps !== "false");
+        }
+      } catch {
+        // Ignore invalid local settings.
+      }
+    });
+  }, []);
+
+  const handleToggleNotifications = () => {
+    const next = !notificationsEnabled;
+    setNotificationsEnabled(next);
+    setSettingsMessage(next ? "🔔 Đã bật thông báo." : "🔕 Đã tắt thông báo.");
+
+    try {
+      window.localStorage.setItem(
+        "travelquest-notifications-enabled",
+        String(next)
+      );
+    } catch {
+      // Ignore localStorage errors.
+    }
+  };
+
+  const handleToggleGps = () => {
+    const next = !gpsEnabled;
+    setGpsEnabled(next);
+    setSettingsMessage(next ? "📍 Đã bật GPS." : "📍 Đã tắt GPS.");
+
+    try {
+      window.localStorage.setItem(
+        "travelquest-gps-enabled",
+        String(next)
+      );
+    } catch {
+      // Ignore localStorage errors.
+    }
+  };
+
+  const handleClearLocalData = () => {
+    try {
+      window.localStorage.removeItem("travelquest-saved-places");
+      window.localStorage.removeItem("travelquest-journey");
+    } catch {
+      // Ignore localStorage errors.
+    }
+
+    setSavedPlaceIds([]);
+    setJourneyCheckpointIds([]);
+    setJourneyStarted(false);
+    setSettingsMessage("🧹 Đã xóa dữ liệu cục bộ trên thiết bị. Dữ liệu tài khoản Supabase không bị xóa.");
+  };
+
+  // ============================================
+  // SAVED PLACES
+  // ============================================
+
+  const [savedPlaceIds, setSavedPlaceIds] =
+    useState<number[]>([]);
+
+  const [showSavedPlaces, setShowSavedPlaces] =
+    useState(false);
+
+  // ============================================
+  // JOURNEY / TRIP
+  // ============================================
+
+  const [journeyOpen, setJourneyOpen] = useState(false);
+  const [journeyName, setJourneyName] = useState("Hành trình Hà Nội");
+  const [journeyCheckpointIds, setJourneyCheckpointIds] = useState<number[]>([]);
+  const [journeyStarted, setJourneyStarted] = useState(false);
+
+  // ============================================
+  // CHECKPOINT DETAIL
+  // ============================================
+
+  const [checkpointDetailOpen, setCheckpointDetailOpen] =
+    useState(false);
+
+  // ============================================
+  // WEATHER
+  // ============================================
+
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
+
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [checkingIn, setCheckingIn] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [distance, setDistance] =
+    useState<number | null>(null);
+
+  const [
+    locationLoading,
+    setLocationLoading,
+  ] = useState(false);
+
+  const [userLocation, setUserLocation] =
+    useState<GPSLocation | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("travelquest-saved-places");
+      if (!raw) return;
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setSavedPlaceIds(
+          parsed.filter((id): id is number => typeof id === "number")
+        );
+      }
+    } catch {
+      // Ignore invalid local saved-place data.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "travelquest-saved-places",
+        JSON.stringify(savedPlaceIds)
+      );
+    } catch {
+      // Ignore localStorage failures.
+    }
+  }, [savedPlaceIds]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const raw = window.localStorage.getItem("travelquest-journey");
+        if (!raw) return;
+        const parsed: unknown = JSON.parse(raw);
+        if (!parsed || typeof parsed !== "object") return;
+        const data = parsed as {
+          name?: unknown;
+          checkpointIds?: unknown;
+          started?: unknown;
+        };
+        if (typeof data.name === "string" && data.name.trim()) {
+          setJourneyName(data.name);
+        }
+        if (Array.isArray(data.checkpointIds)) {
+          setJourneyCheckpointIds(
+            data.checkpointIds.filter((id): id is number => typeof id === "number")
+          );
+        }
+        if (typeof data.started === "boolean") {
+          setJourneyStarted(data.started);
+        }
+      } catch {
+        // Ignore invalid local journey data.
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "travelquest-journey",
+        JSON.stringify({
+          name: journeyName,
+          checkpointIds: journeyCheckpointIds,
+          started: journeyStarted,
+        })
+      );
+    } catch {
+      // Ignore localStorage failures.
+    }
+  }, [journeyName, journeyCheckpointIds, journeyStarted]);
+
+  // ============================================
+  // AUTH
+  // ============================================
+
+  const [user, setUser] =
+    useState<User | null>(null);
+
+  const [authReady, setAuthReady] =
+    useState(false);
+
+  const [authOpen, setAuthOpen] =
+    useState(false);
+
+  const [authMode, setAuthMode] =
+    useState<"login" | "signup">(
+      "login"
+    );
+
+  const [authEmail, setAuthEmail] =
+    useState("");
+
+  const [authPassword, setAuthPassword] =
+    useState("");
+
+  const [authLoading, setAuthLoading] =
+    useState(false);
+
+  const [authMessage, setAuthMessage] =
+    useState("");
+
+  // ============================================
+  // PROFILE
+  // ============================================
+
+  const [profileName, setProfileName] =
+    useState("Traveller");
+
+  const [
+    profileNameInput,
+    setProfileNameInput,
+  ] = useState("");
+
+  const [profileLoading, setProfileLoading] =
+    useState(false);
+
+  const [profileMessage, setProfileMessage] =
+    useState("");
+
+  // ============================================
+  // LEADERBOARD
+  // ============================================
+
+  const [leaderboard, setLeaderboard] =
+    useState<LeaderboardEntry[]>([]);
+
+  const [leaderboardLoading, setLeaderboardLoading] =
+    useState(false);
+
+  const [leaderboardMessage, setLeaderboardMessage] =
+    useState("");
+
+  // ============================================
+  // PUBLIC PROFILE + FOLLOW
+  // ============================================
+
+  const [publicProfileOpen, setPublicProfileOpen] =
+    useState(false);
+
+  const [publicProfile, setPublicProfile] =
+    useState<PublicProfile | null>(null);
+
+  const [publicProfileLoading, setPublicProfileLoading] =
+    useState(false);
+
+  const [publicProfileMessage, setPublicProfileMessage] =
+    useState("");
+
+  const [followingUserIds, setFollowingUserIds] =
+    useState<string[]>([]);
+
+  const [followLoading, setFollowLoading] =
+    useState<Record<string, boolean>>({});
+
+  // ============================================
+  // NOTIFICATIONS
+  // ============================================
+
+  const [notifications, setNotifications] =
+    useState<Notification[]>([]);
+
+  const [notificationsOpen, setNotificationsOpen] =
+    useState(false);
+
+  const [notificationsLoading, setNotificationsLoading] =
+    useState(false);
+
+  // ============================================
+  // SEARCH TRAVELLER
+  // ============================================
+
+  const [searchOpen, setSearchOpen] =
+    useState(false);
+
+  const [searchQuery, setSearchQuery] =
+    useState("");
+
+  const [searchResults, setSearchResults] =
+    useState<PublicProfile[]>([]);
+
+  const [searchLoading, setSearchLoading] =
+    useState(false);
+
+  const [searchMessage, setSearchMessage] =
+    useState("");
+
+  // ============================================
+  // REPORT / MODERATION
+  // ============================================
+
+  const [reportOpen, setReportOpen] =
+    useState(false);
+
+  const [reportTargetType, setReportTargetType] =
+    useState<ReportTargetType>("post");
+
+  const [reportTargetId, setReportTargetId] =
+    useState<string>("");
+
+  const [reportTargetLabel, setReportTargetLabel] =
+    useState("");
+
+  const [reportReason, setReportReason] =
+    useState<ReportReason>("spam");
+
+  const [reportDetails, setReportDetails] =
+    useState("");
+
+  const [reportLoading, setReportLoading] =
+    useState(false);
+
+  const [reportMessage, setReportMessage] =
+    useState("");
+
+  // ============================================
+  // UGC
+  // ============================================
+
+  const [posts, setPosts] =
+    useState<Post[]>([]);
+
+  const [postsLoading, setPostsLoading] =
+    useState(false);
+
+  const [feedMode, setFeedMode] =
+    useState<"all" | "following">("all");
+
+  const [postContent, setPostContent] =
+    useState("");
+
+  const [
+    selectedPostCheckpoint,
+    setSelectedPostCheckpoint,
+  ] = useState<number | null>(null);
+
+  const [posting, setPosting] =
+    useState(false);
+
+  const [postMessage, setPostMessage] =
+    useState("");
+
+  // ============================================
+  // UGC COMMENTS
+  // ============================================
+
+  const [comments, setComments] =
+    useState<PostComment[]>([]);
+
+  const [commentInputs, setCommentInputs] =
+    useState<Record<number, string>>({});
+
+  const [commentLoading, setCommentLoading] =
+    useState<Record<number, boolean>>({});
+
+  const [, setCommentsLoading] =
+    useState(false);
+
+  // ============================================
+  // UGC LIKES
+  // ============================================
+
+  const [likedPostIds, setLikedPostIds] =
+    useState<number[]>([]);
+
+  const [likeLoading, setLikeLoading] =
+    useState<Record<number, boolean>>({});
+
+  // ============================================
+  // UGC IMAGE
+  // ============================================
+
+  const [selectedImage, setSelectedImage] =
+    useState<File | null>(null);
+
+  const [imagePreview, setImagePreview] =
+    useState<string | null>(null);
+
+  const imageInputRef =
+    useRef<HTMLInputElement | null>(null);
+
+  // ============================================
+  // BADGE UNLOCK ANIMATION
+  // ============================================
+
+  const [unlockedBadge, setUnlockedBadge] =
+    useState<Checkpoint | null>(null);
+
+  const previousCheckins =
+    useRef<number[]>([]);
+
+  const badgePopupTimer =
+    useRef<
+      ReturnType<typeof setTimeout> | null
+    >(null);
+
+  const gpsWatchId =
+    useRef<number | null>(null);
+
+  const geofenceCheckpointId =
+    useRef<number | null>(null);
+
+  const autoCheckinInProgress =
+    useRef<Set<number>>(
+      new Set()
+    );
+
+  // ============================================
+  // FIX STALE STATE CHO GPS
+  // ============================================
+
+  const checkpointsRef =
+    useRef<Checkpoint[]>([]);
+
+  const checkinsRef =
+    useRef<Checkin[]>([]);
+
+  const selectedCheckpointRef =
+    useRef<Checkpoint | null>(null);
+
+  useEffect(() => {
+    checkpointsRef.current =
+      checkpoints;
+  }, [checkpoints]);
+
+  useEffect(() => {
+    checkinsRef.current =
+      checkins;
+  }, [checkins]);
+
+  useEffect(() => {
+    selectedCheckpointRef.current =
+      selectedCheckpoint;
+  }, [selectedCheckpoint]);
+
+  // ============================================
+  // AUTH - LOAD SESSION
+  // ============================================
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadAuth = async () => {
+      const {
+        data,
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error(
+          "Lỗi lấy phiên đăng nhập:",
+          error
+        );
+      }
+
+      if (mounted) {
+        setUser(
+          data.session?.user ?? null
+        );
+
+        setAuthReady(true);
+      }
+    };
+
+    loadAuth();
+
+    const {
+      data: authListener,
+    } =
+      supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          if (!mounted) {
+            return;
+          }
+
+          setUser(
+            session?.user ?? null
+          );
+        }
+      );
+
+    return () => {
+      mounted = false;
+
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // ============================================
+  // PROFILE - LOAD
+  // ============================================
+
+  const loadProfile = async (
+    userId: string
+  ) => {
+    if (!userId) {
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileMessage("");
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("profiles")
+        .select(
+          "id, display_name"
+        )
+        .eq(
+          "id",
+          userId
+        )
+        .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Lỗi lấy profile:",
+          error
+        );
+
+        setProfileName(
+          "Traveller"
+        );
+
+        setProfileNameInput(
+          "Traveller"
+        );
+
+        setProfileMessage(
+          "Không thể tải thông tin hồ sơ."
+        );
+
+        setProfileLoading(false);
+        return;
+      }
+
+      const name =
+        data?.display_name?.trim() ||
+        "Traveller";
+
+      setProfileName(
+        name
+      );
+
+      setProfileNameInput(
+        name
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi load profile:",
+        error
+      );
+
+      setProfileName(
+        "Traveller"
+      );
+
+      setProfileNameInput(
+        "Traveller"
+      );
+
+      setProfileMessage(
+        "Không thể tải thông tin hồ sơ."
+      );
+    }
+
+    setProfileLoading(false);
+  };
+
+  // ============================================
+  // PROFILE - SAVE
+  // ============================================
+
+  const saveProfile = async () => {
+    if (!user?.id) {
+      return;
+    }
+
+    const name =
+      profileNameInput.trim();
+
+    if (!name) {
+      setProfileMessage(
+        "✍️ Vui lòng nhập tên hiển thị."
+      );
+
+      return;
+    }
+
+    if (name.length > 30) {
+      setProfileMessage(
+        "Tên hiển thị tối đa 30 ký tự."
+      );
+
+      return;
+    }
+
+    setProfileLoading(true);
+    setProfileMessage("");
+
+    try {
+      const {
+        error,
+      } = await supabase
+        .from("profiles")
+        .upsert(
+          {
+            id: user.id,
+            display_name: name,
+            updated_at:
+              new Date().toISOString(),
+          },
+          {
+            onConflict: "id",
+          }
+        );
+
+      if (error) {
+        console.error(
+          "Lỗi lưu profile:",
+          error?.message,
+          error?.details,
+          error?.hint,
+          error?.code
+        );
+
+        setProfileMessage(
+          "❌ Không thể lưu tên. Hãy thử lại."
+        );
+
+        setProfileLoading(false);
+        return;
+      }
+
+      setProfileName(
+        name
+      );
+
+      setProfileNameInput(
+        name
+      );
+
+      setProfileMessage(
+        "✅ Đã lưu tên hiển thị."
+      );
+
+      loadLeaderboard();
+    } catch (error) {
+      console.error(
+        "Lỗi save profile:",
+        error
+      );
+
+      setProfileMessage(
+        "❌ Có lỗi khi lưu hồ sơ."
+      );
+    }
+
+    setProfileLoading(false);
+  };
+
+  // ============================================
+  // PROFILE - LOAD WHEN USER CHANGES
+  // ============================================
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!authReady) {
+        return;
+      }
+
+      if (!user?.id) {
+        setProfileName("Traveller");
+        setProfileNameInput("");
+        setProfileMessage("");
+        return;
+      }
+
+      void loadProfile(user.id);
+    });
+  }, [
+    authReady,
+    user?.id,
+  ]);
+
+  // ============================================
+  // AUTH - OPEN LOGIN
+  // ============================================
+
+  const openAuth = (
+    mode: "login" | "signup"
+  ) => {
+    setAuthMode(mode);
+    setAuthMessage("");
+    setAuthPassword("");
+    setAuthOpen(true);
+  };
+
+  // ============================================
+  // AUTH - LOGIN / SIGNUP
+  // ============================================
+
+  const handleAuth = async () => {
+    const email =
+      authEmail.trim();
+
+    const password =
+      authPassword;
+
+    if (!email) {
+      setAuthMessage(
+        "📧 Vui lòng nhập email."
+      );
+
+      return;
+    }
+
+    if (!password) {
+      setAuthMessage(
+        "🔑 Vui lòng nhập mật khẩu."
+      );
+
+      return;
+    }
+
+    if (password.length < 6) {
+      setAuthMessage(
+        "🔑 Mật khẩu cần ít nhất 6 ký tự."
+      );
+
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthMessage("");
+
+    try {
+      if (authMode === "login") {
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.signInWithPassword(
+            {
+              email,
+              password,
+            }
+          );
+
+        if (error) {
+          console.error(
+            "Lỗi đăng nhập:",
+            error
+          );
+
+          if (
+            error.message
+              .toLowerCase()
+              .includes("invalid login")
+          ) {
+            setAuthMessage(
+              "❌ Email hoặc mật khẩu không đúng."
+            );
+          } else {
+            setAuthMessage(
+              `❌ ${error.message}`
+            );
+          }
+
+          setAuthLoading(false);
+          return;
+        }
+
+        setUser(
+          data.user
+        );
+
+        if (data.user?.id) {
+          await loadProfile(
+            data.user.id
+          );
+        }
+
+        setAuthMessage(
+          "🎉 Đăng nhập thành công!"
+        );
+
+        setAuthPassword("");
+
+        setTimeout(() => {
+          setAuthOpen(false);
+          setAuthMessage("");
+        }, 700);
+      } else {
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.signUp(
+            {
+              email,
+              password,
+            }
+          );
+
+        if (error) {
+          console.error(
+            "Lỗi đăng ký:",
+            error
+          );
+
+          setAuthMessage(
+            `❌ ${error.message}`
+          );
+
+          setAuthLoading(false);
+          return;
+        }
+
+        if (data.session) {
+          setUser(
+            data.user
+          );
+
+          if (data.user?.id) {
+            await loadProfile(
+              data.user.id
+            );
+          }
+
+          setAuthMessage(
+            "🎉 Tạo tài khoản thành công!"
+          );
+
+          setAuthPassword("");
+
+          setTimeout(() => {
+            setAuthOpen(false);
+            setAuthMessage("");
+          }, 700);
+        } else {
+          setAuthMessage(
+            "📧 Đăng ký thành công! Hãy kiểm tra email để xác nhận tài khoản."
+          );
+
+          setAuthPassword("");
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Lỗi Auth:",
+        error
+      );
+
+      setAuthMessage(
+        "❌ Có lỗi xảy ra. Hãy thử lại."
+      );
+    }
+
+    setAuthLoading(false);
+  };
+
+  // ============================================
+  // AUTH - LOGOUT
+  // ============================================
+
+  const handleLogout = async () => {
+    setAuthLoading(true);
+    setAuthMessage("");
+
+    const {
+      error,
+    } =
+      await supabase.auth.signOut();
+
+    if (error) {
+      console.error(
+        "Lỗi đăng xuất:",
+        error
+      );
+
+      setAuthMessage(
+        "❌ Không thể đăng xuất. Hãy thử lại."
+      );
+
+      setAuthLoading(false);
+      return;
+    }
+
+    setUser(null);
+
+    setProfileName(
+      "Traveller"
+    );
+
+    setProfileNameInput(
+      ""
+    );
+
+    setProfileMessage(
+      ""
+    );
+
+    setAuthOpen(false);
+    setAuthEmail("");
+    setAuthPassword("");
+    setAuthMessage("");
+    setAuthLoading(false);
+  };
+
+  // ============================================
+  // SEARCH TRAVELLER
+  // ============================================
+
+  const searchTravellers = async (value: string) => {
+    const query = value.trim();
+
+    setSearchQuery(value);
+    setSearchMessage("");
+
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("travelquest_public_profiles")
+        .select(
+          "user_id, display_name, checkpoint_count, post_count, follower_count, following_count, xp, level"
+        )
+        .ilike("display_name", `%${query}%`)
+        .neq("user_id", user?.id ?? "")
+        .order("xp", { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error("Lỗi tìm Traveller:", error);
+        setSearchResults([]);
+        setSearchMessage("❌ Không thể tìm Traveller lúc này.");
+        return;
+      }
+
+      setSearchResults((data ?? []) as PublicProfile[]);
+
+      if ((data ?? []).length === 0) {
+        setSearchMessage("Không tìm thấy Traveller phù hợp.");
+      }
+    } catch (error) {
+      console.error("Lỗi search Traveller:", error);
+      setSearchResults([]);
+      setSearchMessage("❌ Có lỗi khi tìm kiếm.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const openSearch = () => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage("🔐 Hãy đăng nhập để tìm Traveller.");
+      return;
+    }
+
+    setSearchOpen(true);
+    setSearchMessage("");
+  };
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchMessage("");
+    setSearchLoading(false);
+  };
+
+  // ============================================
+  // NOTIFICATIONS - LOAD
+  // ============================================
+
+  const loadNotifications = async () => {
+    if (!user?.id) {
+      setNotifications([]);
+      return;
+    }
+
+    setNotificationsLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select(
+          "id, recipient_id, actor_id, type, post_id, message, is_read, created_at"
+        )
+        .eq("recipient_id", user.id)
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(50);
+
+      if (error) {
+        console.error(
+          "Lỗi load notifications:",
+          error
+        );
+        return;
+      }
+
+      setNotifications(
+        (data ?? []) as Notification[]
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi notifications:",
+        error
+      );
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const markNotificationsRead = async () => {
+    if (!user?.id) {
+      return;
+    }
+
+    const unreadIds = notifications
+      .filter((item) => !item.is_read)
+      .map((item) => item.id);
+
+    if (unreadIds.length === 0) {
+      return;
+    }
+
+    setNotifications((current) =>
+      current.map((item) =>
+        unreadIds.includes(item.id)
+          ? {
+              ...item,
+              is_read: true,
+            }
+          : item
+      )
+    );
+
+    const { error } = await supabase
+      .from("notifications")
+      .update({
+        is_read: true,
+      })
+      .in("id", unreadIds)
+      .eq("recipient_id", user.id);
+
+    if (error) {
+      console.error(
+        "Lỗi mark notifications read:",
+        error
+      );
+    }
+  };
+
+  const toggleNotifications = async () => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage(
+        "🔐 Hãy đăng nhập để xem thông báo."
+      );
+      return;
+    }
+
+    const nextOpen = !notificationsOpen;
+    setNotificationsOpen(nextOpen);
+
+    if (nextOpen) {
+      await loadNotifications();
+      await markNotificationsRead();
+    }
+  };
+
+  // ============================================
+  // PUBLIC PROFILE - LOAD FOLLOWING
+  // ============================================
+
+  const loadFollowing = async () => {
+    if (!user?.id) {
+      setFollowingUserIds([]);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("user_follows")
+        .select("following_id")
+        .eq("follower_id", user.id);
+
+      if (error) {
+        console.error("Lỗi load following:", error);
+        return;
+      }
+
+      setFollowingUserIds(
+        (data ?? [])
+          .map((item) => item.following_id)
+          .filter(Boolean)
+      );
+    } catch (error) {
+      console.error("Lỗi load following:", error);
+    }
+  };
+
+  // ============================================
+  // PUBLIC PROFILE - OPEN
+  // ============================================
+
+  const openPublicProfile = async (
+    userId: string
+  ) => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage(
+        "🔐 Hãy đăng nhập để xem hồ sơ Traveller."
+      );
+      return;
+    }
+
+    setPublicProfileOpen(true);
+    setPublicProfile(null);
+    setPublicProfileMessage("");
+    setPublicProfileLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("travelquest_public_profiles")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Lỗi load public profile:",
+          error
+        );
+
+        setPublicProfileMessage(
+          "❌ Không thể tải hồ sơ."
+        );
+
+        return;
+      }
+
+      if (!data) {
+        setPublicProfileMessage(
+          "Không tìm thấy hồ sơ Traveller."
+        );
+
+        return;
+      }
+
+      setPublicProfile(
+        data as PublicProfile
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi public profile:",
+        error
+      );
+
+      setPublicProfileMessage(
+        "❌ Có lỗi khi tải hồ sơ."
+      );
+    } finally {
+      setPublicProfileLoading(false);
+    }
+  };
+
+  // ============================================
+  // PUBLIC PROFILE - FOLLOW / UNFOLLOW
+  // ============================================
+
+  const toggleFollow = async (
+    targetUserId: string
+  ) => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage(
+        "🔐 Hãy đăng nhập để theo dõi Traveller."
+      );
+      return;
+    }
+
+    if (targetUserId === user.id) {
+      return;
+    }
+
+    if (followLoading[targetUserId]) {
+      return;
+    }
+
+    const isFollowing =
+      followingUserIds.includes(targetUserId);
+
+    setFollowLoading((current) => ({
+      ...current,
+      [targetUserId]: true,
+    }));
+
+    setFollowingUserIds((current) =>
+      isFollowing
+        ? current.filter(
+            (id) => id !== targetUserId
+          )
+        : current.includes(targetUserId)
+        ? current
+        : [...current, targetUserId]
+    );
+
+    if (publicProfile?.user_id === targetUserId) {
+      setPublicProfile((current) =>
+        current
+          ? {
+              ...current,
+              follower_count: Math.max(
+                0,
+                current.follower_count +
+                  (isFollowing ? -1 : 1)
+              ),
+            }
+          : current
+      );
+    }
+
+    try {
+      if (isFollowing) {
+        const { error } = await supabase
+          .from("user_follows")
+          .delete()
+          .eq("follower_id", user.id)
+          .eq("following_id", targetUserId);
+
+        if (error) {
+          throw error;
+        }
+      } else {
+        const { error } = await supabase
+          .from("user_follows")
+          .insert({
+            follower_id: user.id,
+            following_id: targetUserId,
+          });
+
+        if (error) {
+          throw error;
+        }
+      }
+    } catch (error: unknown) {
+      const errorInfo =
+        error &&
+        typeof error === "object"
+          ? (error as {
+              message?: string;
+              details?: string;
+              hint?: string;
+              code?: string;
+            })
+          : {};
+
+      console.error(
+        "Lỗi follow/unfollow:",
+        errorInfo.message,
+        errorInfo.details,
+        errorInfo.hint,
+        errorInfo.code,
+        error
+      );
+
+      setFollowingUserIds((current) =>
+        isFollowing
+          ? [...current, targetUserId]
+          : current.filter(
+              (id) => id !== targetUserId
+            )
+      );
+
+      if (
+        publicProfile?.user_id ===
+        targetUserId
+      ) {
+        setPublicProfile((current) =>
+          current
+            ? {
+                ...current,
+                follower_count: Math.max(
+                  0,
+                  current.follower_count +
+                    (isFollowing ? 1 : -1)
+                ),
+              }
+            : current
+        );
+      }
+
+      setPublicProfileMessage(
+        "❌ Không thể cập nhật Follow. Hãy thử lại."
+      );
+    } finally {
+      setFollowLoading((current) => ({
+        ...current,
+        [targetUserId]: false,
+      }));
+    }
+  };
+
+  // ============================================
+  // PUBLIC PROFILE - LOAD WHEN USER CHANGES
+  // ============================================
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!authReady) {
+        return;
+      }
+
+      void loadFollowing();
+      void loadNotifications();
+    });
+  }, [authReady, user?.id]);
+
+  // ============================================
+  // LEADERBOARD - LOAD
+  // ============================================
+
+  const loadLeaderboard = async () => {
+    if (!user?.id) {
+      setLeaderboard([]);
+      return;
+    }
+
+    setLeaderboardLoading(true);
+    setLeaderboardMessage("");
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("travelquest_leaderboard")
+        .select(
+          "user_id, display_name, checkpoint_count, xp, level"
+        )
+        .order("xp", {
+          ascending: false,
+        })
+        .order("checkpoint_count", {
+          ascending: false,
+        })
+        .order("display_name", {
+          ascending: true,
+        });
+
+      if (error) {
+        console.error(
+          "Lỗi tải bảng xếp hạng:",
+          error
+        );
+
+        setLeaderboard([]);
+        setLeaderboardMessage(
+          "Không thể tải bảng xếp hạng."
+        );
+
+        return;
+      }
+
+      setLeaderboard(
+        (data ?? []) as LeaderboardEntry[]
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi load leaderboard:",
+        error
+      );
+
+      setLeaderboard([]);
+      setLeaderboardMessage(
+        "Không thể tải bảng xếp hạng."
+      );
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!authReady || !user?.id) {
+        setLeaderboard([]);
+        return;
+      }
+
+      void loadLeaderboard();
+    });
+  }, [
+    authReady,
+    user?.id,
+  ]);
+
+  // ============================================
+  // CLAIM DEVICE DATA FOR ACCOUNT
+  // ============================================
+
+  const claimDeviceDataForUser =
+    async (
+      userId: string
+    ) => {
+      const deviceId =
+        getDeviceId();
+
+      if (!deviceId || !userId) {
+        return;
+      }
+
+      try {
+        const {
+          error: checkinClaimError,
+        } = await supabase
+          .from("checkins")
+          .update({
+            user_id: userId,
+          })
+          .eq(
+            "device_id",
+            deviceId
+          )
+          .is(
+            "user_id",
+            null
+          );
+
+        if (checkinClaimError) {
+          console.error(
+            "Lỗi gắn check-in vào tài khoản:",
+            checkinClaimError
+          );
+        }
+
+        const {
+          error: postClaimError,
+        } = await supabase
+          .from("posts")
+          .update({
+            user_id: userId,
+          })
+          .eq(
+            "device_id",
+            deviceId
+          )
+          .is(
+            "user_id",
+            null
+          );
+
+        if (postClaimError) {
+          console.error(
+            "Lỗi gắn bài viết vào tài khoản:",
+            postClaimError
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Lỗi claim dữ liệu:",
+          error
+        );
+      }
+    };
+
+  // ============================================
+  // LOAD DATA FROM SUPABASE
+  // ============================================
+
+  useEffect(() => {
+    if (!authReady) {
+      return;
+    }
+
+    const loadData = async () => {
+      setLoading(true);
+      setMessage("");
+
+      try {
+        const deviceId =
+          getDeviceId();
+
+        const currentUserId =
+          user?.id ?? null;
+
+        if (currentUserId) {
+          await claimDeviceDataForUser(
+            currentUserId
+          );
+        }
+
+        const {
+          data: checkpointData,
+          error: checkpointError,
+        } = await supabase
+          .from("checkpoints")
+          .select(
+            "id, name, description, icon, badge, longitude, latitude"
+          )
+          .order("id", {
+            ascending: true,
+          });
+
+        if (checkpointError) {
+          console.error(
+            "Lỗi lấy checkpoints:",
+            checkpointError
+          );
+
+          setMessage(
+            "Không thể tải checkpoint từ Supabase."
+          );
+
+          setLoading(false);
+          return;
+        }
+
+        setCheckpoints(
+          checkpointData ?? []
+        );
+
+        checkpointsRef.current =
+          checkpointData ?? [];
+
+        let checkinQuery =
+          supabase
+            .from("checkins")
+            .select(
+              "checkpoint_id, user_id, created_at"
+            );
+
+        if (currentUserId) {
+          checkinQuery =
+            checkinQuery.eq(
+              "user_id",
+              currentUserId
+            );
+        } else {
+          checkinQuery =
+            checkinQuery
+              .eq(
+                "device_id",
+                deviceId
+              )
+              .is(
+                "user_id",
+                null
+              );
+        }
+
+        const {
+          data: checkinData,
+          error: checkinError,
+        } = await checkinQuery;
+
+        if (checkinError) {
+          console.error(
+            "Lỗi lấy checkins:",
+            checkinError
+          );
+
+          setMessage(
+            "Checkpoint đã tải, nhưng chưa thể tải tiến độ check-in."
+          );
+        } else {
+          const loadedCheckins =
+            checkinData ?? [];
+
+          setCheckins(
+            loadedCheckins
+          );
+
+          checkinsRef.current =
+            loadedCheckins;
+
+          previousCheckins.current =
+            loadedCheckins.map(
+              (item) =>
+                item.checkpoint_id
+            );
+        }
+      } catch (error) {
+        console.error(
+          "Lỗi kết nối Supabase:",
+          error
+        );
+
+        setMessage(
+          "Có lỗi khi kết nối với Supabase."
+        );
+      }
+
+      setLoading(false);
+    };
+
+    loadData();
+  }, [
+    authReady,
+    user?.id,
+  ]);
+
+  // ============================================
+  // LOAD UGC POSTS
+  // ============================================
+
+  const loadPosts = async () => {
+    setPostsLoading(true);
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("posts")
+        .select(
+          `
+            id,
+            device_id,
+            user_id,
+            checkpoint_id,
+            content,
+            likes,
+            created_at,
+            image_url,
+            checkpoint:checkpoints (
+              id,
+              name,
+              description,
+              icon,
+              badge,
+              longitude,
+              latitude
+            )
+          `
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        );
+
+      if (error) {
+        console.error(
+          "Lỗi lấy bài viết:",
+          error
+        );
+
+        setPostMessage(
+          "Không thể tải bài viết từ Supabase."
+        );
+
+        setPostsLoading(false);
+        return;
+      }
+
+      const normalizedPosts: Post[] =
+        (data ?? []).map(
+          (item: PostQueryRow) => {
+            let checkpoint =
+              item.checkpoint ??
+              null;
+
+            if (
+              Array.isArray(
+                checkpoint
+              )
+            ) {
+              checkpoint =
+                checkpoint[0] ??
+                null;
+            }
+
+            return {
+              id: item.id,
+              device_id:
+                item.device_id,
+              user_id:
+                item.user_id ??
+                null,
+              checkpoint_id:
+                item.checkpoint_id,
+              content:
+                item.content,
+              likes:
+                item.likes ?? 0,
+              created_at:
+                item.created_at,
+              image_url:
+                item.image_url ??
+                null,
+              checkpoint,
+            };
+          }
+        );
+
+      setPosts(
+        normalizedPosts
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi load UGC:",
+        error
+      );
+
+      setPostMessage(
+        "Không thể tải cộng đồng TravelQuest."
+      );
+    }
+
+    setPostsLoading(false);
+  };
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!authReady) {
+        return;
+      }
+
+      void loadPosts();
+    });
+  }, [
+    authReady,
+    user?.id,
+  ]);
+
+  // ============================================
+  // LOAD UGC COMMENTS
+  // ============================================
+
+  const loadComments = async () => {
+    if (!user?.id) {
+      setComments([]);
+      return;
+    }
+
+    setCommentsLoading(true);
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("post_comments")
+        .select(
+          "id, post_id, user_id, content, created_at"
+        )
+        .order("created_at", {
+          ascending: true,
+        });
+
+      if (error) {
+        console.error(
+          "Lỗi lấy bình luận:",
+          error
+        );
+
+        setComments([]);
+        return;
+      }
+
+      setComments(
+        (data ?? []) as PostComment[]
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi load bình luận:",
+        error
+      );
+
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!authReady || !user?.id) {
+        setComments([]);
+        return;
+      }
+
+      void loadComments();
+    });
+  }, [
+    authReady,
+    user?.id,
+  ]);
+
+  // ============================================
+  // LOAD UGC LIKES
+  // ============================================
+
+  const loadLikedPosts = async () => {
+    if (!user?.id) {
+      setLikedPostIds([]);
+      return;
+    }
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("post_likes")
+        .select("post_id")
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error(
+          "Lỗi lấy trạng thái like:",
+          error
+        );
+
+        setLikedPostIds([]);
+        return;
+      }
+
+      setLikedPostIds(
+        (data ?? []).map(
+          (item) => Number(item.post_id)
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Lỗi load trạng thái like:",
+        error
+      );
+
+      setLikedPostIds([]);
+    }
+  };
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      if (!authReady || !user?.id) {
+        setLikedPostIds([]);
+        return;
+      }
+
+      void loadLikedPosts();
+    });
+  }, [
+    authReady,
+    user?.id,
+  ]);
+
+  // ============================================
+  // CREATE UGC COMMENT
+  // ============================================
+
+  const handleCreateComment = async (
+    postId: number
+  ) => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage(
+        "🔐 Hãy đăng nhập để bình luận."
+      );
+      return;
+    }
+
+    const content =
+      (commentInputs[postId] ?? "").trim();
+
+    if (!content) {
+      return;
+    }
+
+    if (content.length > 300) {
+      setPostMessage(
+        "Bình luận tối đa 300 ký tự."
+      );
+      return;
+    }
+
+    setCommentLoading((current) => ({
+      ...current,
+      [postId]: true,
+    }));
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from("post_comments")
+        .insert({
+          post_id: postId,
+          user_id: user.id,
+          content,
+        })
+        .select(
+          "id, post_id, user_id, content, created_at"
+        )
+        .single();
+
+      if (error) {
+        console.error(
+          "Lỗi tạo bình luận:",
+          error
+        );
+
+        setPostMessage(
+          "❌ Không thể đăng bình luận. Hãy thử lại."
+        );
+        return;
+      }
+
+      if (data) {
+        setComments((current) => [
+          ...current,
+          data as PostComment,
+        ]);
+      }
+
+      setCommentInputs((current) => ({
+        ...current,
+        [postId]: "",
+      }));
+    } catch (error) {
+      console.error(
+        "Lỗi comment:",
+        error
+      );
+
+      setPostMessage(
+        "❌ Có lỗi khi đăng bình luận."
+      );
+    } finally {
+      setCommentLoading((current) => ({
+        ...current,
+        [postId]: false,
+      }));
+    }
+  };
+
+  // ============================================
+  // IMAGE PREVIEW CLEANUP
+  // ============================================
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(
+          imagePreview
+        );
+      }
+    };
+  }, [imagePreview]);
+
+  // ============================================
+  // SELECT IMAGE
+  // ============================================
+
+  const handleSelectImage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file =
+      event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
+      setPostMessage(
+        "⚠️ Vui lòng chọn một file ảnh."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    const maxSize =
+      5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setPostMessage(
+        "⚠️ Ảnh tối đa 5MB."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    if (imagePreview) {
+      URL.revokeObjectURL(
+        imagePreview
+      );
+    }
+
+    const preview =
+      URL.createObjectURL(
+        file
+      );
+
+    setSelectedImage(file);
+    setImagePreview(preview);
+    setPostMessage("");
+  };
+
+  // ============================================
+  // REMOVE SELECTED IMAGE
+  // ============================================
+
+  const handleRemoveImage = () => {
+    if (imagePreview) {
+      URL.revokeObjectURL(
+        imagePreview
+      );
+    }
+
+    setSelectedImage(null);
+    setImagePreview(null);
+
+    if (imageInputRef.current) {
+      imageInputRef.current.value =
+        "";
+    }
+  };
+
+  // ============================================
+  // SHOW BADGE WHEN NEW CHECK-IN IS ADDED
+  // ============================================
+
+  useEffect(() => {
+    if (
+      checkpoints.length === 0
+    ) {
+      return;
+    }
+
+    const currentIds =
+      checkins.map(
+        (item) =>
+          item.checkpoint_id
+      );
+
+    const newCheckpointId =
+      currentIds.find(
+        (id) =>
+          !previousCheckins.current.includes(
+            id
+          )
+      );
+
+    if (
+      newCheckpointId !==
+      undefined
+    ) {
+      const checkpoint =
+        checkpoints.find(
+          (item) =>
+            item.id ===
+            newCheckpointId
+        );
+
+      if (checkpoint) {
+        setUnlockedBadge(
+          checkpoint
+        );
+
+        if (
+          badgePopupTimer.current
+        ) {
+          clearTimeout(
+            badgePopupTimer.current
+          );
+        }
+
+        badgePopupTimer.current =
+          setTimeout(() => {
+            setUnlockedBadge(
+              null
+            );
+          }, 4500);
+      }
+    }
+
+    previousCheckins.current =
+      currentIds;
+  }, [
+    checkins,
+    checkpoints,
+  ]);
+
+  // ============================================
+  // CLEANUP
+  // ============================================
+
+  useEffect(() => {
+    return () => {
+      if (gpsWatchId.current !== null) {
+        stopWatchingLocation(
+          gpsWatchId.current
+        );
+      }
+
+      gpsWatchId.current =
+        null;
+
+      if (
+        badgePopupTimer.current
+      ) {
+        clearTimeout(
+          badgePopupTimer.current
+        );
+      }
+
+      if (imagePreview) {
+        URL.revokeObjectURL(
+          imagePreview
+        );
+      }
+    };
+  }, []);
+
+  // ============================================
+  // AUTO CHECK-IN / GEOFENCING
+  // ============================================
+
+  const autoCheckIn = async (
+    location: GPSLocation
+  ) => {
+    const currentCheckpoints =
+      checkpointsRef.current;
+
+    const currentCheckins =
+      checkinsRef.current;
+
+    if (
+      currentCheckpoints.length ===
+      0
+    ) {
+      return;
+    }
+
+    let nearestCheckpoint:
+      | Checkpoint
+      | null = null;
+
+    let nearestDistance =
+      Infinity;
+
+    for (
+      const checkpoint of
+        currentCheckpoints
+    ) {
+      const currentDistance =
+        getValidGpsDistance(
+          location,
+          checkpoint
+        );
+
+      if (currentDistance === null) {
+        continue;
+      }
+
+      if (
+        currentDistance <
+        nearestDistance
+      ) {
+        nearestDistance =
+          currentDistance;
+
+        nearestCheckpoint =
+          checkpoint;
+      }
+    }
+
+    if (
+      !nearestCheckpoint ||
+      !Number.isFinite(nearestDistance)
+    ) {
+      setDistance(null);
+      setMessage(GPS_DISTANCE_UNAVAILABLE);
+      return;
+    }
+
+    const roundedDistance =
+      Math.round(
+        nearestDistance
+      );
+
+    if (
+      nearestDistance <=
+      CHECKIN_RADIUS
+    ) {
+      if (
+        geofenceCheckpointId.current !==
+        nearestCheckpoint.id
+      ) {
+        geofenceCheckpointId.current =
+          nearestCheckpoint.id;
+
+        setDistance(
+          roundedDistance
+        );
+
+        setMessage(
+          `📍 Bạn đã vào vùng ${nearestCheckpoint.name}!`
+        );
+      }
+
+      const alreadyCheckedIn =
+        currentCheckins.some(
+          (item) =>
+            item.checkpoint_id ===
+            nearestCheckpoint!.id
+        );
+
+      if (
+        alreadyCheckedIn
+      ) {
+        if (
+          selectedCheckpointRef.current
+            ?.id ===
+          nearestCheckpoint.id
+        ) {
+          setMessage(
+            `🏆 Bạn đã chinh phục ${nearestCheckpoint.name}!`
+          );
+        }
+
+        return;
+      }
+
+      if (
+        autoCheckinInProgress.current.has(
+          nearestCheckpoint.id
+        )
+      ) {
+        return;
+      }
+
+      autoCheckinInProgress.current.add(
+        nearestCheckpoint.id
+      );
+
+      const deviceId =
+        getDeviceId();
+
+      const currentUserId =
+        user?.id ?? null;
+
+      setMessage(
+        `🎉 Đang tự động check-in tại ${nearestCheckpoint.name}...`
+      );
+
+      try {
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("checkins")
+          .insert({
+            device_id:
+              deviceId,
+            user_id:
+              currentUserId,
+            checkpoint_id:
+              nearestCheckpoint.id,
+          })
+          .select(
+            "checkpoint_id, user_id"
+          )
+          .single();
+
+        if (error) {
+          console.error(
+            "Lỗi Auto Check-in:",
+            error
+          );
+
+          if (
+            error.code ===
+            "23505"
+          ) {
+            setCheckins(
+              (current) => {
+                if (
+                  current.some(
+                    (item) =>
+                      item.checkpoint_id ===
+                      nearestCheckpoint!.id
+                  )
+                ) {
+                  return current;
+                }
+
+                const updated = [
+                  ...current,
+                  {
+                    checkpoint_id:
+                      nearestCheckpoint!.id,
+                    user_id:
+                      currentUserId,
+                  },
+                ];
+
+                checkinsRef.current =
+                  updated;
+
+                return updated;
+              }
+            );
+
+            setMessage(
+              `🏆 Bạn đã chinh phục ${nearestCheckpoint.name}!`
+            );
+          } else {
+            setMessage(
+              "⚠️ Không thể tự động check-in. Hãy thử lại."
+            );
+          }
+
+          return;
+        }
+
+        if (data) {
+          setCheckins(
+            (current) => {
+              if (
+                current.some(
+                  (item) =>
+                    item.checkpoint_id ===
+                    data.checkpoint_id
+                )
+              ) {
+                return current;
+              }
+
+              const updated = [
+                ...current,
+                data,
+              ];
+
+              checkinsRef.current =
+                updated;
+
+              return updated;
+            }
+          );
+        }
+
+        setSelectedCheckpoint(
+          nearestCheckpoint
+        );
+
+        selectedCheckpointRef.current =
+          nearestCheckpoint;
+
+        setDistance(
+          roundedDistance
+        );
+
+        setMessage(
+          `🏆 Auto Check-in thành công tại ${nearestCheckpoint.name}!`
+        );
+      } catch (error) {
+        console.error(
+          "Lỗi Auto Check-in:",
+          error
+        );
+
+        setMessage(
+          "⚠️ Có lỗi khi tự động check-in."
+        );
+      } finally {
+        autoCheckinInProgress.current.delete(
+          nearestCheckpoint.id
+        );
+      }
+
+      return;
+    }
+
+    if (
+      geofenceCheckpointId.current !==
+        null &&
+      nearestDistance >
+        GEOFENCE_EXIT_RADIUS
+    ) {
+      const previousCheckpoint =
+        currentCheckpoints.find(
+          (checkpoint) =>
+            checkpoint.id ===
+            geofenceCheckpointId.current
+        );
+
+      geofenceCheckpointId.current =
+        null;
+
+      setMessage(
+        previousCheckpoint
+          ? `📍 Bạn đã rời khỏi vùng ${previousCheckpoint.name}.`
+          : "📍 Bạn đã rời khỏi vùng checkpoint."
+      );
+    }
+
+    if (
+      selectedCheckpointRef.current
+        ?.id ===
+      nearestCheckpoint.id
+    ) {
+      setDistance(
+        roundedDistance
+      );
+    }
+  };
+
+  // ============================================
+  // GET GPS LOCATION
+  // ============================================
+
+  const updateLocation =
+    async () => {
+      setLocationLoading(true);
+      setMessage("");
+
+      try {
+        const location =
+          await getCurrentLocation();
+
+        setUserLocation(
+          location
+        );
+
+        await autoCheckIn(
+          location
+        );
+
+        const currentSelected =
+          selectedCheckpointRef.current;
+
+        if (
+          currentSelected
+        ) {
+          const currentDistance =
+            getValidGpsDistance(
+              location,
+              currentSelected
+            );
+
+          if (currentDistance === null) {
+            setDistance(null);
+            setMessage(GPS_DISTANCE_UNAVAILABLE);
+            return;
+          }
+
+          const roundedDistance =
+            Math.round(
+              currentDistance
+            );
+
+          setDistance(
+            roundedDistance
+          );
+
+          if (
+            currentDistance <=
+            CHECKIN_RADIUS
+          ) {
+            setMessage(
+              `✅ Bạn đang ở trong vùng check-in của ${currentSelected.name}!`
+            );
+          } else if (
+            currentDistance <=
+            GEOFENCE_EXIT_RADIUS
+          ) {
+            setMessage(
+              `📍 Bạn đang ở gần ${currentSelected.name} — còn ${roundedDistance}m.`
+            );
+          } else {
+            setMessage(
+              `📍 Bạn đang cách checkpoint khoảng ${roundedDistance}m.`
+            );
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Lỗi GPS:",
+          error
+        );
+
+        if (
+          error instanceof Error
+        ) {
+          setMessage(
+            error.message
+          );
+        } else {
+          setMessage(
+            "Không thể lấy vị trí hiện tại."
+          );
+        }
+      }
+
+      setLocationLoading(false);
+    };
+
+  // ============================================
+  // START WATCHING GPS
+  // ============================================
+
+  const startWatchingGPS =
+    () => {
+      if (
+        gpsWatchId.current !==
+        null
+      ) {
+        return;
+      }
+
+      setLocationLoading(true);
+
+      setMessage(
+        "📡 TravelQuest đang theo dõi vị trí..."
+      );
+
+      const watchId =
+        watchCurrentLocation(
+          async (location) => {
+            setUserLocation(
+              location
+            );
+
+            setLocationLoading(
+              false
+            );
+
+            await autoCheckIn(
+              location
+            );
+
+            const currentSelected =
+              selectedCheckpointRef.current;
+
+            if (
+              currentSelected
+            ) {
+              const currentDistance =
+                getValidGpsDistance(
+                  location,
+                  currentSelected
+                );
+
+              if (currentDistance === null) {
+                setDistance(null);
+                setMessage(GPS_DISTANCE_UNAVAILABLE);
+                return;
+              }
+
+              const roundedDistance =
+                Math.round(
+                  currentDistance
+                );
+
+              setDistance(
+                roundedDistance
+              );
+
+              if (
+                currentDistance <=
+                CHECKIN_RADIUS
+              ) {
+                setMessage(
+                  `✅ Bạn đang ở trong vùng check-in của ${currentSelected.name}!`
+                );
+              } else if (
+                currentDistance <=
+                GEOFENCE_EXIT_RADIUS
+              ) {
+                setMessage(
+                  `📍 Bạn đang gần ${currentSelected.name} — còn ${roundedDistance}m.`
+                );
+              } else {
+                setMessage(
+                  `📍 Bạn đang cách checkpoint khoảng ${roundedDistance}m.`
+                );
+              }
+            }
+          },
+          (error) => {
+            console.error(
+              "Lỗi theo dõi GPS:",
+              error
+            );
+
+            setLocationLoading(
+              false
+            );
+
+            setMessage(
+              error.message
+            );
+          }
+        );
+
+      gpsWatchId.current =
+        watchId;
+    };
+
+  // ============================================
+  // SELECT CHECKPOINT
+  // ============================================
+
+  const toggleSavedPlace = (checkpointId: number) => {
+    setSavedPlaceIds((current) =>
+      current.includes(checkpointId)
+        ? current.filter((id) => id !== checkpointId)
+        : [...current, checkpointId]
+    );
+  };
+
+  const isSavedPlace = (checkpointId: number) =>
+    savedPlaceIds.includes(checkpointId);
+
+  const savedCheckpoints = checkpoints.filter((checkpoint) =>
+    isSavedPlace(checkpoint.id)
+  );
+
+  // ============================================
+  // HELPERS
+  // ============================================
+
+  const isCheckedIn = (
+    checkpointId: number
+  ) => {
+    return checkins.some(
+      (item) =>
+        item.checkpoint_id ===
+        checkpointId
+    );
+  };
+
+  const journeyCheckpoints = checkpoints.filter((checkpoint) =>
+    journeyCheckpointIds.includes(checkpoint.id)
+  );
+
+  const journeyCompletedCount = journeyCheckpoints.filter((checkpoint) =>
+    isCheckedIn(checkpoint.id)
+  ).length;
+
+  const journeyProgress =
+    journeyCheckpoints.length > 0
+      ? Math.round(
+          (journeyCompletedCount / journeyCheckpoints.length) * 100
+        )
+      : 0;
+
+  const toggleJourneyCheckpoint = (checkpointId: number) => {
+    setJourneyCheckpointIds((current) =>
+      current.includes(checkpointId)
+        ? current.filter((id) => id !== checkpointId)
+        : [...current, checkpointId]
+    );
+  };
+
+  const startJourney = () => {
+    if (journeyCheckpointIds.length === 0) return;
+    setJourneyStarted(true);
+    setJourneyOpen(false);
+    setMessage(`🧭 Đã bắt đầu ${journeyName.trim() || "hành trình của bạn"}.`);
+  };
+
+  const finishJourney = () => {
+    setJourneyStarted(false);
+    setMessage("🏁 Hành trình đã kết thúc. Dữ liệu checkpoint vẫn được giữ lại.");
+  };
+
+  const clearJourney = () => {
+    setJourneyStarted(false);
+    setJourneyCheckpointIds([]);
+    setJourneyName("Hành trình Hà Nội");
+  };
+
+  const selectCheckpoint = (
+    checkpoint: Checkpoint
+  ) => {
+    setSelectedCheckpoint(
+      checkpoint
+    );
+
+    selectedCheckpointRef.current =
+      checkpoint;
+
+    setDistance(null);
+    setMessage("");
+
+    startWatchingGPS();
+  };
+
+  const loadCheckpointWeather = async (checkpoint: Checkpoint) => {
+    setWeatherLoading(true);
+    setWeatherError("");
+
+    try {
+      const params = new URLSearchParams({
+        latitude: String(checkpoint.latitude),
+        longitude: String(checkpoint.longitude),
+        current: [
+          "temperature_2m",
+          "apparent_temperature",
+          "relative_humidity_2m",
+          "wind_speed_10m",
+          "weather_code",
+        ].join(","),
+        daily: [
+          "weather_code",
+          "temperature_2m_max",
+          "temperature_2m_min",
+        ].join(","),
+        timezone: "auto",
+        forecast_days: "5",
+      });
+
+      const response = await fetch(
+        `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
+        { cache: "no-store" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Không thể lấy dữ liệu thời tiết.");
+      }
+
+      const data = await response.json();
+
+      const current = data.current;
+      const daily = data.daily;
+
+      if (!current || !daily) {
+        throw new Error("Dữ liệu thời tiết không hợp lệ.");
+      }
+
+      setWeather({
+        current: {
+          temperature: Number(current.temperature_2m),
+          apparentTemperature: Number(current.apparent_temperature),
+          humidity: Number(current.relative_humidity_2m),
+          windSpeed: Number(current.wind_speed_10m),
+          weatherCode: Number(current.weather_code),
+        },
+        daily: (daily.time ?? []).map((date: string, index: number) => ({
+          date,
+          weatherCode: Number(daily.weather_code?.[index] ?? 0),
+          temperatureMax: Number(daily.temperature_2m_max?.[index] ?? 0),
+          temperatureMin: Number(daily.temperature_2m_min?.[index] ?? 0),
+        })),
+      });
+    } catch (error: unknown) {
+      const details =
+        typeof error === "object" && error !== null
+          ? (error as { message?: string }).message
+          : undefined;
+
+      setWeatherError(details || "Không thể tải thời tiết lúc này.");
+      setWeather(null);
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  const weatherDescription = (code: number) => {
+    if (code === 0) return { icon: "☀️", label: "Trời quang" };
+    if ([1, 2].includes(code)) return { icon: "🌤️", label: "Có mây nhẹ" };
+    if (code === 3) return { icon: "☁️", label: "Nhiều mây" };
+    if ([45, 48].includes(code)) return { icon: "🌫️", label: "Sương mù" };
+    if ([51, 53, 55, 56, 57].includes(code)) return { icon: "🌦️", label: "Mưa phùn" };
+    if ([61, 63, 65, 66, 67].includes(code)) return { icon: "🌧️", label: "Mưa" };
+    if ([71, 73, 75, 77].includes(code)) return { icon: "🌨️", label: "Tuyết" };
+    if ([80, 81, 82].includes(code)) return { icon: "🌦️", label: "Mưa rào" };
+    if ([85, 86].includes(code)) return { icon: "🌨️", label: "Mưa tuyết" };
+    if ([95, 96, 99].includes(code)) return { icon: "⛈️", label: "Dông" };
+    return { icon: "🌤️", label: "Thời tiết" };
+  };
+
+  const bookingSearchQuery = selectedCheckpoint
+    ? encodeURIComponent(`${selectedCheckpoint.name}, Hanoi, Vietnam`)
+    : "";
+
+  const bookingOptions = selectedCheckpoint
+    ? [
+        {
+          icon: "🏨",
+          title: "Lưu trú",
+          description: "Tìm khách sạn, homestay và nơi ở gần checkpoint.",
+          links: [
+            { label: "Booking.com", url: `https://www.booking.com/searchresults.html?ss=${bookingSearchQuery}` },
+            { label: "Google Maps", url: `https://www.google.com/maps/search/?api=1&query=${bookingSearchQuery}+hotel` },
+          ],
+        },
+        {
+          icon: "🍜",
+          title: "Ăn uống",
+          description: "Khám phá nhà hàng và quán ăn quanh địa điểm.",
+          links: [
+            { label: "Google Maps", url: `https://www.google.com/maps/search/?api=1&query=${bookingSearchQuery}+restaurant` },
+          ],
+        },
+        {
+          icon: "🎟️",
+          title: "Vé & trải nghiệm",
+          description: "Tìm tour, vé tham quan và hoạt động gần đây.",
+          links: [
+            { label: "GetYourGuide", url: `https://www.getyourguide.com/s/?q=${bookingSearchQuery}` },
+            { label: "Google Maps", url: `https://www.google.com/maps/search/?api=1&query=${bookingSearchQuery}+tour` },
+          ],
+        },
+      ]
+    : [];
+
+  const formatWeatherDate = (date: string) =>
+    new Date(`${date}T12:00:00`).toLocaleDateString("vi-VN", {
+      weekday: "short",
+      day: "2-digit",
+      month: "2-digit",
+    });
+
+  const openCheckpointDetail = () => {
+    if (!selectedCheckpoint) return;
+    setCheckpointDetailOpen(true);
+    void loadCheckpointWeather(selectedCheckpoint);
+  };
+
+
+  // ============================================
+  // MANUAL CHECK-IN WITH GPS
+  // ============================================
+
+  const handleCheckIn =
+    async () => {
+      if (!user?.id) {
+        setAuthOpen(true);
+        setAuthMode("login");
+        setAuthMessage("🔐 Hãy đăng nhập để check-in checkpoint.");
+        return;
+      }
+
+      const currentSelected =
+        selectedCheckpointRef.current;
+
+      if (
+        !currentSelected ||
+        checkingIn
+      ) {
+        return;
+      }
+
+      const alreadyCheckedIn =
+        checkinsRef.current.some(
+          (item) =>
+            item.checkpoint_id ===
+            currentSelected.id
+        );
+
+      if (
+        alreadyCheckedIn
+      ) {
+        setMessage(
+          `Bạn đã check-in ${currentSelected.name} rồi!`
+        );
+
+        return;
+      }
+
+      setCheckingIn(true);
+      setMessage("");
+      setDistance(null);
+
+      try {
+        const location =
+          await getCurrentLocation();
+
+        setUserLocation(
+          location
+        );
+
+        const currentDistance =
+          getValidGpsDistance(
+            location,
+            currentSelected
+          );
+
+        if (currentDistance === null) {
+          setDistance(null);
+          setMessage(GPS_DISTANCE_UNAVAILABLE);
+          setCheckingIn(false);
+          return;
+        }
+
+        const roundedDistance =
+          Math.round(
+            currentDistance
+          );
+
+        setDistance(
+          roundedDistance
+        );
+
+        if (
+          currentDistance >
+          CHECKIN_RADIUS
+        ) {
+          setMessage(
+            `🔒 Bạn đang cách checkpoint ${roundedDistance}m. Hãy đến gần hơn ${CHECKIN_RADIUS}m để check-in.`
+          );
+
+          setCheckingIn(false);
+          return;
+        }
+
+        const deviceId =
+          getDeviceId();
+
+        const currentUserId =
+          user?.id ?? null;
+
+        const {
+          data,
+          error,
+        } = await supabase
+          .from("checkins")
+          .insert({
+            device_id:
+              deviceId,
+            user_id:
+              currentUserId,
+            checkpoint_id:
+              currentSelected.id,
+          })
+          .select(
+            "checkpoint_id, user_id"
+          )
+          .single();
+
+        if (error) {
+          console.error(
+            "Lỗi check-in:",
+            error
+          );
+
+          if (
+            error.code ===
+            "23505"
+          ) {
+            setMessage(
+              "🏆 Bạn đã check-in checkpoint này rồi!"
+            );
+
+            setCheckins(
+              (current) => {
+                if (
+                  current.some(
+                    (item) =>
+                      item.checkpoint_id ===
+                      currentSelected.id
+                  )
+                ) {
+                  return current;
+                }
+
+                const updated = [
+                  ...current,
+                  {
+                    checkpoint_id:
+                      currentSelected.id,
+                    user_id:
+                      currentUserId,
+                  },
+                ];
+
+                checkinsRef.current =
+                  updated;
+
+                return updated;
+              }
+            );
+          } else {
+            setMessage(
+              "Check-in thất bại. Hãy thử lại."
+            );
+          }
+
+          setCheckingIn(false);
+          return;
+        }
+
+        if (data) {
+          setCheckins(
+            (current) => {
+              if (
+                current.some(
+                  (item) =>
+                    item.checkpoint_id ===
+                    data.checkpoint_id
+                )
+              ) {
+                return current;
+              }
+
+              const updated = [
+                ...current,
+                data,
+              ];
+
+              checkinsRef.current =
+                updated;
+
+              return updated;
+            }
+          );
+        }
+
+        geofenceCheckpointId.current =
+          currentSelected.id;
+
+        setMessage(
+          `🎉 Check-in thành công tại ${currentSelected.name}!`
+        );
+      } catch (error) {
+        console.error(
+          "Lỗi check-in GPS:",
+          error
+        );
+
+        if (
+          error instanceof Error
+        ) {
+          setMessage(
+            error.message
+          );
+        } else {
+          setMessage(
+            "Có lỗi xảy ra khi check-in."
+          );
+        }
+      }
+
+      setCheckingIn(false);
+    };
+
+  // ============================================
+  // CREATE UGC POST
+  // ============================================
+
+  const handleCreatePost =
+    async () => {
+      if (!user?.id) {
+        setAuthOpen(true);
+        setAuthMode("login");
+        setAuthMessage("🔐 Hãy đăng nhập để đăng UGC.");
+        return;
+      }
+
+      const content =
+        postContent.trim();
+
+      if (!content) {
+        setPostMessage(
+          "✍️ Hãy viết nội dung trước khi đăng."
+        );
+
+        return;
+      }
+
+      if (
+        content.length < 3
+      ) {
+        setPostMessage(
+          "Bài viết cần ít nhất 3 ký tự."
+        );
+
+        return;
+      }
+
+      if (
+        content.length > 1000
+      ) {
+        setPostMessage(
+          "Bài viết tối đa 1000 ký tự."
+        );
+
+        return;
+      }
+
+      setPosting(true);
+      setPostMessage("");
+
+      try {
+        const deviceId =
+          getDeviceId();
+
+        const currentUserId =
+          user?.id ?? null;
+
+        let imageUrl:
+          | string
+          | null = null;
+
+        // ============================================
+        // UPLOAD IMAGE TO SUPABASE STORAGE
+        // ============================================
+
+        if (selectedImage) {
+          const originalName =
+            selectedImage.name;
+
+          const extension =
+            originalName.includes(".")
+              ? originalName
+                  .split(".")
+                  .pop()
+                  ?.toLowerCase() ??
+                "jpg"
+              : "jpg";
+
+          const safeExtension =
+            [
+              "jpg",
+              "jpeg",
+              "png",
+              "webp",
+              "gif",
+            ].includes(
+              extension
+            )
+              ? extension
+              : "jpg";
+
+          const filePath =
+            `posts/${deviceId}-${Date.now()}.${safeExtension}`;
+
+          const {
+            error:
+              uploadError,
+          } = await supabase.storage
+            .from(
+              "post-images"
+            )
+            .upload(
+              filePath,
+              selectedImage,
+              {
+                cacheControl:
+                  "3600",
+                upsert: false,
+                contentType:
+                  selectedImage.type,
+              }
+            );
+
+          if (
+            uploadError
+          ) {
+            console.error(
+              "Lỗi upload ảnh:",
+              uploadError
+            );
+
+            setPostMessage(
+              "⚠️ Không thể tải ảnh lên. Hãy kiểm tra bucket post-images."
+            );
+
+            setPosting(false);
+            return;
+          }
+
+          const {
+            data:
+              publicUrlData,
+          } =
+            supabase.storage
+              .from(
+                "post-images"
+              )
+              .getPublicUrl(
+                filePath
+              );
+
+          imageUrl =
+            publicUrlData.publicUrl;
+        }
+
+        // ============================================
+        // INSERT POST
+        // ============================================
+
+        const {
+          error,
+        } = await supabase
+          .from("posts")
+          .insert({
+            device_id:
+              deviceId,
+            user_id:
+              currentUserId,
+            checkpoint_id:
+              selectedPostCheckpoint,
+            content,
+            likes: 0,
+            image_url:
+              imageUrl,
+          });
+
+        if (error) {
+          console.error(
+            "Lỗi đăng bài:",
+            error
+          );
+
+          setPostMessage(
+            "Không thể đăng bài. Hãy kiểm tra Supabase."
+          );
+
+          setPosting(false);
+          return;
+        }
+
+        setPostContent("");
+
+        setSelectedPostCheckpoint(
+          null
+        );
+
+        handleRemoveImage();
+
+        setPostMessage(
+          "🎉 Đăng bài thành công!"
+        );
+
+        await loadPosts();
+      } catch (error) {
+        console.error(
+          "Lỗi tạo bài viết:",
+          error
+        );
+
+        setPostMessage(
+          "Có lỗi khi đăng bài."
+        );
+      }
+
+      setPosting(false);
+    };
+
+  // ============================================
+  // REPORT / MODERATION
+  // ============================================
+
+  const openReport = (
+    targetType: ReportTargetType,
+    targetId: string | number,
+    label: string
+  ) => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage(
+        "🔐 Hãy đăng nhập để báo cáo nội dung."
+      );
+      return;
+    }
+
+    setReportTargetType(targetType);
+    setReportTargetId(String(targetId));
+    setReportTargetLabel(label);
+    setReportReason("spam");
+    setReportDetails("");
+    setReportMessage("");
+    setReportOpen(true);
+  };
+
+  const closeReport = () => {
+    if (reportLoading) {
+      return;
+    }
+
+    setReportOpen(false);
+    setReportMessage("");
+  };
+
+  const handleSubmitReport = async () => {
+    if (!user?.id) {
+      setReportOpen(false);
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage(
+        "🔐 Hãy đăng nhập để báo cáo nội dung."
+      );
+      return;
+    }
+
+    if (!reportTargetId) {
+      setReportMessage("Không xác định được nội dung cần báo cáo.");
+      return;
+    }
+
+    setReportLoading(true);
+    setReportMessage("");
+
+    try {
+      const { error } = await supabase
+        .from("content_reports")
+        .insert({
+          reporter_id: user.id,
+          target_type: reportTargetType,
+          target_id: reportTargetId,
+          reason: reportReason,
+          details: reportDetails.trim() || null,
+        });
+
+      if (error) {
+        console.error("Lỗi gửi báo cáo:", error);
+
+        setReportMessage(
+          "❌ Chưa thể gửi báo cáo. Hãy thử lại sau."
+        );
+        return;
+      }
+
+      setReportMessage(
+        "✅ Đã gửi báo cáo. TravelQuest sẽ xem xét nội dung này."
+      );
+      setReportDetails("");
+
+      window.setTimeout(() => {
+        setReportOpen(false);
+        setReportMessage("");
+      }, 900);
+    } catch (error) {
+      console.error("Lỗi report:", error);
+      setReportMessage("❌ Có lỗi khi gửi báo cáo.");
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  // ============================================
+  // LIKE / UNLIKE UGC
+  // ============================================
+
+  const handleLike = async (
+    post: Post
+  ) => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage(
+        "🔐 Hãy đăng nhập để thích bài viết."
+      );
+      return;
+    }
+
+    if (likeLoading[post.id]) {
+      return;
+    }
+
+    const wasLiked =
+      likedPostIds.includes(post.id);
+
+    const optimisticLikes =
+      Math.max(
+        0,
+        post.likes +
+          (wasLiked ? -1 : 1)
+      );
+
+    setLikeLoading((current) => ({
+      ...current,
+      [post.id]: true,
+    }));
+
+    setLikedPostIds((current) =>
+      wasLiked
+        ? current.filter(
+            (id) => id !== post.id
+          )
+        : current.includes(post.id)
+        ? current
+        : [...current, post.id]
+    );
+
+    setPosts((current) =>
+      current.map((item) =>
+        item.id === post.id
+          ? {
+              ...item,
+              likes: optimisticLikes,
+            }
+          : item
+      )
+    );
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase.rpc(
+        "toggle_post_like",
+        {
+          p_post_id: post.id,
+        }
+      );
+
+      if (error) {
+        throw error;
+      }
+
+      const result =
+        Array.isArray(data)
+          ? data[0]
+          : data;
+
+      const serverLiked =
+        Boolean(result?.liked);
+
+      const serverLikes =
+        Number(result?.likes);
+
+      setLikedPostIds((current) =>
+        serverLiked
+          ? current.includes(post.id)
+            ? current
+            : [...current, post.id]
+          : current.filter(
+              (id) => id !== post.id
+            )
+      );
+
+      setPosts((current) =>
+        current.map((item) =>
+          item.id === post.id
+            ? {
+                ...item,
+                likes:
+                  Number.isFinite(
+                    serverLikes
+                  )
+                    ? serverLikes
+                    : optimisticLikes,
+              }
+            : item
+        )
+      );
+    } catch (error: unknown) {
+      const errorInfo =
+        error &&
+        typeof error === "object"
+          ? (error as {
+              message?: string;
+              details?: string;
+              hint?: string;
+              code?: string;
+            })
+          : {};
+
+      console.error(
+        "Lỗi like/unlike:",
+        errorInfo.message,
+        errorInfo.details,
+        errorInfo.hint,
+        errorInfo.code,
+        error
+      );
+
+      setLikedPostIds((current) =>
+        wasLiked
+          ? current.includes(post.id)
+            ? current
+            : [...current, post.id]
+          : current.filter(
+              (id) => id !== post.id
+            )
+      );
+
+      setPosts((current) =>
+        current.map((item) =>
+          item.id === post.id
+            ? {
+                ...item,
+                likes: post.likes,
+              }
+            : item
+        )
+      );
+
+      setPostMessage(
+        "❌ Không thể cập nhật lượt thích. Hãy thử lại."
+      );
+    } finally {
+      setLikeLoading((current) => ({
+        ...current,
+        [post.id]: false,
+      }));
+    }
+  };
+
+  // ============================================
+  // RESET
+  // ============================================
+
+  const resetProgress =
+    async () => {
+      const confirmed =
+        window.confirm(
+          user
+            ? "Bạn có chắc muốn xóa toàn bộ check-in của tài khoản này?"
+            : "Bạn có chắc muốn xóa toàn bộ check-in trên thiết bị này?"
+        );
+
+      if (!confirmed) {
+        return;
+      }
+
+      const deviceId =
+        getDeviceId();
+
+      let deleteQuery =
+        supabase
+          .from("checkins")
+          .delete();
+
+      if (user?.id) {
+        deleteQuery =
+          deleteQuery.eq(
+            "user_id",
+            user.id
+          );
+      } else {
+        deleteQuery =
+          deleteQuery
+            .eq(
+              "device_id",
+              deviceId
+            )
+            .is(
+              "user_id",
+              null
+            );
+      }
+
+      const {
+        error,
+      } = await deleteQuery;
+
+      if (error) {
+        console.error(
+          "Lỗi xóa check-in:",
+          error
+        );
+
+        setMessage(
+          "Không thể xóa dữ liệu check-in."
+        );
+
+        return;
+      }
+
+      setCheckins([]);
+      checkinsRef.current = [];
+
+      setSelectedCheckpoint(
+        null
+      );
+
+      selectedCheckpointRef.current =
+        null;
+
+      setDistance(null);
+
+      geofenceCheckpointId.current =
+        null;
+
+      autoCheckinInProgress.current.clear();
+
+      setMessage(
+        "Đã reset tiến độ check-in."
+      );
+    };
+
+  const progress =
+    checkpoints.length > 0
+      ? Math.round(
+          (checkins.length /
+            checkpoints.length) *
+            100
+        )
+      : 0;
+
+  // ============================================
+  // GAMIFICATION - XP & LEVEL
+  // ============================================
+
+  const XP_PER_CHECKPOINT = 100;
+  const XP_PER_LEVEL = 500;
+
+  const totalXP =
+    checkins.length *
+    XP_PER_CHECKPOINT;
+
+  const currentLevel =
+    Math.floor(
+      totalXP / XP_PER_LEVEL
+    ) + 1;
+
+  const currentLevelXP =
+    totalXP % XP_PER_LEVEL;
+
+  const nextLevelXP =
+    XP_PER_LEVEL -
+    currentLevelXP;
+
+  const levelProgress =
+    Math.round(
+      (currentLevelXP /
+        XP_PER_LEVEL) *
+        100
+    );
+
+  const canCheckIn =
+    distance !== null &&
+    distance <= CHECKIN_RADIUS;
+
+  const userPostCount =
+    user?.id
+      ? posts.filter(
+          (post) =>
+            post.user_id ===
+            user.id
+        ).length
+      : 0;
+
+  const visiblePosts =
+    feedMode === "following"
+      ? posts.filter(
+          (post) =>
+            post.user_id !== null &&
+            followingUserIds.includes(
+              post.user_id
+            )
+        )
+      : posts;
+
+  // ============================================
+  // GAMIFICATION - STREAK
+  // ============================================
+
+  const getLocalDateKey = (
+    value: string | Date
+  ) => {
+    const date =
+      value instanceof Date
+        ? value
+        : new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+
+    const year =
+      date.getFullYear();
+
+    const month =
+      String(
+        date.getMonth() + 1
+      ).padStart(2, "0");
+
+    const day =
+      String(
+        date.getDate()
+      ).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const getDateKeyOffset = (
+    date: Date,
+    offset: number
+  ) => {
+    const result =
+      new Date(date);
+
+    result.setDate(
+      result.getDate() + offset
+    );
+
+    return getLocalDateKey(result);
+  };
+
+  const checkinDateKeys = Array.from(
+    new Set(
+      checkins
+        .map(
+          (checkin) =>
+            checkin.created_at
+              ? getLocalDateKey(
+                  checkin.created_at
+                )
+              : null
+        )
+        .filter(
+          (
+            dateKey
+          ): dateKey is string =>
+            Boolean(dateKey)
+        )
+    )
+  ).sort();
+
+  const checkinDateSet =
+    new Set(checkinDateKeys);
+
+  const calculateCurrentStreak =
+    () => {
+      if (
+        checkinDateKeys.length ===
+        0
+      ) {
+        return 0;
+      }
+
+      const today =
+        new Date();
+
+      const todayKey =
+        getLocalDateKey(today);
+
+      const yesterdayKey =
+        getDateKeyOffset(
+          today,
+          -1
+        );
+
+      let cursorKey =
+        checkinDateSet.has(
+          todayKey ?? ""
+        )
+          ? todayKey
+          : checkinDateSet.has(
+              yesterdayKey ?? ""
+            )
+          ? yesterdayKey
+          : null;
+
+      if (!cursorKey) {
+        return 0;
+      }
+
+      let streak = 0;
+
+      while (
+        cursorKey &&
+        checkinDateSet.has(
+          cursorKey
+        )
+      ) {
+        streak += 1;
+
+        const cursorDate =
+          new Date(
+            `${cursorKey}T12:00:00`
+          );
+
+        cursorKey =
+          getDateKeyOffset(
+            cursorDate,
+            -1
+          );
+      }
+
+      return streak;
+    };
+
+  const calculateBestStreak =
+    () => {
+      if (
+        checkinDateKeys.length ===
+        0
+      ) {
+        return 0;
+      }
+
+      let best = 1;
+      let current = 1;
+
+      for (
+        let index = 1;
+        index <
+        checkinDateKeys.length;
+        index += 1
+      ) {
+        const previousDate =
+          new Date(
+            `${checkinDateKeys[index - 1]}T12:00:00`
+          );
+
+        const expectedNext =
+          getDateKeyOffset(
+            previousDate,
+            1
+          );
+
+        if (
+          expectedNext ===
+          checkinDateKeys[index]
+        ) {
+          current += 1;
+          best = Math.max(
+            best,
+            current
+          );
+        } else {
+          current = 1;
+        }
+      }
+
+      return best;
+    };
+
+  const currentStreak =
+    calculateCurrentStreak();
+
+  const bestStreak =
+    calculateBestStreak();
+
+  const streakAchievementUnlocked =
+    bestStreak >= 3;
+
+  // ============================================
+  // GAMIFICATION - ACHIEVEMENTS
+  // ============================================
+
+  const achievements = [
+    {
+      id: "first-checkpoint",
+      icon: "🌱",
+      name: "Khởi hành",
+      description: "Chinh phục checkpoint đầu tiên.",
+      unlocked: checkins.length >= 1,
+    },
+    {
+      id: "three-day-streak",
+      icon: "🔥",
+      name: "Giữ lửa",
+      description: "Chinh phục checkpoint trong 3 ngày liên tiếp.",
+      unlocked: streakAchievementUnlocked,
+    },
+    {
+      id: "two-checkpoints",
+      icon: "🗺️",
+      name: "Nhà khám phá",
+      description: "Chinh phục ít nhất 2 checkpoint.",
+      unlocked: checkins.length >= 2,
+    },
+    {
+      id: "halfway",
+      icon: "🔥",
+      name: "Đang tăng tốc",
+      description: "Hoàn thành ít nhất 50% checkpoint.",
+      unlocked:
+        checkpoints.length > 0 &&
+        checkins.length >= Math.ceil(checkpoints.length / 2),
+    },
+    {
+      id: "all-checkpoints",
+      icon: "👑",
+      name: "Hanoi Master",
+      description: "Chinh phục toàn bộ checkpoint hiện có.",
+      unlocked:
+        checkpoints.length > 0 &&
+        checkins.length >= checkpoints.length,
+    },
+    {
+      id: "first-post",
+      icon: "📸",
+      name: "Người kể chuyện",
+      description: "Đăng bài UGC đầu tiên.",
+      unlocked: userPostCount >= 1,
+    },
+    {
+      id: "five-posts",
+      icon: "🎒",
+      name: "Travel Creator",
+      description: "Đăng ít nhất 5 bài UGC.",
+      unlocked: userPostCount >= 5,
+    },
+  ];
+
+  const unlockedAchievementCount =
+    achievements.filter(
+      (achievement) =>
+        achievement.unlocked
+    ).length;
+
+
+  // ============================================
+  // UI
+  // ============================================
+
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-[#06111f] text-white pb-20">
+
+      {/* ============================================
+          AUTH MODAL
+      ============================================ */}
+
+      {authOpen && !user && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center px-5">
+
+          <div
+            className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            onClick={() => {
+              if (!authLoading) {
+                setAuthOpen(false);
+                setAuthMessage("");
+              }
+            }}
+          />
+
+          <div className="relative w-full max-w-sm">
+
+            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a] p-6 shadow-2xl">
+
+              <div className="flex items-start justify-between">
+
+                <div>
+
+                  <p className="text-blue-300 text-xs font-bold tracking-[0.2em]">
+                    TRAVELQUEST
+                  </p>
+
+                  <h2 className="text-2xl font-black mt-2">
+                    {authMode === "login"
+                      ? "Đăng nhập"
+                      : "Tạo tài khoản"}
+                  </h2>
+
+                  <p className="text-sm text-white/45 mt-1">
+                    {authMode === "login"
+                      ? "Tiếp tục hành trình của bạn."
+                      : "Tham gia cộng đồng TravelQuest."}
+                  </p>
+
+                </div>
+
+                <button
+                  onClick={() => {
+                    if (!authLoading) {
+                      setAuthOpen(false);
+                      setAuthMessage("");
+                    }
+                  }}
+                  className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition"
+                >
+                  ✕
+                </button>
+
+              </div>
+
+              <div className="mt-6">
+
+                <label className="block text-xs text-white/50 mb-2">
+                  Email
+                </label>
+
+                <input
+                  type="email"
+                  value={authEmail}
+                  onChange={(event) =>
+                    setAuthEmail(
+                      event.target.value
+                    )
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key ===
+                      "Enter"
+                    ) {
+                      handleAuth();
+                    }
+                  }}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
+                />
+
+              </div>
+
+              <div className="mt-4">
+
+                <label className="block text-xs text-white/50 mb-2">
+                  Mật khẩu
+                </label>
+
+                <input
+                  type="password"
+                  value={authPassword}
+                  onChange={(event) =>
+                    setAuthPassword(
+                      event.target.value
+                    )
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key ===
+                      "Enter"
+                    ) {
+                      handleAuth();
+                    }
+                  }}
+                  placeholder="Ít nhất 6 ký tự"
+                  autoComplete={
+                    authMode === "login"
+                      ? "current-password"
+                      : "new-password"
+                  }
+                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
+                />
+
+              </div>
+
+              {authMessage && (
+                <div className="mt-4 rounded-xl bg-blue-500/10 border border-blue-400/10 px-4 py-3">
+
+                  <p className="text-sm text-blue-300 leading-relaxed">
+                    {authMessage}
+                  </p>
+
+                </div>
+              )}
+
+              <button
+                onClick={
+                  handleAuth
+                }
+                disabled={
+                  authLoading
+                }
+                className="w-full mt-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 font-bold transition"
+              >
+                {authLoading
+                  ? "📡 Đang xử lý..."
+                  : authMode ===
+                    "login"
+                  ? "Đăng nhập 🔑"
+                  : "Tạo tài khoản ✨"}
+              </button>
+
+              <button
+                onClick={() => {
+                  setAuthMode(
+                    authMode ===
+                      "login"
+                      ? "signup"
+                      : "login"
+                  );
+
+                  setAuthMessage("");
+                  setAuthPassword("");
+                }}
+                disabled={
+                  authLoading
+                }
+                className="w-full mt-3 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold transition"
+              >
+                {authMode ===
+                "login"
+                  ? "Chưa có tài khoản? Đăng ký"
+                  : "Đã có tài khoản? Đăng nhập"}
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* BADGE UNLOCK POPUP */}
+
+      {unlockedBadge && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-5">
+
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() =>
+              setUnlockedBadge(null)
+            }
+          />
+
+          <div className="relative w-full max-w-sm">
+
+            <div className="relative overflow-hidden rounded-[2rem] border border-blue-300/30 bg-[#07182a] p-7 text-center shadow-2xl">
+
+              <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-blue-500/30 blur-3xl" />
+
+              <div className="absolute top-5 left-8 text-xl animate-bounce">
+                ✨
+              </div>
+
+              <div className="absolute top-10 right-10 text-lg animate-pulse">
+                ⭐
+              </div>
+
+              <div className="absolute bottom-16 left-8 text-lg animate-pulse">
+                ✨
+              </div>
+
+              <div className="absolute bottom-10 right-8 text-xl animate-bounce">
+                🎉
+              </div>
+
+              <p className="relative text-blue-300 text-xs font-bold tracking-[0.25em]">
+                ACHIEVEMENT UNLOCKED
+              </p>
+
+              <div className="relative mt-5 mx-auto w-28 h-28 rounded-full bg-white/10 border border-white/15 flex items-center justify-center shadow-xl">
+
+                <span className="text-6xl animate-bounce">
+                  {unlockedBadge.icon ??
+                    "🏆"}
+                </span>
+
+              </div>
+
+              <h2 className="relative text-2xl font-black mt-6">
+                Huy hiệu đã mở khóa!
+              </h2>
+
+              <p className="relative text-white/50 text-sm mt-2">
+                {unlockedBadge.name}
+              </p>
+
+              <p className="relative text-blue-300 font-bold text-sm mt-3">
+                {unlockedBadge.badge ??
+                  "🏆 Huy hiệu TravelQuest"}
+              </p>
+
+              <button
+                onClick={() =>
+                  setUnlockedBadge(
+                    null
+                  )
+                }
+                className="relative w-full mt-7 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 font-bold transition"
+              >
+                Tuyệt! 🎉
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* HEADER */}
+
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4 bg-[#06111f]/85 backdrop-blur-xl border-b border-white/10">
+
+        <div>
+          <h1 className="text-xl font-black tracking-tight">
+            TravelQuest
+          </h1>
+
+          <p className="text-[11px] text-white/50">
+            Explore • Check-in • Collect
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+
+          {/* SEARCH TRAVELLER */}
+
+          {authReady && user && (
+            <button
+              type="button"
+              onClick={openSearch}
+              className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
+              title="Tìm Traveller"
+            >
+              🔎
+            </button>
+          )}
+
+          {/* NOTIFICATIONS */}
+
+          {authReady && user && (
+            <button
+              type="button"
+              onClick={toggleNotifications}
+              className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
+              title="Thông báo"
+            >
+              🔔
+
+              {notifications.some(
+                (item) => !item.is_read
+              ) && (
+                <span className="absolute top-1 right-1 min-w-2.5 h-2.5 rounded-full bg-red-400 border-2 border-[#06111f]" />
+              )}
+            </button>
+          )}
+
+          {/* ACCOUNT */}
+
+          {authReady && (
+            <button
+              onClick={() => {
+                if (user) {
+                  setAuthMessage("");
+                  setAuthOpen(true);
+                } else {
+                  openAuth("login");
+                }
+              }}
+              className="h-10 rounded-full bg-white/10 hover:bg-white/15 px-3 flex items-center gap-2 transition"
+              title={
+                user
+                  ? "Tài khoản"
+                  : "Đăng nhập"
+              }
+            >
+
+              <span className="text-sm">
+                {user
+                  ? "👤"
+                  : "🔐"}
+              </span>
+
+              <span className="hidden sm:block text-xs font-semibold max-w-[120px] truncate">
+                {user
+                  ? profileName
+                  : "Đăng nhập"}
+              </span>
+
+            </button>
+          )}
+
+          <button
+            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
+            onClick={() => {
+              updateLocation();
+              startWatchingGPS();
+            }}
+            title="Cập nhật vị trí"
+          >
+            📍
+          </button>
+
+        </div>
+
+      </header>
+
+      <div className="pb-24">
+
+        {/* ================= MAP ================= */}
+
+        {activeTab === "map" && (
+          <section className="relative min-h-screen">
+
+            <div className="absolute inset-0 pt-[72px] pb-20">
+              <Map
+                userLocation={
+                  userLocation
+                }
+              />
+            </div>
+
+            {/* CHECKPOINT LIST */}
+
+            <div className="absolute top-[90px] left-4 right-4 z-20">
+
+              <div className="max-w-md">
+
+                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl">
+
+                  <div className="flex items-center justify-between mb-2 px-1">
+
+                    <div>
+                      <p className="text-sm font-bold">
+                        Checkpoints
+                      </p>
+
+                      <p className="text-[11px] text-white/50">
+                        {checkins.length}/
+                        {checkpoints.length}{" "}
+                        đã mở khóa
+                      </p>
+                    </div>
+
+                    <div className="text-xs text-white/60">
+                      {progress}%
+                    </div>
+
+                  </div>
+
+                  {loading ? (
+                    <div className="py-4 text-center text-sm text-white/50">
+                      Đang tải checkpoint...
+                    </div>
+                  ) : checkpoints.length ===
+                    0 ? (
+                    <div className="py-4 text-center text-sm text-white/50">
+                      Chưa có checkpoint.
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+
+                      {checkpoints.map(
+                        (
+                          checkpoint
+                        ) => {
+                          const checked =
+                            isCheckedIn(
+                              checkpoint.id
+                            );
+
+                          const selected =
+                            selectedCheckpoint?.id ===
+                            checkpoint.id;
+
+                          return (
+                            <button
+                              key={
+                                checkpoint.id
+                              }
+                              onClick={() =>
+                                selectCheckpoint(
+                                  checkpoint
+                                )
+                              }
+                              className={`shrink-0 px-3 py-2 rounded-xl border transition ${
+                                selected
+                                  ? "bg-blue-500/25 border-blue-400/60"
+                                  : "bg-white/5 border-white/10 hover:bg-white/10"
+                              }`}
+                            >
+
+                              <div className="flex items-center gap-2">
+
+                                <span className="text-lg">
+                                  {checkpoint.icon ??
+                                    "📍"}
+                                </span>
+
+                                <div className="text-left">
+
+                                  <p className="text-xs font-semibold">
+                                    {
+                                      checkpoint.name
+                                    }
+                                  </p>
+
+                                  <p className="text-[10px] text-white/50">
+                                    {checked
+                                      ? "✓ Đã check-in"
+                                      : "Chưa check-in"}
+                                  </p>
+
+                                </div>
+
+                              </div>
+
+                            </button>
+                          );
+                        }
+                      )}
+
+                    </div>
+                  )}
+
+                </div>
+
+              </div>
+
+            </div>
+
+            {/* SAVED PLACES */}
+
+            <div className="absolute top-[205px] left-4 right-4 z-20 pointer-events-none">
+              <div className="max-w-md pointer-events-auto">
+                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowSavedPlaces((value) => !value)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition"
+                  >
+                    <div className="flex items-center gap-3 text-left">
+                      <span className="text-lg">🔖</span>
+                      <div>
+                        <p className="text-sm font-bold">Địa điểm đã lưu</p>
+                        <p className="text-[10px] text-white/45">
+                          {savedCheckpoints.length} điểm trong danh sách
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-white/45 text-xs">{showSavedPlaces ? "▲" : "▼"}</span>
+                  </button>
+
+                  {showSavedPlaces && (
+                    <div className="border-t border-white/10 p-3">
+                      {savedCheckpoints.length === 0 ? (
+                        <div className="py-3 text-center">
+                          <p className="text-sm text-white/50">Chưa lưu địa điểm nào.</p>
+                          <p className="text-[10px] text-white/30 mt-1">Nhấn ☆ cạnh checkpoint để lưu.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-52 overflow-y-auto">
+                          {savedCheckpoints.map((checkpoint) => (
+                            <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/5 p-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  selectCheckpoint(checkpoint);
+                                  setShowSavedPlaces(false);
+                                }}
+                                className="min-w-0 flex-1 flex items-center gap-2 text-left"
+                              >
+                                <span className="text-lg">{checkpoint.icon ?? "📍"}</span>
+                                <span className="min-w-0">
+                                  <span className="block text-xs font-semibold truncate">{checkpoint.name}</span>
+                                  <span className="block text-[10px] text-white/35 mt-0.5">
+                                    {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
+                                  </span>
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => toggleSavedPlace(checkpoint.id)}
+                                title="Bỏ lưu"
+                                className="w-8 h-8 shrink-0 rounded-lg bg-white/5 hover:bg-white/10 transition"
+                              >
+                                🔖
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* JOURNEY / TRIP */}
+
+            <div className="absolute top-[350px] left-4 right-4 z-20 pointer-events-none">
+              <div className="max-w-md pointer-events-auto">
+                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setJourneyOpen(true)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition"
+                  >
+                    <div className="flex items-center gap-3 text-left">
+                      <span className="text-lg">🧭</span>
+                      <div>
+                        <p className="text-sm font-bold">{journeyName}</p>
+                        <p className="text-[10px] text-white/45">
+                          {journeyCheckpoints.length === 0
+                            ? "Tạo hành trình từ các checkpoint"
+                            : `${journeyCompletedCount}/${journeyCheckpoints.length} checkpoint · ${journeyProgress}%`}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-bold ${journeyStarted ? "text-emerald-300" : "text-white/40"}`}>
+                      {journeyStarted ? "● ĐANG ĐI" : "MỞ"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* USER LOCATION STATUS */}
+
+            {userLocation && (
+              <div className="absolute top-[205px] left-4 z-20">
+
+                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-[11px] text-white/60">
+
+                  📍 GPS đã cập nhật
+
+                </div>
+
+              </div>
+            )}
+
+            {/* SELECTED CHECKPOINT */}
+
+            {selectedCheckpoint && (
+              <div className="absolute bottom-28 left-4 right-4 z-30">
+
+                <div className="max-w-xl mx-auto bg-[#07182a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
+
+                  <div className="flex items-start gap-4">
+
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-3xl shrink-0">
+                      {selectedCheckpoint.icon ??
+                        "📍"}
+                    </div>
+
+                    <div className="flex-1">
+
+                      <div className="flex items-start justify-between gap-3">
+
+                        <div>
+
+                          <h2 className="font-bold text-lg">
+                            {
+                              selectedCheckpoint.name
+                            }
+                          </h2>
+
+                          <p className="text-sm text-white/55 mt-1">
+                            {
+                              selectedCheckpoint.description
+                            }
+                          </p>
+
+                        </div>
+
+                        <button
+                          onClick={() => {
+                            setSelectedCheckpoint(
+                              null
+                            );
+
+                            selectedCheckpointRef.current =
+                              null;
+
+                            setDistance(
+                              null
+                            );
+
+                            setMessage("");
+                          }}
+                          className="text-white/40 hover:text-white"
+                        >
+                          ✕
+                        </button>
+
+                      </div>
+
+                      {distance !== null && (
+                        <div
+                          className={`mt-4 px-3 py-2 rounded-xl text-sm ${
+                            canCheckIn
+                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20"
+                              : "bg-orange-500/10 text-orange-300 border border-orange-400/20"
+                          }`}
+                        >
+                          {canCheckIn
+                            ? `✅ Bạn đang ở cách checkpoint ${distance}m`
+                            : `📍 Bạn đang cách checkpoint ${distance}m`}
+                        </div>
+                      )}
+
+                      <button
+                        onClick={openCheckpointDetail}
+                        className="w-full mt-4 py-3 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/20 text-blue-200 font-semibold transition"
+                      >
+                        📖 Xem chi tiết checkpoint
+                      </button>
+
+                      <button
+                        onClick={
+                          updateLocation
+                        }
+                        disabled={
+                          locationLoading
+                        }
+                        className="w-full mt-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 font-semibold transition"
+                      >
+                        {locationLoading
+                          ? "📡 Đang lấy vị trí..."
+                          : "📍 Kiểm tra vị trí của tôi"}
+                      </button>
+
+                      <button
+                        onClick={
+                          handleCheckIn
+                        }
+                        disabled={
+                          checkingIn ||
+                          isCheckedIn(
+                            selectedCheckpoint.id
+                          )
+                        }
+                        className={`w-full mt-2 py-3 rounded-xl font-bold transition ${
+                          isCheckedIn(
+                            selectedCheckpoint.id
+                          )
+                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/20"
+                            : "bg-blue-500 hover:bg-blue-400 text-white"
+                        }`}
+                      >
+                        {checkingIn
+                          ? "📡 Đang xác nhận GPS..."
+                          : isCheckedIn(
+                              selectedCheckpoint.id
+                            )
+                          ? "✓ Đã check-in"
+                          : "📍 Check-in tại đây"}
+                      </button>
+
+                      {message && (
+                        <p className="text-center text-xs text-white/60 mt-3 leading-relaxed">
+                          {message}
+                        </p>
+                      )}
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
+          </section>
+        )}
+
+        {/* ================= JOURNEY / TRIP MODAL ================= */}
+
+        {journeyOpen && (
+          <div
+            className="fixed inset-0 z-[115] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-5"
+            onClick={() => setJourneyOpen(false)}
+          >
+            <div
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#07182a] border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs text-blue-300 font-semibold uppercase tracking-wider">
+                      Journey / Trip
+                    </p>
+                    <h2 className="text-2xl font-black mt-1">🧭 Lập hành trình</h2>
+                    <p className="text-xs text-white/40 mt-2">
+                      Chọn các checkpoint muốn đi. Tiến độ cập nhật theo check-in GPS thật.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setJourneyOpen(false)}
+                    className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="mt-5">
+                  <label className="block text-xs text-white/50 mb-2">Tên hành trình</label>
+                  <input
+                    type="text"
+                    value={journeyName}
+                    maxLength={50}
+                    onChange={(event) => setJourneyName(event.target.value)}
+                    className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-blue-400/50 transition"
+                    placeholder="Ví dụ: Hà Nội cuối tuần"
+                  />
+                </div>
+
+                <div className="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-bold">Tiến độ</p>
+                      <p className="text-[11px] text-white/40 mt-1">
+                        {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint đã chinh phục
+                      </p>
+                    </div>
+                    <span className="text-lg font-black text-blue-300">{journeyProgress}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/10 overflow-hidden mt-3">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-500"
+                      style={{ width: `${journeyProgress}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-bold">Checkpoint trong hành trình</p>
+                    <p className="text-[10px] text-white/35">{journeyCheckpointIds.length} đã chọn</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    {checkpoints.map((checkpoint) => {
+                      const selected = journeyCheckpointIds.includes(checkpoint.id);
+                      const checked = isCheckedIn(checkpoint.id);
+                      return (
+                        <button
+                          key={checkpoint.id}
+                          type="button"
+                          onClick={() => toggleJourneyCheckpoint(checkpoint.id)}
+                          className={`w-full flex items-center gap-3 rounded-2xl border p-3 text-left transition ${
+                            selected
+                              ? "bg-blue-500/15 border-blue-400/30"
+                              : "bg-white/5 border-white/10 hover:bg-white/10"
+                          }`}
+                        >
+                          <span className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl shrink-0">
+                            {checkpoint.icon ?? "📍"}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-bold truncate">{checkpoint.name}</span>
+                            <span className="block text-[10px] text-white/35 mt-1">
+                              {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
+                            </span>
+                          </span>
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center border text-xs ${selected ? "bg-blue-500 border-blue-400" : "bg-white/5 border-white/10"}`}>
+                            {selected ? "✓" : ""}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-6">
+                  <button
+                    type="button"
+                    onClick={clearJourney}
+                    className="py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition"
+                  >
+                    🗑️ Xóa hành trình
+                  </button>
+                  {journeyStarted ? (
+                    <button
+                      type="button"
+                      onClick={finishJourney}
+                      className="py-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/20 text-emerald-300 text-xs font-bold transition"
+                    >
+                      🏁 Kết thúc chuyến đi
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={startJourney}
+                      disabled={journeyCheckpointIds.length === 0 || !journeyName.trim()}
+                      className="py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-40 text-white text-xs font-bold transition"
+                    >
+                      🧭 Bắt đầu hành trình
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= CHECKPOINT DETAIL ================= */}
+
+        {checkpointDetailOpen && selectedCheckpoint && (
+          <div
+            className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-5"
+            onClick={() => setCheckpointDetailOpen(false)}
+          >
+            <div
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#07182a] border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-4xl shrink-0">
+                    {selectedCheckpoint.icon ?? "📍"}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs text-blue-300 font-semibold uppercase tracking-wider">
+                          Checkpoint
+                        </p>
+                        <h2 className="text-2xl font-black mt-1">
+                          {selectedCheckpoint.name}
+                        </h2>
+                      </div>
+
+                      <button
+                        onClick={() => setCheckpointDetailOpen(false)}
+                        className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition"
+                      >
+                        ✕
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
+                        className="shrink-0 h-9 px-3 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition"
+                      >
+                        {isSavedPlace(selectedCheckpoint.id) ? "🔖 Đã lưu" : "☆ Lưu"}
+                      </button>
+                    </div>
+
+                    <p className="text-sm text-white/55 mt-3 leading-relaxed">
+                      {selectedCheckpoint.description ||
+                        "Một điểm đến trong hành trình TravelQuest của bạn."}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-6">
+                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                    <p className="text-[11px] text-white/40">Trạng thái</p>
+                    <p className="text-sm font-bold mt-1">
+                      {isCheckedIn(selectedCheckpoint.id)
+                        ? "✓ Đã chinh phục"
+                        : "🔒 Chưa chinh phục"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                    <p className="text-[11px] text-white/40">Khoảng cách</p>
+                    <p className="text-sm font-bold mt-1">
+                      {distance !== null
+                        ? `${distance}m`
+                        : "Chưa xác định"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <p className="text-[11px] text-white/40">Huy hiệu nhận được</p>
+                  <p className="text-base font-bold mt-1">
+                    {selectedCheckpoint.badge ||
+                      `${selectedCheckpoint.icon ?? "🏆"} Huy hiệu ${selectedCheckpoint.name}`}
+                  </p>
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <p className="text-[11px] text-white/40">Tọa độ</p>
+                  <p className="text-sm text-white/70 mt-1 font-mono">
+                    {selectedCheckpoint.latitude.toFixed(5)}, {selectedCheckpoint.longitude.toFixed(5)}
+                  </p>
+                </div>
+
+                {/* ================= WEATHER ================= */}
+
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] text-white/40">THỜI TIẾT TẠI CHECKPOINT</p>
+                      <p className="text-sm font-bold mt-1">🌤️ Dự báo địa điểm</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => void loadCheckpointWeather(selectedCheckpoint)}
+                      disabled={weatherLoading}
+                      className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold disabled:opacity-50 transition"
+                    >
+                      {weatherLoading ? "Đang tải..." : "↻ Làm mới"}
+                    </button>
+                  </div>
+
+                  {weatherLoading && (
+                    <div className="mt-4 rounded-xl bg-black/10 p-4 text-sm text-white/50">
+                      🌤️ Đang lấy dữ liệu thời tiết...
+                    </div>
+                  )}
+
+                  {!weatherLoading && weather && (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                        <div className="rounded-xl bg-black/10 p-3">
+                          <p className="text-[10px] text-white/40">Nhiệt độ</p>
+                          <p className="text-lg font-black mt-1">{Math.round(weather.current.temperature)}°C</p>
+                        </div>
+                        <div className="rounded-xl bg-black/10 p-3">
+                          <p className="text-[10px] text-white/40">Cảm nhận</p>
+                          <p className="text-lg font-black mt-1">{Math.round(weather.current.apparentTemperature)}°C</p>
+                        </div>
+                        <div className="rounded-xl bg-black/10 p-3">
+                          <p className="text-[10px] text-white/40">Độ ẩm</p>
+                          <p className="text-lg font-black mt-1">{weather.current.humidity}%</p>
+                        </div>
+                        <div className="rounded-xl bg-black/10 p-3">
+                          <p className="text-[10px] text-white/40">Gió</p>
+                          <p className="text-lg font-black mt-1">{Math.round(weather.current.windSpeed)} km/h</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-xl bg-black/10 p-3 flex items-center gap-3">
+                        <span className="text-3xl">{weatherDescription(weather.current.weatherCode).icon}</span>
+                        <div>
+                          <p className="font-bold">{weatherDescription(weather.current.weatherCode).label}</p>
+                          <p className="text-xs text-white/40">Điều kiện hiện tại tại checkpoint</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-5 gap-2">
+                        {weather.daily.map((day) => {
+                          const description = weatherDescription(day.weatherCode);
+                          return (
+                            <div key={day.date} className="rounded-xl bg-black/10 p-2 text-center">
+                              <p className="text-[10px] text-white/40">{formatWeatherDate(day.date)}</p>
+                              <div className="text-xl my-2">{description.icon}</div>
+                              <p className="text-xs font-bold">{Math.round(day.temperatureMax)}°</p>
+                              <p className="text-[10px] text-white/40">{Math.round(day.temperatureMin)}°</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {!weatherLoading && !weather && weatherError && (
+                    <div className="mt-4 rounded-xl bg-red-500/10 border border-red-400/10 p-3 text-xs text-red-200">
+                      {weatherError}
+                    </div>
+                  )}
+                </div>
+
+                {/* ================= BOOKING ================= */}
+
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <div>
+                    <p className="text-[11px] text-white/40">DỊCH VỤ QUANH CHECKPOINT</p>
+                    <p className="text-sm font-bold mt-1">🏨 Đặt dịch vụ & trải nghiệm</p>
+                    <p className="text-xs text-white/40 mt-1">
+                      Mở nền tảng bên ngoài để xem lựa chọn và thực hiện đặt dịch vụ. TravelQuest không xử lý thanh toán trong MVP.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 mt-4">
+                    {bookingOptions.map((option) => (
+                      <div
+                        key={option.title}
+                        className="rounded-xl bg-black/10 border border-white/5 p-3"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl shrink-0">
+                            {option.icon}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-sm">{option.title}</p>
+                            <p className="text-xs text-white/40 mt-1">{option.description}</p>
+
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {option.links.map((link) => (
+                                <a
+                                  key={link.url}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold transition"
+                                >
+                                  {link.label}
+                                  <span className="text-white/40">↗</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-6">
+                  <button
+                    onClick={() => {
+                      setCheckpointDetailOpen(false);
+                      updateLocation();
+                    }}
+                    disabled={locationLoading}
+                    className="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 font-semibold transition disabled:opacity-50"
+                  >
+                    {locationLoading ? "📡 Đang lấy vị trí..." : "📍 Kiểm tra GPS"}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setCheckpointDetailOpen(false);
+                      handleCheckIn();
+                    }}
+                    disabled={
+                      checkingIn ||
+                      isCheckedIn(selectedCheckpoint.id)
+                    }
+                    className="flex-1 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:bg-emerald-500/20 disabled:text-emerald-300 text-white font-bold transition"
+                  >
+                    {isCheckedIn(selectedCheckpoint.id)
+                      ? "✓ Đã check-in"
+                      : checkingIn
+                      ? "📡 Đang xác nhận..."
+                      : "📍 Check-in"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= BADGES ================= */}
+
+        {activeTab === "badges" && (
+          <section className="pt-28 px-5 max-w-5xl mx-auto">
+
+            <div className="mb-8">
+
+              <p className="text-blue-300 text-sm font-semibold">
+                YOUR COLLECTION
+              </p>
+
+              <h2 className="text-3xl font-black mt-1">
+                Bộ sưu tập huy hiệu
+              </h2>
+
+              <p className="text-white/50 mt-2">
+                Hoàn thành checkpoint để mở khóa huy hiệu.
+              </p>
+
+            </div>
+
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+
+              <div className="flex items-center justify-between mb-3">
+
+                <span className="text-sm text-white/60">
+                  Tiến độ hành trình
+                </span>
+
+                <span className="font-bold">
+                  {checkins.length}/
+                  {checkpoints.length}
+                </span>
+
+              </div>
+
+              <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${progress}%`,
+                  }}
+                />
+
+              </div>
+
+              <p className="text-xs text-white/40 mt-3">
+                {progress === 100
+                  ? "🎉 Bạn đã hoàn thành tất cả checkpoint!"
+                  : `Còn ${
+                      checkpoints.length -
+                      checkins.length
+                    } checkpoint nữa.`}
+              </p>
+
+            </div>
+
+            {/* ================= XP & LEVEL ================= */}
+
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+
+              <div className="flex items-center justify-between mb-3">
+
+                <div>
+                  <p className="text-xs text-blue-300 font-semibold">
+                    LEVEL {currentLevel}
+                  </p>
+
+                  <p className="text-xl font-black mt-1">
+                    {totalXP} XP
+                  </p>
+                </div>
+
+                <div className="text-3xl">
+                  🧭
+                </div>
+
+              </div>
+
+              <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${levelProgress}%`,
+                  }}
+                />
+
+              </div>
+
+              <div className="flex items-center justify-between mt-2">
+
+                <p className="text-xs text-white/40">
+                  {currentLevelXP}/{XP_PER_LEVEL} XP
+                </p>
+
+                <p className="text-xs text-white/40">
+                  Còn {nextLevelXP} XP → Level {currentLevel + 1}
+                </p>
+
+              </div>
+
+              <p className="text-xs text-white/40 mt-3">
+                🏆 Mỗi checkpoint đã chinh phục nhận +{XP_PER_CHECKPOINT} XP.
+              </p>
+
+            </div>
+
+            {/* ================= STREAK ================= */}
+
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+
+              <div className="flex items-center justify-between">
+
+                <div>
+
+                  <p className="text-xs text-orange-300 font-semibold">
+                    TRAVEL STREAK
+                  </p>
+
+                  <h3 className="text-xl font-black mt-1">
+                    Chuỗi chinh phục
+                  </h3>
+
+                  <p className="text-xs text-white/40 mt-2">
+                    Chinh phục checkpoint mỗi ngày để giữ lửa hành trình.
+                  </p>
+
+                </div>
+
+                <div className="text-4xl">
+                  🔥
+                </div>
+
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-5">
+
+                <div className="bg-black/10 border border-white/5 rounded-2xl p-4">
+
+                  <p className="text-xs text-white/40">
+                    Chuỗi hiện tại
+                  </p>
+
+                  <p className="text-3xl font-black mt-1">
+                    {currentStreak}
+                  </p>
+
+                  <p className="text-[10px] text-white/30 mt-1">
+                    ngày liên tiếp
+                  </p>
+
+                </div>
+
+                <div className="bg-black/10 border border-white/5 rounded-2xl p-4">
+
+                  <p className="text-xs text-white/40">
+                    Kỷ lục
+                  </p>
+
+                  <p className="text-3xl font-black mt-1">
+                    {bestStreak}
+                  </p>
+
+                  <p className="text-[10px] text-white/30 mt-1">
+                    ngày liên tiếp
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-blue-500/10 border border-blue-400/15 p-4">
+
+                <p className="text-xs text-blue-200">
+                  {currentStreak > 0
+                    ? `🔥 Bạn đang giữ chuỗi ${currentStreak} ngày.`
+                    : "🧭 Chinh phục một checkpoint hôm nay để bắt đầu chuỗi."}
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* ================= LEADERBOARD ================= */}
+
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+
+              <div className="flex items-center justify-between mb-4">
+
+                <div>
+
+                  <p className="text-xs text-yellow-300 font-semibold">
+                    TRAVELQUEST RANKING
+                  </p>
+
+                  <h3 className="text-xl font-black mt-1">
+                    Bảng xếp hạng
+                  </h3>
+
+                  <p className="text-xs text-white/40 mt-2">
+                    Xếp hạng theo XP từ checkpoint đã chinh phục.
+                  </p>
+
+                </div>
+
+                <div className="text-3xl">
+                  🏆
+                </div>
+
+              </div>
+
+              {leaderboardLoading ? (
+                <div className="py-8 text-center text-sm text-white/40">
+                  📡 Đang tải bảng xếp hạng...
+                </div>
+              ) : leaderboardMessage ? (
+                <div className="py-6 text-center text-sm text-white/40">
+                  {leaderboardMessage}
+                </div>
+              ) : leaderboard.length === 0 ? (
+                <div className="py-8 text-center text-sm text-white/40">
+                  Chưa có dữ liệu xếp hạng.
+                </div>
+              ) : (
+                <div className="space-y-2">
+
+                  {leaderboard.map(
+                    (entry, index) => {
+
+                      const isCurrentUser =
+                        entry.user_id === user?.id;
+
+                      const rank = index + 1;
+
+                      const rankIcon =
+                        rank === 1
+                          ? "🥇"
+                          : rank === 2
+                          ? "🥈"
+                          : rank === 3
+                          ? "🥉"
+                          : `#${rank}`;
+
+                      return (
+                        <div
+                          key={entry.user_id}
+                          className={`flex items-center gap-3 rounded-2xl border p-3 transition ${
+                            isCurrentUser
+                              ? "bg-blue-500/10 border-blue-400/20"
+                              : "bg-black/10 border-white/5"
+                          }`}
+                        >
+
+                          <div className="w-10 text-center text-sm font-black">
+                            {rankIcon}
+                          </div>
+
+                          <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/15 border border-blue-400/15 flex items-center justify-center">
+                            👤
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openPublicProfile(
+                                entry.user_id
+                              )
+                            }
+                            className="min-w-0 flex-1 text-left"
+                          >
+
+                            <div className="flex items-center gap-2">
+
+                              <p className="font-bold truncate">
+                                {entry.display_name}
+                              </p>
+
+                              {isCurrentUser && (
+                                <span className="shrink-0 text-[9px] font-bold text-blue-300 bg-blue-500/10 border border-blue-400/15 rounded-full px-2 py-1">
+                                  BẠN
+                                </span>
+                              )}
+
+                            </div>
+
+                            <p className="text-[10px] text-white/35 mt-1">
+                              {entry.checkpoint_count} checkpoint
+                              {" · "}
+                              Level {entry.level}
+                            </p>
+
+                          </button>
+
+                          <div className="text-right shrink-0">
+
+                            <p className="font-black text-sm">
+                              {entry.xp} XP
+                            </p>
+
+                            <p className="text-[9px] text-white/30 mt-1">
+                              Level {entry.level}
+                            </p>
+
+                          </div>
+
+                        </div>
+                      );
+                    }
+                  )}
+
+                </div>
+              )}
+
+              <button
+                onClick={loadLeaderboard}
+                disabled={leaderboardLoading}
+                className="w-full mt-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold transition disabled:opacity-50"
+              >
+                {leaderboardLoading
+                  ? "📡 Đang cập nhật..."
+                  : "↻ Cập nhật bảng xếp hạng"}
+              </button>
+
+            </div>
+
+            {/* ================= ACHIEVEMENTS ================= */}
+
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+
+              <div className="flex items-center justify-between mb-4">
+
+                <div>
+                  <p className="text-xs text-blue-300 font-semibold">
+                    ACHIEVEMENTS
+                  </p>
+
+                  <h3 className="text-xl font-black mt-1">
+                    Thành tựu hành trình
+                  </h3>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-lg font-black">
+                    {unlockedAchievementCount}/{achievements.length}
+                  </p>
+
+                  <p className="text-[10px] text-white/35">
+                    đã mở khóa
+                  </p>
+                </div>
+
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                {achievements.map(
+                  (achievement) => (
+                    <div
+                      key={
+                        achievement.id
+                      }
+                      className={`flex items-center gap-3 rounded-2xl border p-4 transition ${
+                        achievement.unlocked
+                          ? "bg-blue-500/10 border-blue-400/20"
+                          : "bg-black/10 border-white/5 opacity-45"
+                      }`}
+                    >
+
+                      <div
+                        className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-2xl ${
+                          achievement.unlocked
+                            ? "bg-blue-500/15"
+                            : "bg-black/20 grayscale"
+                        }`}
+                      >
+                        {achievement.unlocked
+                          ? achievement.icon
+                          : "🔒"}
+                      </div>
+
+                      <div className="min-w-0">
+
+                        <p className="font-bold text-sm">
+                          {achievement.name}
+                        </p>
+
+                        <p className="text-xs text-white/40 mt-1 leading-relaxed">
+                          {achievement.description}
+                        </p>
+
+                        <p
+                          className={`text-[10px] mt-2 font-semibold ${
+                            achievement.unlocked
+                              ? "text-blue-300"
+                              : "text-white/25"
+                          }`}
+                        >
+                          {achievement.unlocked
+                            ? "✓ Đã mở khóa"
+                            : "Chưa mở khóa"}
+                        </p>
+
+                      </div>
+
+                    </div>
+                  )
+                )}
+
+              </div>
+
+            </div>
+
+            {loading ? (
+              <div className="text-center py-10 text-white/50">
+                Đang tải huy hiệu...
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+
+                {checkpoints.map(
+                  (checkpoint) => {
+                    const unlocked =
+                      isCheckedIn(
+                        checkpoint.id
+                      );
+
+                    return (
+                      <div
+                        key={
+                          checkpoint.id
+                        }
+                        className={`rounded-3xl border p-5 text-center transition ${
+                          unlocked
+                            ? "bg-white/10 border-white/15"
+                            : "bg-white/[0.03] border-white/5 opacity-50"
+                        }`}
+                      >
+
+                        <div
+                          className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl ${
+                            unlocked
+                              ? "bg-white/10"
+                              : "bg-black/20 grayscale"
+                          }`}
+                        >
+                          {unlocked
+                            ? checkpoint.icon ??
+                              "🏆"
+                            : "🔒"}
+                        </div>
+
+                        <h3 className="font-bold text-sm mt-4">
+                          {checkpoint.badge ??
+                            checkpoint.name}
+                        </h3>
+
+                        <p className="text-xs text-white/40 mt-1">
+                          {unlocked
+                            ? "Đã mở khóa"
+                            : "Chưa mở khóa"}
+                        </p>
+
+                      </div>
+                    );
+                  }
+                )}
+
+              </div>
+            )}
+
+            <button
+              onClick={
+                resetProgress
+              }
+              className="mt-8 text-xs text-red-300/60 hover:text-red-300 transition"
+            >
+              Reset dữ liệu demo
+            </button>
+
+          </section>
+        )}
+
+        {/* ================= UGC ================= */}
+
+        {activeTab === "ugc" && (
+          <section className="pt-28 px-5 max-w-5xl mx-auto">
+
+            <div className="mb-8">
+
+              <p className="text-blue-300 text-sm font-semibold">
+                TRAVEL COMMUNITY
+              </p>
+
+              <h2 className="text-3xl font-black mt-1">
+                UGC
+              </h2>
+
+              <p className="text-white/50 mt-2">
+                Chia sẻ những khoảnh khắc trong hành trình.
+              </p>
+
+            </div>
+
+            {/* ================= CREATE POST ================= */}
+
+            <div className="mb-6 bg-white/5 border border-white/10 rounded-3xl p-5">
+
+              <div className="flex items-center gap-3 mb-4">
+
+                <div className="w-11 h-11 rounded-full bg-blue-500/15 flex items-center justify-center text-xl">
+                  🧭
+                </div>
+
+                <div>
+
+                  <p className="font-bold">
+                    Chia sẻ hành trình
+                  </p>
+
+                  <p className="text-xs text-white/40">
+                    Bài viết sẽ được lưu vào TravelQuest
+                  </p>
+
+                </div>
+
+              </div>
+
+              <textarea
+                value={postContent}
+                onChange={(event) =>
+                  setPostContent(
+                    event.target.value
+                  )
+                }
+                maxLength={1000}
+                placeholder="Bạn vừa khám phá điều gì? ✨"
+                className="w-full min-h-32 resize-none rounded-2xl bg-black/20 border border-white/10 p-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-blue-400/50 transition"
+              />
+
+              <div className="flex justify-between items-center mt-2">
+
+                <span className="text-[11px] text-white/30">
+                  {postContent.length}/1000
+                </span>
+
+                <span className="text-[11px] text-white/30">
+                  Chia sẻ trải nghiệm của bạn
+                </span>
+
+              </div>
+
+              {/* CHECKPOINT SELECT */}
+
+              <div className="mt-4">
+
+                <p className="text-xs text-white/50 mb-2">
+                  Gắn checkpoint
+                </p>
+
+                <select
+                  value={
+                    selectedPostCheckpoint ??
+                    ""
+                  }
+                  onChange={(event) => {
+                    const value =
+                      event.target.value;
+
+                    setSelectedPostCheckpoint(
+                      value
+                        ? Number(value)
+                        : null
+                    );
+                  }}
+                  className="w-full rounded-xl bg-[#07182a] border border-white/10 px-4 py-3 text-sm text-white outline-none"
+                >
+
+                  <option value="">
+                    📍 Không gắn checkpoint
+                  </option>
+
+                  {checkpoints.map(
+                    (checkpoint) => (
+                      <option
+                        key={
+                          checkpoint.id
+                        }
+                        value={
+                          checkpoint.id
+                        }
+                      >
+                        {checkpoint.icon ??
+                          "📍"}{" "}
+                        {
+                          checkpoint.name
+                        }
+                      </option>
+                    )
+                  )}
+
+                </select>
+
+              </div>
+
+              {/* ================= IMAGE UPLOAD ================= */}
+
+              <div className="mt-4">
+
+                <p className="text-xs text-white/50 mb-2">
+                  Thêm ảnh
+                </p>
+
+                {!imagePreview ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      imageInputRef.current?.click()
+                    }
+                    className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 hover:bg-white/5 py-8 transition"
+                  >
+
+                    <div className="text-4xl">
+                      📸
+                    </div>
+
+                    <p className="text-sm font-semibold mt-2">
+                      Chọn ảnh chuyến đi
+                    </p>
+
+                    <p className="text-[11px] text-white/30 mt-1">
+                      JPG, PNG, WEBP hoặc GIF • tối đa 5MB
+                    </p>
+
+                  </button>
+                ) : (
+                  <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+
+                    <img
+                      src={imagePreview}
+                      alt="Preview ảnh bài viết"
+                      className="w-full max-h-80 object-cover"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={
+                        handleRemoveImage
+                      }
+                      className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition"
+                      title="Xóa ảnh"
+                    >
+                      ✕
+                    </button>
+
+                  </div>
+                )}
+
+                <input
+                  ref={
+                    imageInputRef
+                  }
+                  type="file"
+                  accept="image/*"
+                  onChange={
+                    handleSelectImage
+                  }
+                  className="hidden"
+                />
+
+              </div>
+
+              {postMessage && (
+                <p className="mt-3 text-sm text-blue-300">
+                  {postMessage}
+                </p>
+              )}
+
+              <button
+                onClick={
+                  handleCreatePost
+                }
+                disabled={posting}
+                className="w-full mt-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 font-bold transition"
+              >
+                {posting
+                  ? "📡 Đang đăng..."
+                  : "Đăng bài ✨"}
+              </button>
+
+            </div>
+
+            {/* ================= FEED FILTER ================= */}
+
+            <div className="mb-5 flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-1">
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFeedMode("all")
+                }
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
+                  feedMode === "all"
+                    ? "bg-blue-500 text-white"
+                    : "text-white/45 hover:text-white"
+                }`}
+              >
+                🌍 Tất cả
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user?.id) {
+                    setAuthOpen(true);
+                    setAuthMode("login");
+                    setAuthMessage(
+                      "🔐 Hãy đăng nhập để xem bài từ người bạn theo dõi."
+                    );
+                    return;
+                  }
+
+                  setFeedMode("following");
+                }}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
+                  feedMode === "following"
+                    ? "bg-blue-500 text-white"
+                    : "text-white/45 hover:text-white"
+                }`}
+              >
+                👥 Đang theo dõi
+                {user?.id && (
+                  <span className="ml-1 text-[9px] opacity-60">
+                    {followingUserIds.length}
+                  </span>
+                )}
+              </button>
+
+            </div>
+
+            {/* ================= REAL POSTS ================= */}
+
+            {postsLoading ? (
+              <div className="py-10 text-center text-white/50">
+                Đang tải bài viết...
+              </div>
+            ) : visiblePosts.length ===
+              0 ? (
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center">
+
+                <div className="text-5xl">
+                  📸
+                </div>
+
+                <h3 className="font-bold mt-4">
+                  {feedMode === "following"
+                    ? "Chưa có bài từ người bạn theo dõi"
+                    : "Chưa có bài viết nào"}
+                </h3>
+
+                <p className="text-sm text-white/40 mt-2">
+                  {feedMode === "following"
+                    ? "Hãy Follow thêm Traveller để xây dựng feed của riêng bạn."
+                    : "Hãy trở thành người đầu tiên chia sẻ hành trình!"}
+                </p>
+
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-3 gap-4">
+
+                {visiblePosts.map(
+                  (post) => (
+                    <article
+                      key={
+                        post.id
+                      }
+                      className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
+                    >
+
+                      {/* ================= REAL IMAGE ================= */}
+
+                      {post.image_url ? (
+                        <div className="aspect-[4/3] bg-black/20 overflow-hidden">
+
+                          <img
+                            src={
+                              post.image_url
+                            }
+                            alt="Ảnh bài viết TravelQuest"
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+
+                        </div>
+                      ) : (
+                        <div className="aspect-[4/3] bg-gradient-to-br from-blue-900/60 via-slate-800 to-indigo-950 flex items-center justify-center text-6xl">
+                          📸
+                        </div>
+                      )}
+
+                      <div className="p-5">
+
+                        <div className="flex items-center justify-between">
+
+                          <div className="flex items-center gap-2">
+
+                            <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center text-sm">
+                              🧭
+                            </div>
+
+                            <div>
+
+                              <p className="font-bold text-sm">
+                                {post.user_id ===
+                                user?.id
+                                  ? profileName
+                                  : "Traveller"}
+                              </p>
+
+                              <p className="text-[10px] text-white/30">
+                                {formatPostTime(
+                                  post.created_at
+                                )}
+                              </p>
+
+                            </div>
+
+                          </div>
+
+                          <button
+                            onClick={() =>
+                              handleLike(
+                                post
+                              )
+                            }
+                            disabled={
+                              likeLoading[
+                                post.id
+                              ]
+                            }
+                            className={`text-xs transition ${
+                              likedPostIds.includes(
+                                post.id
+                              )
+                                ? "text-red-300"
+                                : "text-white/50 hover:text-white"
+                            } disabled:opacity-50`}
+                          >
+                            {likedPostIds.includes(
+                              post.id
+                            )
+                              ? "❤️"
+                              : "♡"}{" "}
+                            {
+                              post.likes
+                            }
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openReport(
+                                "post",
+                                post.id,
+                                "bài viết này"
+                              )
+                            }
+                            className="text-[11px] text-white/25 hover:text-red-300 transition"
+                            aria-label="Báo cáo bài viết"
+                            title="Báo cáo bài viết"
+                          >
+                            ⋯
+                          </button>
+
+                        </div>
+
+                        {/* CHECKPOINT */}
+
+                        {post.checkpoint && (
+                          <button
+                            onClick={() => {
+                              if (
+                                post.checkpoint
+                              ) {
+                                selectCheckpoint(
+                                  post.checkpoint
+                                );
+
+                                setActiveTab(
+                                  "map"
+                                );
+                              }
+                            }}
+                            className="w-full mt-4 text-left bg-blue-500/5 border border-blue-400/10 rounded-xl p-3 hover:bg-blue-500/10 transition"
+                          >
+
+                            <p className="text-[10px] text-blue-300 font-semibold">
+                              CHECKPOINT
+                            </p>
+
+                            <p className="text-xs font-semibold mt-1">
+                              {post.checkpoint.icon ??
+                                "📍"}{" "}
+                              {
+                                post
+                                  .checkpoint
+                                  .name
+                              }
+                            </p>
+
+                          </button>
+                        )}
+
+                        {/* CONTENT */}
+
+                        <p className="text-sm text-white/75 mt-4 leading-relaxed whitespace-pre-wrap">
+                          {
+                            post.content
+                          }
+                        </p>
+
+                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+
+                          <span className="text-xs text-white/30">
+                            TravelQuest Community
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              handleLike(
+                                post
+                              )
+                            }
+                            disabled={
+                              likeLoading[
+                                post.id
+                              ]
+                            }
+                            className={`text-xs transition ${
+                              likedPostIds.includes(
+                                post.id
+                              )
+                                ? "text-red-300"
+                                : "text-white/40 hover:text-white"
+                            } disabled:opacity-50`}
+                          >
+                            {likedPostIds.includes(
+                              post.id
+                            )
+                              ? "❤️ Đã thích"
+                              : "♡ Thích"}
+                          </button>
+
+                        </div>
+
+                        {/* COMMENTS */}
+
+                        <div className="mt-4">
+
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-xs font-bold text-white/55">
+                              💬 Bình luận ({comments.filter((comment) => comment.post_id === post.id).length})
+                            </p>
+                          </div>
+
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+
+                            {comments
+                              .filter((comment) => comment.post_id === post.id)
+                              .map((comment) => (
+                                <div
+                                  key={comment.id}
+                                  className="rounded-xl bg-black/10 border border-white/5 px-3 py-2"
+                                >
+
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-[11px] font-bold truncate">
+                                      {comment.user_id === user?.id
+                                        ? profileName
+                                        : "Traveller"}
+                                    </p>
+
+                                    <p className="text-[9px] text-white/25 shrink-0">
+                                      {formatPostTime(comment.created_at)}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-end justify-between gap-2">
+                                    <p className="text-xs text-white/65 mt-1 whitespace-pre-wrap break-words min-w-0 flex-1">
+                                      {comment.content}
+                                    </p>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        openReport(
+                                          "comment",
+                                          comment.id,
+                                          "bình luận này"
+                                        )
+                                      }
+                                      className="text-[10px] text-white/20 hover:text-red-300 transition shrink-0"
+                                      title="Báo cáo bình luận"
+                                    >
+                                      Báo cáo
+                                    </button>
+                                  </div>
+
+                                </div>
+                              ))}
+
+                          </div>
+
+                          <div className="flex gap-2 mt-3">
+
+                            <input
+                              type="text"
+                              value={commentInputs[post.id] ?? ""}
+                              maxLength={300}
+                              onChange={(event) =>
+                                setCommentInputs((current) => ({
+                                  ...current,
+                                  [post.id]: event.target.value,
+                                }))
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  handleCreateComment(post.id);
+                                }
+                              }}
+                              placeholder={
+                                user
+                                  ? "Viết bình luận..."
+                                  : "Đăng nhập để bình luận"
+                              }
+                              className="min-w-0 flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none focus:border-blue-400/40 transition"
+                            />
+
+                            <button
+                              onClick={() =>
+                                handleCreateComment(post.id)
+                              }
+                              disabled={
+                                commentLoading[post.id] ||
+                                !(commentInputs[post.id] ?? "").trim()
+                              }
+                              className="shrink-0 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition disabled:opacity-40"
+                            >
+                              {commentLoading[post.id]
+                                ? "..."
+                                : "Gửi"}
+                            </button>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </article>
+                  )
+                )}
+
+              </div>
+            )}
+
+          </section>
+        )}
+
+      </div>
+
+      {/* ================= BOTTOM NAV ================= */}
+
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#06111f]/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+
+        <div className="max-w-xl mx-auto h-20 min-h-[72px] flex items-center justify-around px-2">
+
+          <button
+            onClick={() =>
+              setActiveTab(
+                "map"
+              )
+            }
+            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
+              activeTab === "map"
+                ? "text-white bg-white/10"
+                : "text-white/40 hover:text-white"
+            }`}
+          >
+
+            <span className="text-xl">
+              🗺️
+            </span>
+
+            <span className="text-[11px] font-semibold">
+              Map
+            </span>
+
+          </button>
+
+          <button
+            onClick={() =>
+              setActiveTab(
+                "badges"
+              )
+            }
+            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
+              activeTab === "badges"
+                ? "text-white bg-white/10"
+                : "text-white/40 hover:text-white"
+            }`}
+          >
+
+            <span className="text-xl">
+              🏆
+            </span>
+
+            <span className="text-[11px] font-semibold">
+              Huy hiệu
+            </span>
+
+          </button>
+
+          <button
+            onClick={() =>
+              setActiveTab(
+                "ugc"
+              )
+            }
+            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
+              activeTab === "ugc"
+                ? "text-white bg-white/10"
+                : "text-white/40 hover:text-white"
+            }`}
+          >
+
+            <span className="text-xl">
+              📸
+            </span>
+
+            <span className="text-[11px] font-semibold">
+              UGC
+            </span>
+
+          </button>
+
+        </div>
+
+      </nav>
+
+      {/* ============================================
+          REPORT / MODERATION PANEL
+      ============================================ */}
+
+      {reportOpen && (
+        <div className="fixed inset-0 z-[240] flex items-center justify-center px-4">
+          <button
+            type="button"
+            aria-label="Đóng báo cáo"
+            onClick={closeReport}
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          />
+
+          <div className="relative w-full max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl">
+            <div className="flex items-start justify-between gap-4 px-5 py-5 border-b border-white/10">
+              <div>
+                <p className="text-xs font-bold tracking-[0.16em] text-red-300">
+                  REPORT / MODERATION
+                </p>
+                <h2 className="text-xl font-black mt-1">🚩 Báo cáo nội dung</h2>
+                <p className="text-[11px] text-white/40 mt-1">
+                  Báo cáo {reportTargetLabel || "nội dung"} để đội ngũ xem xét.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeReport}
+                disabled={reportLoading}
+                className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-white/50 hover:text-white disabled:opacity-50 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5">
+              <label className="block text-xs text-white/50 mb-2">Lý do</label>
+
+              <select
+                value={reportReason}
+                onChange={(event) =>
+                  setReportReason(event.target.value as ReportReason)
+                }
+                className="w-full rounded-xl bg-[#0b2035] border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-blue-400/50 transition"
+              >
+                <option value="spam">Spam / quảng cáo không phù hợp</option>
+                <option value="harassment">Quấy rối / bắt nạt</option>
+                <option value="inappropriate">Nội dung không phù hợp</option>
+                <option value="misinformation">Thông tin có vẻ sai lệch</option>
+                <option value="other">Lý do khác</option>
+              </select>
+
+              <label className="block text-xs text-white/50 mb-2 mt-5">Chi tiết (không bắt buộc)</label>
+              <textarea
+                value={reportDetails}
+                maxLength={500}
+                onChange={(event) => setReportDetails(event.target.value)}
+                rows={4}
+                placeholder="Mô tả ngắn vấn đề..."
+                className="w-full resize-none rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
+              />
+
+              {reportMessage && (
+                <p className="text-xs text-blue-300 mt-3 leading-relaxed">
+                  {reportMessage}
+                </p>
+              )}
+
+              <div className="flex gap-2 mt-5">
+                <button
+                  type="button"
+                  onClick={closeReport}
+                  disabled={reportLoading}
+                  className="flex-1 rounded-xl bg-white/5 hover:bg-white/10 disabled:opacity-50 px-4 py-3 text-sm font-bold transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitReport}
+                  disabled={reportLoading}
+                  className="flex-1 rounded-xl bg-red-500/80 hover:bg-red-500 disabled:opacity-50 px-4 py-3 text-sm font-bold transition"
+                >
+                  {reportLoading ? "Đang gửi..." : "🚩 Gửi báo cáo"}
+                </button>
+              </div>
+
+              <p className="text-[10px] text-white/25 mt-3 text-center">
+                Chỉ báo cáo nội dung thực sự có vấn đề.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================
+          SEARCH TRAVELLER PANEL
+      ============================================ */}
+
+      {searchOpen && (
+        <div className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20">
+
+          <button
+            type="button"
+            aria-label="Đóng tìm kiếm"
+            onClick={closeSearch}
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          />
+
+          <div className="relative w-full max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl">
+
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div>
+                <p className="font-black text-lg">🔎 Tìm Traveller</p>
+                <p className="text-[10px] text-white/35 mt-1">
+                  Tìm người và mở hồ sơ công khai
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeSearch}
+                className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5">
+              <div className="relative">
+                <input
+                  autoFocus
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) =>
+                    searchTravellers(event.target.value)
+                  }
+                  placeholder="Nhập tên Traveller..."
+                  maxLength={50}
+                  className="w-full rounded-2xl bg-black/20 border border-white/10 px-4 py-3.5 pr-12 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
+                />
+
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => searchTravellers("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full text-white/35 hover:text-white transition"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              <p className="text-[10px] text-white/30 mt-2 px-1">
+                Nhập ít nhất 2 ký tự để tìm kiếm.
+              </p>
+
+              <div className="mt-4 max-h-[55vh] overflow-y-auto">
+
+                {searchLoading ? (
+                  <div className="py-10 text-center text-sm text-white/40">
+                    📡 Đang tìm Traveller...
+                  </div>
+                ) : searchQuery.trim().length < 2 ? (
+                  <div className="py-10 text-center">
+                    <div className="text-4xl">🧭</div>
+                    <p className="font-bold mt-3">
+                      Tìm bạn đồng hành
+                    </p>
+                    <p className="text-xs text-white/35 mt-1">
+                      Nhập tên để khám phá các Traveller.
+                    </p>
+                  </div>
+                ) : searchResults.length === 0 ? (
+                  <div className="py-10 text-center">
+                    <div className="text-4xl">🕵️</div>
+                    <p className="font-bold mt-3">
+                      {searchMessage || "Không có kết quả"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {searchResults.map((traveller) => (
+                      <div
+                        key={traveller.user_id}
+                        className="flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 p-3 hover:bg-white/[0.07] transition"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeSearch();
+                            openPublicProfile(traveller.user_id);
+                          }}
+                          className="w-12 h-12 shrink-0 rounded-full bg-blue-500/15 border border-blue-400/15 flex items-center justify-center text-xl"
+                          title="Mở hồ sơ"
+                        >
+                          👤
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            closeSearch();
+                            openPublicProfile(traveller.user_id);
+                          }}
+                          className="min-w-0 flex-1 text-left"
+                        >
+                          <p className="font-bold truncate">
+                            {traveller.display_name}
+                          </p>
+                          <p className="text-[10px] text-white/35 mt-1">
+                            Level {traveller.level} · {traveller.xp} XP · {traveller.checkpoint_count} checkpoint
+                          </p>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            toggleFollow(traveller.user_id)
+                          }
+                          disabled={
+                            followLoading[traveller.user_id]
+                          }
+                          className={`shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold border transition disabled:opacity-50 ${
+                            followingUserIds.includes(
+                              traveller.user_id
+                            )
+                              ? "bg-white/5 border-white/10 text-white/65"
+                              : "bg-blue-500 border-blue-400/20 text-white hover:bg-blue-400"
+                          }`}
+                        >
+                          {followLoading[traveller.user_id]
+                            ? "..."
+                            : followingUserIds.includes(
+                                traveller.user_id
+                              )
+                            ? "✓ Theo dõi"
+                            : "+ Theo dõi"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================
+          NOTIFICATIONS PANEL
+      ============================================ */}
+
+      {notificationsOpen && (
+        <div className="fixed inset-0 z-[215] flex items-start justify-end px-4 pt-20">
+
+          <button
+            type="button"
+            aria-label="Đóng thông báo"
+            onClick={() =>
+              setNotificationsOpen(false)
+            }
+            className="absolute inset-0 bg-black/30"
+          />
+
+          <div className="relative w-full max-w-sm max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.5rem] border border-white/10 bg-[#07182a] shadow-2xl">
+
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+
+              <div>
+                <p className="font-black text-lg">
+                  🔔 Thông báo
+                </p>
+                <p className="text-[10px] text-white/35 mt-1">
+                  Các hoạt động mới trên TravelQuest
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setNotificationsOpen(false)
+                }
+                className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+              >
+                ✕
+              </button>
+
+            </div>
+
+            <div className="max-h-[65vh] overflow-y-auto">
+
+              {notificationsLoading ? (
+                <div className="py-10 text-center text-sm text-white/40">
+                  📡 Đang tải thông báo...
+                </div>
+              ) : notifications.length === 0 ? (
+                <div className="py-12 px-6 text-center">
+
+                  <div className="text-4xl">
+                    🔕
+                  </div>
+
+                  <p className="font-bold mt-3">
+                    Chưa có thông báo
+                  </p>
+
+                  <p className="text-xs text-white/35 mt-1">
+                    Khi có Traveller tương tác với cậu, thông báo sẽ xuất hiện ở đây.
+                  </p>
+
+                </div>
+              ) : (
+                notifications.map(
+                  (notification) => (
+                    <div
+                      key={notification.id}
+                      className={`px-5 py-4 border-b border-white/5 ${
+                        notification.is_read
+                          ? ""
+                          : "bg-blue-500/5"
+                      }`}
+                    >
+
+                      <div className="flex gap-3">
+
+                        <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/10 border border-blue-400/10 flex items-center justify-center">
+                          {notification.type ===
+                          "follow"
+                            ? "👤"
+                            : notification.type ===
+                              "like"
+                            ? "❤️"
+                            : "💬"}
+                        </div>
+
+                        <div className="min-w-0">
+
+                          <p className="text-sm leading-5">
+                            {notification.message}
+                          </p>
+
+                          <p className="text-[10px] text-white/30 mt-1">
+                            {formatPostTime(
+                              notification.created_at
+                            )}
+                          </p>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+                  )
+                )
+              )}
+
+            </div>
+
+            {notifications.length > 0 && (
+              <div className="px-5 py-3 border-t border-white/10 text-center">
+                <button
+                  type="button"
+                  onClick={loadNotifications}
+                  disabled={
+                    notificationsLoading
+                  }
+                  className="text-xs text-blue-300 hover:text-blue-200 font-bold transition disabled:opacity-50"
+                >
+                  ↻ Cập nhật
+                </button>
+              </div>
+            )}
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ============================================
+          PUBLIC PROFILE PANEL
+      ============================================ */}
+
+      {publicProfileOpen && (
+        <div className="fixed inset-0 z-[220] flex items-center justify-center px-5">
+
+          <button
+            type="button"
+            aria-label="Đóng hồ sơ"
+            onClick={() => {
+              setPublicProfileOpen(false);
+              setPublicProfileMessage("");
+            }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+
+          <div className="relative w-full max-w-sm pointer-events-auto">
+
+            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a] p-6 shadow-2xl">
+
+              <div className="flex items-center gap-4">
+
+                <div className="w-16 h-16 rounded-full bg-blue-500/15 border border-blue-400/20 flex items-center justify-center text-3xl">
+                  👤
+                </div>
+
+                <div className="flex-1 min-w-0">
+
+                  {publicProfileLoading ? (
+                    <p className="font-bold">
+                      📡 Đang tải hồ sơ...
+                    </p>
+                  ) : (
+                    <>
+                      <p className="font-black text-xl truncate">
+                        {publicProfile?.display_name ??
+                          "Traveller"}
+                      </p>
+
+                      <p className="text-xs text-white/40 mt-1">
+                        Level{" "}
+                        {publicProfile?.level ?? 1}
+                        {" · "}
+                        {publicProfile?.xp ?? 0} XP
+                      </p>
+                    </>
+                  )}
+
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPublicProfileOpen(false);
+                    setPublicProfileMessage("");
+                  }}
+                  className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+                >
+                  ✕
+                </button>
+
+              </div>
+
+              {publicProfileLoading ? (
+                <div className="py-10 text-center text-sm text-white/40">
+                  Đang tải thông tin Traveller...
+                </div>
+              ) : publicProfileMessage ? (
+                <div className="py-8 text-center text-sm text-white/45">
+                  {publicProfileMessage}
+                </div>
+              ) : publicProfile ? (
+                <>
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-xs text-white/40">
+                        Checkpoint
+                      </p>
+                      <p className="text-2xl font-black mt-1">
+                        {publicProfile.checkpoint_count}
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-xs text-white/40">
+                        UGC
+                      </p>
+                      <p className="text-2xl font-black mt-1">
+                        {publicProfile.post_count}
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-xs text-white/40">
+                        Người theo dõi
+                      </p>
+                      <p className="text-2xl font-black mt-1">
+                        {publicProfile.follower_count}
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                      <p className="text-xs text-white/40">
+                        Đang theo dõi
+                      </p>
+                      <p className="text-2xl font-black mt-1">
+                        {publicProfile.following_count}
+                      </p>
+                    </div>
+
+                  </div>
+
+                  {publicProfile.user_id !==
+                    user?.id && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        toggleFollow(
+                          publicProfile.user_id
+                        )
+                      }
+                      disabled={
+                        followLoading[
+                          publicProfile.user_id
+                        ]
+                      }
+                      className={`w-full mt-5 py-3 rounded-xl border font-bold transition disabled:opacity-50 ${
+                        followingUserIds.includes(
+                          publicProfile.user_id
+                        )
+                          ? "bg-white/5 border-white/10 text-white/70"
+                          : "bg-blue-500 border-blue-400/20 text-white hover:bg-blue-400"
+                      }`}
+                    >
+                      {followLoading[
+                        publicProfile.user_id
+                      ]
+                        ? "📡 Đang cập nhật..."
+                        : followingUserIds.includes(
+                            publicProfile.user_id
+                          )
+                        ? "✓ Đang theo dõi"
+                        : "+ Theo dõi"}
+                    </button>
+                  )}
+
+                  {/* ============================================
+                      PUBLIC JOURNEY SUMMARY
+                  ============================================ */}
+
+                  <div className="mt-5">
+
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-sm font-black">🧭 Hành trình</p>
+                        <p className="text-[11px] text-white/35 mt-1">
+                          Tiến trình khám phá của Traveller
+                        </p>
+                      </div>
+
+                      <div className="text-xs text-white/40">
+                        {publicProfile.checkpoint_count} checkpoint
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-white/45">XP</span>
+                        <span className="font-bold text-blue-200">
+                          {publicProfile.xp} XP
+                        </span>
+                      </div>
+
+                      <div className="h-2 mt-3 rounded-full bg-black/20 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-blue-500 transition-all"
+                          style={{
+                            width: `${Math.min(100, ((publicProfile.xp % 500) / 500) * 100)}%`,
+                          }}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between mt-2 text-[10px] text-white/30">
+                        <span>Level {publicProfile.level}</span>
+                        <span>
+                          {publicProfile.xp % 500} / 500 XP đến level tiếp theo
+                        </span>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  <div className="mt-5">
+
+                    <p className="text-sm font-black mb-3">🏆 Thành tựu</p>
+
+                    <div className="grid grid-cols-2 gap-2">
+
+                      <div className={`rounded-2xl border p-3 ${
+                        publicProfile.checkpoint_count >= 1
+                          ? "bg-blue-500/10 border-blue-400/20"
+                          : "bg-white/5 border-white/10 opacity-45"
+                      }`}>
+                        <p className="text-lg">🌱</p>
+                        <p className="text-xs font-bold mt-1">Khởi hành</p>
+                        <p className="text-[10px] text-white/35 mt-1">
+                          Checkpoint đầu tiên
+                        </p>
+                      </div>
+
+                      <div className={`rounded-2xl border p-3 ${
+                        publicProfile.checkpoint_count >= 2
+                          ? "bg-blue-500/10 border-blue-400/20"
+                          : "bg-white/5 border-white/10 opacity-45"
+                      }`}>
+                        <p className="text-lg">🗺️</p>
+                        <p className="text-xs font-bold mt-1">Nhà khám phá</p>
+                        <p className="text-[10px] text-white/35 mt-1">
+                          2 checkpoint
+                        </p>
+                      </div>
+
+                      <div className={`rounded-2xl border p-3 ${
+                        publicProfile.post_count >= 1
+                          ? "bg-blue-500/10 border-blue-400/20"
+                          : "bg-white/5 border-white/10 opacity-45"
+                      }`}>
+                        <p className="text-lg">📸</p>
+                        <p className="text-xs font-bold mt-1">Người kể chuyện</p>
+                        <p className="text-[10px] text-white/35 mt-1">
+                          Bài UGC đầu tiên
+                        </p>
+                      </div>
+
+                      <div className={`rounded-2xl border p-3 ${
+                        publicProfile.post_count >= 5
+                          ? "bg-blue-500/10 border-blue-400/20"
+                          : "bg-white/5 border-white/10 opacity-45"
+                      }`}>
+                        <p className="text-lg">🎒</p>
+                        <p className="text-xs font-bold mt-1">Travel Creator</p>
+                        <p className="text-[10px] text-white/35 mt-1">
+                          5 bài UGC
+                        </p>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  {publicProfile.user_id ===
+                    user?.id && (
+                    <div className="mt-5 rounded-xl bg-blue-500/10 border border-blue-400/15 px-4 py-3 text-center text-sm text-blue-200">
+                      Đây là hồ sơ công khai của bạn.
+                    </div>
+                  )}
+
+                </>
+              ) : null}
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
+      {/* ============================================
+          ACCOUNT PANEL
+      ============================================ */}
+
+      {authOpen &&
+        user && (
+          <div className="fixed inset-0 z-[210] flex items-center justify-center px-5 pointer-events-none">
+
+            <div className="absolute inset-0 pointer-events-auto" />
+
+            <div className="relative w-full max-w-sm pointer-events-auto">
+
+              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a] p-6 shadow-2xl">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="w-14 h-14 rounded-full bg-blue-500/15 border border-blue-400/20 flex items-center justify-center text-2xl">
+                    👤
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+
+                    <p className="font-black text-lg">
+                      {profileName}
+                    </p>
+
+                    <p className="text-xs text-white/45 truncate">
+                      {user.email}
+                    </p>
+
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setAuthOpen(false);
+                      setAuthMessage("");
+                    }}
+                    className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+                  >
+                    ✕
+                  </button>
+
+                </div>
+
+                {/* ================= PROFILE NAME ================= */}
+
+                <div className="mt-6">
+
+                  <label className="block text-xs text-white/50 mb-2">
+                    Tên hiển thị
+                  </label>
+
+                  <div className="flex gap-2">
+
+                    <input
+                      type="text"
+                      value={
+                        profileNameInput
+                      }
+                      maxLength={30}
+                      onChange={(event) =>
+                        setProfileNameInput(
+                          event.target.value
+                        )
+                      }
+                      onKeyDown={(event) => {
+                        if (
+                          event.key ===
+                          "Enter"
+                        ) {
+                          saveProfile();
+                        }
+                      }}
+                      placeholder="Tên của bạn"
+                      className="min-w-0 flex-1 rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
+                    />
+
+                    <button
+                      onClick={
+                        saveProfile
+                      }
+                      disabled={
+                        profileLoading
+                      }
+                      className="shrink-0 px-4 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-sm font-bold transition"
+                    >
+                      {profileLoading
+                        ? "..."
+                        : "Lưu"}
+                    </button>
+
+                  </div>
+
+                  {profileMessage && (
+                    <p className="text-xs text-blue-300 mt-2">
+                      {profileMessage}
+                    </p>
+                  )}
+
+                </div>
+
+                {/* ================= ACCOUNT STATS ================= */}
+
+                <div className="mt-5 grid grid-cols-2 gap-3">
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+
+                    <p className="text-xs text-white/40">
+                      Checkpoint
+                    </p>
+
+                    <p className="text-2xl font-black mt-1">
+                      {checkins.length}
+                    </p>
+
+                    <p className="text-[10px] text-white/30 mt-1">
+                      đã chinh phục
+                    </p>
+
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+
+                    <p className="text-xs text-white/40">
+                      UGC
+                    </p>
+
+                    <p className="text-2xl font-black mt-1">
+                      {userPostCount}
+                    </p>
+
+                    <p className="text-[10px] text-white/30 mt-1">
+                      bài đã đăng
+                    </p>
+
+                  </div>
+
+                </div>
+
+                <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-4">
+
+                  <div className="flex items-center justify-between">
+
+                    <div>
+
+                      <p className="text-xs text-white/40">
+                        Trạng thái
+                      </p>
+
+                      <p className="text-sm font-bold mt-1">
+                        🟢 Đang đăng nhập
+                      </p>
+
+                    </div>
+
+                    <div className="text-2xl">
+                      🧭
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <button
+                  onClick={() => {
+                    setSettingsMessage("");
+                    setAuthOpen(false);
+                    setSettingsOpen(true);
+                  }}
+                  className="w-full mt-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold transition"
+                >
+                  ⚙️ Cài đặt
+                </button>
+
+                <button
+                  onClick={
+                    handleLogout
+                  }
+                  disabled={
+                    authLoading
+                  }
+                  className="w-full mt-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/15 border border-red-400/15 text-red-300 font-bold transition disabled:opacity-50"
+                >
+                  {authLoading
+                    ? "📡 Đang đăng xuất..."
+                    : "🚪 Đăng xuất"}
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+        )}
+
+        {/* ================= ACCOUNT SETTINGS ================= */}
+        {settingsOpen && user && (
+          <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-3xl bg-[#07152f] border border-white/10 shadow-2xl p-5 sm:p-6">
+
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs text-blue-300 font-bold uppercase tracking-wider">
+                    Tài khoản
+                  </p>
+                  <h2 className="text-xl font-black mt-1">
+                    ⚙️ Cài đặt
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      setSettingsMessage("");
+                      setAuthOpen(true);
+                    }}
+                    className="h-9 px-3 rounded-full bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition text-xs font-bold"
+                  >
+                    ← Tài khoản
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSettingsOpen(false);
+                      setSettingsMessage("");
+                    }}
+                    className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <button
+                  onClick={handleToggleNotifications}
+                  className="w-full flex items-center justify-between gap-4 rounded-2xl bg-white/5 border border-white/10 p-4 text-left hover:bg-white/10 transition"
+                >
+                  <div>
+                    <p className="font-bold">🔔 Thông báo</p>
+                    <p className="text-xs text-white/40 mt-1">
+                      {notificationsEnabled ? "Đang bật" : "Đang tắt"}
+                    </p>
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${notificationsEnabled ? "bg-blue-500/20 text-blue-300" : "bg-white/10 text-white/40"}`}>
+                    {notificationsEnabled ? "BẬT" : "TẮT"}
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleToggleGps}
+                  className="w-full flex items-center justify-between gap-4 rounded-2xl bg-white/5 border border-white/10 p-4 text-left hover:bg-white/10 transition"
+                >
+                  <div>
+                    <p className="font-bold">📍 GPS</p>
+                    <p className="text-xs text-white/40 mt-1">
+                      {gpsEnabled ? "Cho phép TravelQuest theo dõi vị trí khi cần check-in" : "Đang tắt theo dõi vị trí"}
+                    </p>
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${gpsEnabled ? "bg-blue-500/20 text-blue-300" : "bg-white/10 text-white/40"}`}>
+                    {gpsEnabled ? "BẬT" : "TẮT"}
+                  </span>
+                </button>
+
+                <button
+                  onClick={handleClearLocalData}
+                  className="w-full rounded-2xl bg-red-500/10 border border-red-400/15 p-4 text-left hover:bg-red-500/15 transition"
+                >
+                  <p className="font-bold text-red-300">🧹 Xóa dữ liệu trên thiết bị</p>
+                  <p className="text-xs text-white/40 mt-1">
+                    Xóa địa điểm đã lưu và hành trình lưu trên trình duyệt.
+                  </p>
+                </button>
+              </div>
+
+              {settingsMessage && (
+                <p className="text-xs text-blue-300 mt-4">
+                  {settingsMessage}
+                </p>
+              )}
+
+              <div className="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
+                <p className="text-xs text-white/40">Tài khoản</p>
+                <p className="text-sm font-bold mt-1 truncate">{user.email}</p>
+                <p className="text-[10px] text-white/30 mt-2">
+                  TravelQuest MVP • Dữ liệu tài khoản được lưu trên Supabase.
+                </p>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+    </main>
+  );
+}
