@@ -214,6 +214,268 @@ function calculateDistance(
   return distance;
 }
 
+function createCheckpointDetailsModal({
+  checkpoint,
+  details,
+  distanceText,
+  mapInstance,
+  userLocation,
+  onClose,
+}: {
+  checkpoint: Checkpoint;
+  details: CheckpointDetails;
+  distanceText: string;
+  mapInstance: mapboxgl.Map;
+  userLocation: UserLocation | null;
+  onClose: () => void;
+}): HTMLDivElement {
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.zIndex = "9999";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.padding = "24px";
+  overlay.style.background = "rgba(3, 12, 24, 0.62)";
+  overlay.style.backdropFilter = "blur(3px)";
+
+  const card = document.createElement("div");
+  card.style.width = "min(720px, calc(100vw - 32px))";
+  card.style.maxHeight = "min(820px, calc(100vh - 48px))";
+  card.style.overflow = "hidden";
+  card.style.borderRadius = "22px";
+  card.style.background = "#ffffff";
+  card.style.boxShadow = "0 24px 80px rgba(0,0,0,0.45)";
+  card.style.fontFamily = "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+  card.style.color = "#202124";
+  card.style.display = "flex";
+  card.style.flexDirection = "column";
+
+  const safeName = escapeHtml(checkpoint.name);
+  const safeDescription = escapeHtml(checkpoint.description ?? "Checkpoint du lịch TravelQuest.");
+  const safeBadge = escapeHtml(checkpoint.badge ?? "🏆 Huy hiệu TravelQuest");
+  const category = escapeHtml(details.category);
+  const address = escapeHtml(details.address ?? "Chưa cập nhật địa chỉ");
+  const hours = escapeHtml(details.hours ?? "Chưa cập nhật giờ mở cửa");
+  const phone = escapeHtml(details.phone ?? "Chưa cập nhật");
+  const website = escapeHtml(details.website ?? "Chưa cập nhật");
+  const rating = details.rating !== undefined ? "⭐ " + details.rating.toFixed(1) : "⭐ Chưa có đánh giá";
+  const reviewCount = details.reviewCount !== undefined ? "(" + details.reviewCount.toLocaleString("vi-VN") + " đánh giá)" : "";
+
+  const header = document.createElement("div");
+  header.style.padding = "18px 20px 16px";
+  header.style.borderBottom = "1px solid #e5e7eb";
+  header.style.flexShrink = "0";
+  header.innerHTML =
+    "<div style=\"display:flex;align-items:flex-start;gap:14px;\">" +
+      "<div style=\"width:58px;height:58px;flex:0 0 58px;border-radius:16px;background:#07182a;display:flex;align-items:center;justify-content:center;font-size:30px;border:1px solid #dbe3ea;\">" +
+        escapeHtml(checkpoint.icon?.trim() || "📍") +
+      "</div>" +
+      "<div style=\"min-width:0;flex:1;\">" +
+        "<div style=\"font-size:22px;line-height:1.2;font-weight:800;color:#111827;\">" + safeName + "</div>" +
+        "<div style=\"margin-top:5px;font-size:13px;color:#667085;\">" + category + "</div>" +
+        "<div style=\"margin-top:7px;font-size:13px;\"><strong style=\"color:#111827;\">" + rating + "</strong><span style=\"color:#667085;margin-left:6px;\">" + reviewCount + "</span></div>" +
+      "</div>" +
+      "<button data-action=\"close\" aria-label=\"Đóng\" style=\"width:40px;height:40px;border:0;border-radius:50%;background:#f3f4f6;color:#374151;font-size:22px;cursor:pointer;\">×</button>" +
+    "</div>";
+
+  const tabs = document.createElement("div");
+  tabs.style.display = "grid";
+  tabs.style.gridTemplateColumns = "repeat(4,1fr)";
+  tabs.style.borderBottom = "1px solid #e5e7eb";
+  tabs.style.flexShrink = "0";
+
+  const body = document.createElement("div");
+  body.style.overflowY = "auto";
+  body.style.padding = "18px 20px 22px";
+
+  const tabNames = ["Tổng quan", "Vé", "Bài đánh giá", "Giới thiệu"];
+  const tabButtons: HTMLButtonElement[] = [];
+
+  const infoRow = (icon: string, title: string, value: string) =>
+    "<div style=\"display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eef0f2;\">" +
+      "<div style=\"width:24px;flex:0 0 24px;text-align:center;font-size:19px;\">" + icon + "</div>" +
+      "<div style=\"min-width:0;\"><div style=\"font-size:11px;color:#8a9199;font-weight:700;text-transform:uppercase;letter-spacing:.03em;\">" + title + "</div>" +
+      "<div style=\"margin-top:3px;font-size:14px;color:#344054;line-height:1.45;word-break:break-word;\">" + value + "</div></div>" +
+    "</div>";
+
+  const renderOverview = () => {
+    body.innerHTML =
+      "<div style=\"font-size:14px;line-height:1.65;color:#3c4043;\">" + safeDescription + "</div>" +
+      "<div style=\"margin-top:14px;padding:12px 14px;border-radius:14px;background:#f0f9ff;color:#174e57;font-size:12px;font-weight:700;\">" + safeBadge + "</div>" +
+      "<div style=\"margin-top:12px;\">" +
+        infoRow("📍", "Địa chỉ", address) +
+        infoRow("◷", "Giờ mở cửa", hours) +
+        infoRow("📏", "Khoảng cách", escapeHtml(distanceText)) +
+        infoRow("☎", "Điện thoại", phone) +
+        infoRow("🌐", "Website", website) +
+      "</div>" +
+      "<div style=\"margin-top:14px;font-size:11px;color:#8a9199;\">Giờ mở cửa là thông tin tham khảo và có thể thay đổi theo ngày/lễ.</div>";
+  };
+
+  const renderTickets = () => {
+    const price = details.price
+      ? "Giá tham khảo: <strong style=\"color:#111827;\">" + escapeHtml(details.price) + "</strong>"
+      : "TravelQuest chưa có dữ liệu giá vé cho checkpoint này.";
+    body.innerHTML =
+      "<div style=\"padding:16px;border-radius:16px;background:#f8fafc;\">" +
+        "<div style=\"font-size:15px;font-weight:800;color:#111827;\">🎟️ Thông tin vé</div>" +
+        "<div style=\"margin-top:8px;font-size:13px;color:#667085;line-height:1.55;\">" + price + "</div>" +
+        "<div style=\"margin-top:12px;font-size:12px;color:#8a9199;\">Dữ liệu giá vé có thể được bổ sung vào checkpoint sau này.</div>" +
+      "</div>";
+  };
+
+  const renderReviews = () => {
+    body.innerHTML =
+      "<div style=\"padding:16px;border-radius:16px;background:#f8fafc;\">" +
+        "<div style=\"font-size:15px;font-weight:800;color:#111827;\">⭐ Đánh giá</div>" +
+        "<div style=\"margin-top:8px;font-size:24px;font-weight:800;color:#111827;\">" + rating + "</div>" +
+        "<div style=\"margin-top:4px;font-size:13px;color:#667085;\">" + (reviewCount || "Chưa có dữ liệu đánh giá") + "</div>" +
+        "<div style=\"margin-top:14px;font-size:13px;color:#667085;line-height:1.55;\">Review TravelQuest sẽ hiển thị tại đây khi dữ liệu đánh giá checkpoint được tải vào.</div>" +
+      "</div>";
+  };
+
+  const renderAbout = () => {
+    body.innerHTML =
+      "<div style=\"font-size:14px;line-height:1.65;color:#3c4043;\">" + safeDescription + "</div>" +
+      "<div style=\"margin-top:14px;\">" +
+        infoRow("🏷️", "Loại địa điểm", category) +
+        infoRow("📍", "Tọa độ", checkpoint.latitude.toFixed(5) + ", " + checkpoint.longitude.toFixed(5)) +
+        infoRow("🎯", "Bán kính check-in", CHECKIN_RADIUS + "m") +
+      "</div>";
+  };
+
+  tabNames.forEach((name, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = name;
+    button.style.border = "0";
+    button.style.background = "transparent";
+    button.style.padding = "13px 6px";
+    button.style.fontSize = "13px";
+    button.style.fontWeight = index === 0 ? "800" : "600";
+    button.style.color = index === 0 ? "#00897b" : "#667085";
+    button.style.cursor = "pointer";
+    button.style.borderBottom = index === 0 ? "3px solid #00897b" : "3px solid transparent";
+    button.addEventListener("click", () => {
+      tabButtons.forEach((tab, tabIndex) => {
+        tab.style.fontWeight = tabIndex === index ? "800" : "600";
+        tab.style.color = tabIndex === index ? "#00897b" : "#667085";
+        tab.style.borderBottom = tabIndex === index ? "3px solid #00897b" : "3px solid transparent";
+      });
+      if (index === 0) renderOverview();
+      if (index === 1) renderTickets();
+      if (index === 2) renderReviews();
+      if (index === 3) renderAbout();
+    });
+    tabButtons.push(button);
+    tabs.appendChild(button);
+  });
+
+  const actions = document.createElement("div");
+  actions.style.display = "grid";
+  actions.style.gridTemplateColumns = "repeat(5,minmax(0,1fr))";
+  actions.style.gap = "8px";
+  actions.style.padding = "14px 20px";
+  actions.style.borderBottom = "1px solid #e5e7eb";
+  actions.style.flexShrink = "0";
+
+  const makeAction = (icon: string, label: string, action: () => void) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.style.border = "0";
+    button.style.background = "transparent";
+    button.style.cursor = "pointer";
+    button.style.padding = "0";
+    button.innerHTML =
+      "<span style=\"display:flex;width:42px;height:42px;margin:auto;border-radius:50%;align-items:center;justify-content:center;background:#e0f5f5;color:#007c91;font-size:19px;\">" + icon + "</span>" +
+      "<span style=\"display:block;margin-top:6px;font-size:11px;font-weight:700;color:#174e57;\">" + label + "</span>";
+    button.addEventListener("click", action);
+    return button;
+  };
+
+  const savedKey = "travelquest-saved-places";
+  const saveButton = makeAction("♡", "Lưu", () => {
+    try {
+      const raw = window.localStorage.getItem(savedKey);
+      const ids = raw ? JSON.parse(raw) : [];
+      const current = Array.isArray(ids) ? ids.filter((id): id is number => typeof id === "number") : [];
+      const saved = current.includes(checkpoint.id);
+      const next = saved ? current.filter((id) => id !== checkpoint.id) : [...current, checkpoint.id];
+      window.localStorage.setItem(savedKey, JSON.stringify(next));
+      const icon = saveButton.querySelector("span");
+      const label = saveButton.querySelectorAll("span")[1];
+      if (icon) {
+        icon.style.background = next.includes(checkpoint.id) ? "#00897b" : "#e0f5f5";
+        icon.style.color = next.includes(checkpoint.id) ? "white" : "#007c91";
+        icon.textContent = next.includes(checkpoint.id) ? "♥" : "♡";
+      }
+      if (label) label.textContent = next.includes(checkpoint.id) ? "Đã lưu" : "Lưu";
+    } catch {
+      // Ignore localStorage failures.
+    }
+  });
+
+  const actionButtons = [
+    makeAction("➤", "Đường đi", () => {
+      if (userLocation) {
+        mapInstance.fitBounds(
+          [[userLocation.longitude, userLocation.latitude], [checkpoint.longitude, checkpoint.latitude]],
+          { padding: 90, maxZoom: 15, duration: 900 }
+        );
+      } else {
+        mapInstance.flyTo({ center: [checkpoint.longitude, checkpoint.latitude], zoom: 15, duration: 900 });
+      }
+    }),
+    saveButton,
+    makeAction("◎", "Gần đó", () => {
+      mapInstance.flyTo({ center: [checkpoint.longitude, checkpoint.latitude], zoom: 16, duration: 900 });
+    }),
+    makeAction("☎", "Gọi điện", () => {
+      if (details.phone) window.location.href = "tel:" + details.phone.replace(/[^\d+]/g, "");
+    }),
+    makeAction("⌯", "Chia sẻ", async () => {
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: checkpoint.name, text: checkpoint.name + " · TravelQuest", url: window.location.href });
+        } else if (navigator.clipboard) {
+          await navigator.clipboard.writeText(window.location.href);
+          window.alert("Đã sao chép liên kết TravelQuest.");
+        }
+      } catch {
+        // User cancelled sharing.
+      }
+    }),
+  ];
+  actionButtons.forEach((button) => actions.appendChild(button));
+
+  renderOverview();
+  card.appendChild(header);
+  card.appendChild(tabs);
+  card.appendChild(actions);
+  card.appendChild(body);
+  overlay.appendChild(card);
+
+  const close = () => {
+    document.removeEventListener("keydown", onKeyDown);
+    overlay.remove();
+    onClose();
+  };
+
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") close();
+  };
+
+  header.querySelector<HTMLButtonElement>("[data-action=\"close\"]")?.addEventListener("click", close);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) close();
+  });
+  document.addEventListener("keydown", onKeyDown);
+
+  return overlay;
+}
+
 export default function Map({
   userLocation = null,
   checkpoints = [],
@@ -602,104 +864,27 @@ export default function Map({
       const websiteText =
         details.website ?? "Chưa cập nhật";
 
-      const popup = new mapboxgl.Popup({
-        offset: 30,
-        closeButton: true,
-        closeOnClick: false,
-        maxWidth: "390px",
-      }).setHTML(`
-        <div style="width:350px;max-width:calc(100vw - 40px);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#202124;background:#fff;">
-          <div style="padding:14px 16px 10px;border-bottom:1px solid #e5e7eb;">
-            <div style="font-size:28px;line-height:1;margin-bottom:8px;">
-              ${escapeHtml(checkpoint.icon?.trim() || "📍")}
-            </div>
-            <div style="font-size:21px;line-height:1.25;font-weight:700;color:#202124;">
-              ${safeName}
-            </div>
-            <div style="margin-top:6px;font-size:13px;color:#5f6368;">
-              ${escapeHtml(details.category)}
-            </div>
-            <div style="margin-top:7px;font-size:13px;">
-              <span style="font-weight:700;color:#202124;">${ratingText}</span>
-              <span style="color:#5f6368;margin-left:5px;">${reviewText}</span>
-            </div>
-          </div>
+      const openDetailsModal = () => {
+        const existingModal = document.querySelector(
+          "[data-travelquest-checkpoint-modal=\"true\"]"
+        );
 
-          <div style="display:flex;border-bottom:1px solid #dadce0;">
-            <div style="flex:1;padding:10px 5px;text-align:center;border-bottom:3px solid #00897b;color:#00897b;font-size:12px;font-weight:700;">Tổng quan</div>
-            <div style="flex:1;padding:10px 5px;text-align:center;color:#5f6368;font-size:12px;">Vé</div>
-            <div style="flex:1;padding:10px 5px;text-align:center;color:#5f6368;font-size:12px;">Bài đánh giá</div>
-            <div style="flex:1;padding:10px 5px;text-align:center;color:#5f6368;font-size:12px;">Giới thiệu</div>
-          </div>
+        if (existingModal) existingModal.remove();
 
-          <div style="display:flex;justify-content:space-around;padding:13px 8px 11px;border-bottom:1px solid #e5e7eb;">
-            <div style="text-align:center;width:20%;">
-              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#00897b;color:white;font-size:18px;">➤</div>
-              <div style="margin-top:6px;font-size:11px;color:#174e57;">Đường đi</div>
-            </div>
-            <div style="text-align:center;width:20%;">
-              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">♡</div>
-              <div style="margin-top:6px;font-size:11px;color:#174e57;">Lưu</div>
-            </div>
-            <div style="text-align:center;width:20%;">
-              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">◎</div>
-              <div style="margin-top:6px;font-size:11px;color:#174e57;">Gần đó</div>
-            </div>
-            <div style="text-align:center;width:20%;">
-              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">▣</div>
-              <div style="margin-top:6px;font-size:11px;color:#174e57;">Gọi điện</div>
-            </div>
-            <div style="text-align:center;width:20%;">
-              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">⌯</div>
-              <div style="margin-top:6px;font-size:11px;color:#174e57;">Chia sẻ</div>
-            </div>
-          </div>
+        const overlay = createCheckpointDetailsModal({
+          checkpoint,
+          details,
+          distanceText,
+          mapInstance,
+          userLocation,
+          onClose: () => undefined,
+        });
 
-          <div style="padding:14px 16px;">
-            <p style="margin:0;color:#3c4043;font-size:13px;line-height:1.55;">
-              ${safeDescription}
-            </p>
+        overlay.dataset.travelquestCheckpointModal = "true";
+        document.body.appendChild(overlay);
+      };
 
-            <div style="margin-top:14px;padding-top:12px;border-top:1px solid #e5e7eb;">
-              <div style="display:flex;gap:10px;margin-bottom:12px;">
-                <div style="width:20px;color:#00897b;font-size:18px;">📍</div>
-                <div style="font-size:13px;color:#3c4043;line-height:1.45;">${escapeHtml(addressText)}</div>
-              </div>
-
-              <div style="display:flex;gap:10px;margin-bottom:12px;">
-                <div style="width:20px;color:#00897b;font-size:18px;">◷</div>
-                <div>
-                  <div style="font-size:13px;color:#d93025;font-weight:600;">${escapeHtml(hoursText)}</div>
-                  <div style="margin-top:2px;font-size:11px;color:#80868b;">Giờ tham khảo — có thể thay đổi theo ngày/lễ.</div>
-                </div>
-              </div>
-
-              <div style="display:flex;gap:10px;margin-bottom:12px;">
-                <div style="width:20px;color:#00897b;font-size:18px;">☎</div>
-                <div style="font-size:13px;color:#3c4043;">${escapeHtml(phoneText)}</div>
-              </div>
-
-              <div style="display:flex;gap:10px;margin-bottom:12px;">
-                <div style="width:20px;color:#00897b;font-size:18px;">🌐</div>
-                <div style="font-size:13px;color:#007c91;">${escapeHtml(websiteText)}</div>
-              </div>
-
-              <div style="display:flex;gap:10px;">
-                <div style="width:20px;color:#00897b;font-size:18px;">📏</div>
-                <div style="font-size:13px;color:#3c4043;">${escapeHtml(distanceText)}</div>
-              </div>
-            </div>
-
-            <div style="margin-top:14px;padding:10px 11px;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;">
-              🏆 ${safeBadge}
-            </div>
-
-            <div style="margin-top:8px;color:#6b7280;font-size:11px;">
-              📍 Vùng check-in: ${CHECKIN_RADIUS}m · 🧭 ${checkpoint.latitude.toFixed(5)}, ${checkpoint.longitude.toFixed(5)}
-            </div>
-          </div>
-        </div>
-      `);
+      markerElement.addEventListener("click", openDetailsModal);
 
       return new mapboxgl.Marker({
         element: markerElement,
