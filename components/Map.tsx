@@ -982,7 +982,7 @@ function createCheckpointDetailsModal({
       };
     };
 
-    const routeCache = new Map<
+    const routeCache = new globalThis.Map<
       (typeof modeConfig)[number]["key"],
       CachedRoute
     >();
