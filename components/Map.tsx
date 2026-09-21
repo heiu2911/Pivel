@@ -1159,16 +1159,6 @@ export default function Map({
 
         if (
           nearestDistance === null ||
-          distance <
-            nearestDistance
-        ) {
-          nearestDistance =
-            distance;
-
-        }
-
-        if (
-          nearestDistance === null ||
           distance < nearestDistance
         ) {
           nearestDistance = distance;
