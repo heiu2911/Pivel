@@ -982,6 +982,18 @@ function createCheckpointDetailsModal({
     };
 
     const getOrigin = async (): Promise<UserLocation> => {
+      const liveLocation = latestUserLocation.current;
+
+      if (
+        liveLocation &&
+        isValidCoordinate(
+          liveLocation.latitude,
+          liveLocation.longitude
+        )
+      ) {
+        return liveLocation;
+      }
+
       if (userLocation && isValidCoordinate(userLocation.latitude, userLocation.longitude)) {
         return userLocation;
       }
@@ -1684,6 +1696,9 @@ export default function Map({
   const userMarker =
     useRef<mapboxgl.Marker | null>(null);
 
+  const latestUserLocation =
+    useRef<UserLocation | null>(null);
+
   const checkpointMarkers =
     useRef<mapboxgl.Marker[]>([]);
 
@@ -2038,7 +2053,7 @@ export default function Map({
           details,
           distanceText,
           mapInstance,
-          userLocation,
+          userLocation: latestUserLocation.current,
           onClose: () => undefined,
         });
 
@@ -2259,6 +2274,8 @@ export default function Map({
   // ========================================
 
   useEffect(() => {
+    latestUserLocation.current = userLocation;
+
     const mapInstance = map.current;
 
     if (
