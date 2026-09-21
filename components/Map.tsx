@@ -510,40 +510,35 @@ export default function Map({
         offset: 30,
         closeButton: true,
         closeOnClick: false,
-        maxWidth: "360px",
+        maxWidth: "300px",
       }).setHTML(`
-        <div style="width:320px;max-width:calc(100vw - 48px);overflow:hidden;border-radius:16px;background:#fff;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111827;box-shadow:0 10px 30px rgba(0,0,0,.18);">
-          <div style="height:105px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#07182a,#123b5d);">
-            <div style="width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);">
-              ${escapeHtml(checkpoint.icon?.trim() || "📍")}
-            </div>
+        <div style="padding: 6px; min-width: 220px; font-family: system-ui, sans-serif;">
+          <div style="font-size: 28px; margin-bottom: 6px;">
+            ${escapeHtml(checkpoint.icon?.trim() || "📍")}
           </div>
-          <div style="padding:16px;">
-            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-              <div>
-                <div style="font-size:19px;line-height:1.25;font-weight:800;color:#111827;">${safeName}</div>
-                <div style="margin-top:5px;font-size:12px;color:#6b7280;">📍 Địa danh TravelQuest</div>
-              </div>
-              <div style="flex-shrink:0;padding:5px 8px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:800;">CHECKPOINT</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:13px;padding:9px 10px;border-radius:10px;background:#f8fafc;">
-              <span style="font-size:17px;">🏆</span>
-              <span style="font-size:12px;color:#334155;font-weight:700;">${safeBadge}</span>
-            </div>
-            <p style="margin:13px 0 0;color:#475569;font-size:13px;line-height:1.55;">${safeDescription}</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;">
-              <div style="padding:9px 10px;border-radius:10px;background:#f8fafc;">
-                <div style="font-size:10px;color:#94a3b8;font-weight:700;">KHOẢNG CÁCH</div>
-                <div style="margin-top:3px;font-size:12px;color:#334155;font-weight:700;">${escapeHtml(distanceText)}</div>
-              </div>
-              <div style="padding:9px 10px;border-radius:10px;background:#f8fafc;">
-                <div style="font-size:10px;color:#94a3b8;font-weight:700;">CHECK-IN</div>
-                <div style="margin-top:3px;font-size:12px;color:#334155;font-weight:700;">Trong bán kính ${CHECKIN_RADIUS}m</div>
-              </div>
-            </div>
-            <div style="margin-top:12px;padding-top:11px;border-top:1px solid #e5e7eb;color:#64748b;font-size:11px;line-height:1.5;">
-              🧭 ${checkpoint.latitude.toFixed(5)}, ${checkpoint.longitude.toFixed(5)}
-            </div>
+
+          <strong style="font-size: 16px; color: #111827;">
+            ${safeName}
+          </strong>
+
+          <p style="margin-top: 7px; margin-bottom: 0; color: #4b5563; line-height: 1.45;">
+            ${safeDescription}
+          </p>
+
+          <div style="margin-top: 10px; padding: 7px 9px; border-radius: 8px; background: #eff6ff; color: #1d4ed8; font-size: 12px; font-weight: 600;">
+            ${safeBadge}
+          </div>
+
+          <div style="margin-top: 8px; color: #6b7280; font-size: 11px;">
+            📍 Vùng check-in: ${CHECKIN_RADIUS}m
+          </div>
+
+          <div style="margin-top: 8px; color: #6b7280; font-size: 11px;">
+            🧭 ${checkpoint.latitude.toFixed(5)}, ${checkpoint.longitude.toFixed(5)}
+          </div>
+
+          <div style="margin-top: 6px; color: #6b7280; font-size: 11px;">
+            📏 ${escapeHtml(distanceText)}
           </div>
         </div>
       `);
