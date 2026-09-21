@@ -691,7 +691,7 @@ function createCheckpointDetailsModal({
   card.appendChild(actions);
   card.appendChild(body);
   overlay.appendChild(card);
-  void loadCheckpointImage();
+  void loadCheckpointImages();
 
   const close = () => {
     document.removeEventListener("keydown", onKeyDown);
