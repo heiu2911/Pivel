@@ -1395,7 +1395,9 @@ function createCheckpointDetailsModal({
       result.innerHTML =
         "<div style='padding:20px 4px;text-align:center;color:#667085'>Đang tìm tuyến đường…</div>";
 
-      clearRouteFromMap();
+      // Giữ tuyến hiện tại trên bản đồ trong lúc tính tuyến mới.
+      // Khi tuyến mới trả về, renderRouteResult sẽ thay thế tuyến cũ.
+      // Điều này tránh việc đường xanh biến mất giữa lúc panel đóng và Mapbox trả kết quả.
 
       try {
         const origin = await getOrigin();
