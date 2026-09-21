@@ -962,6 +962,38 @@ function createCheckpointDetailsModal({
     let activeMode: (typeof modeConfig)[number]["key"] = "motorcycle";
     let routeRequestId = 0;
 
+    type CachedRoute = {
+      origin: UserLocation;
+      route: {
+        distance: number;
+        duration: number;
+        geometry?: {
+          type: "LineString";
+          coordinates: [number, number][];
+        };
+        legs?: Array<{
+          steps?: Array<{
+            distance: number;
+            duration: number;
+            name?: string;
+            maneuver?: { instruction?: string };
+          }>;
+        }>;
+      };
+    };
+
+    const routeCache = new Map<
+      (typeof modeConfig)[number]["key"],
+      CachedRoute
+    >();
+
+    const sameOrigin = (
+      a: UserLocation,
+      b: UserLocation
+    ) =>
+      Math.abs(a.latitude - b.latitude) < 0.0005 &&
+      Math.abs(a.longitude - b.longitude) < 0.0005;
+
     const googleMapsButton = document.createElement("button");
     googleMapsButton.type = "button";
     googleMapsButton.textContent = "Mở chỉ đường Google Maps";
@@ -1299,6 +1331,10 @@ function createCheckpointDetailsModal({
       }
 
       latestOrigin = origin;
+      routeCache.set(mode.key, {
+        origin,
+        route,
+      });
       renderRouteResult(route, mode, isLiveUpdate);
     };
 
@@ -1410,19 +1446,51 @@ function createCheckpointDetailsModal({
         lastRerouteLocation = origin;
         lastRerouteAt = Date.now();
 
-        // Vẽ tuyến ngay khi có kết quả. Không chờ thêm dữ liệu chỉ dẫn chi tiết.
-        await fetchAndDrawRoute(
-          mode,
-          origin,
-          requestId,
-          false
-        );
+        const cached = routeCache.get(mode.key);
+
+        if (cached && sameOrigin(cached.origin, origin)) {
+          // Tuyến đã được tải trước: vẽ ngay lập tức.
+          renderRouteResult(cached.route, mode, false);
+        } else {
+          routeCache.delete(mode.key);
+
+          await fetchAndDrawRoute(
+            mode,
+            origin,
+            requestId,
+            false
+          );
+        }
 
         if (requestId !== routeRequestId) {
           return;
         }
 
         startNavigationTracking(mode);
+
+        // Tải trước 2 chế độ còn lại để lần chọn tiếp theo hiện gần như tức thì.
+        void Promise.all(
+          modeConfig
+            .filter((candidate) => candidate.key !== mode.key)
+            .map(async (candidate) => {
+              const existing = routeCache.get(candidate.key);
+
+              if (existing && sameOrigin(existing.origin, origin)) {
+                return;
+              }
+
+              try {
+                await fetchAndDrawRoute(
+                  candidate,
+                  origin,
+                  requestId,
+                  false
+                );
+              } catch {
+                // Không làm ảnh hưởng tuyến người dùng đang xem.
+              }
+            })
+        );
       } catch (error) {
         if (requestId !== routeRequestId) {
           return;
@@ -1468,8 +1536,9 @@ function createCheckpointDetailsModal({
               : "#fff";
         });
 
-        // Đóng bảng ngay khi người dùng chọn phương tiện.
-        // Tuyến sẽ tiếp tục được tính/vẽ trực tiếp trên bản đồ.
+        // Đổi phương tiện: xóa tuyến cũ ngay lập tức.
+        // Tuyến mới sẽ lấy từ cache nếu đã được tải trước.
+        clearRouteFromMap();
         document.removeEventListener("keydown", onRouteKeyDown);
         panel.remove();
         showNavigationControl(mode);
