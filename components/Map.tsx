@@ -54,6 +54,7 @@ const CHECKPOINT_LOCAL_IMAGES: Record<string, string[]> = {
     "/checkpoints/hoang-thanh-thang-long-1.jpg",
     "/checkpoints/hoang-thanh-thang-long-2.jpg",
     "/checkpoints/hoang-thanh-thang-long-3.jpg",
+  ],
 };
 
 const CHECKPOINT_IMAGE_QUERIES: Record<string, string> = {
