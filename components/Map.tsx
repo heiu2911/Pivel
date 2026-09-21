@@ -1164,3 +1164,56 @@ export default function Map({
         ) {
           nearestDistance =
             distance;
+
+        }
+
+        if (
+          nearestDistance === null ||
+          distance < nearestDistance
+        ) {
+          nearestDistance = distance;
+          nearestCheckpoint = checkpoint;
+        }
+      }
+    );
+
+    if (
+      nearestDistance !== null &&
+      nearestCheckpoint !== null
+    ) {
+      console.log(
+        `Checkpoint gần nhất: ${Math.round(
+          nearestDistance
+        )}m`
+      );
+
+      if (
+        nearestDistance <=
+        CHECKIN_RADIUS
+      ) {
+        console.log(
+          "Bạn đang trong vùng check-in!"
+        );
+      }
+    }
+
+    mapInstance.flyTo({
+      center: [
+        longitude,
+        latitude,
+      ],
+      zoom: 15,
+      duration: 1000,
+    });
+  }, [
+    userLocation,
+    checkpoints,
+  ]);
+
+  return (
+    <div
+      ref={mapContainer}
+      className="w-full h-full"
+    />
+  );
+}
