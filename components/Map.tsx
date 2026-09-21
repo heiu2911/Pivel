@@ -975,6 +975,8 @@ function createCheckpointDetailsModal({
 
     let closePanel = () => {
       routeRequestId += 1;
+      stopNavigationTracking();
+      removeNavigationControl();
       panel.remove();
       clearRouteFromMap();
     };
@@ -1005,6 +1007,7 @@ function createCheckpointDetailsModal({
     let lastRerouteAt = 0;
     let latestOrigin: UserLocation | null = null;
     let isInitialRoute = true;
+    let navigationControl: HTMLDivElement | null = null;
 
     const stopNavigationTracking = () => {
       if (navigationWatchId !== null && navigator.geolocation) {
@@ -1014,6 +1017,65 @@ function createCheckpointDetailsModal({
 
       lastRerouteLocation = null;
       lastRerouteAt = 0;
+    };
+
+    const removeNavigationControl = () => {
+      if (navigationControl) {
+        navigationControl.remove();
+        navigationControl = null;
+      }
+    };
+
+    const showNavigationControl = (
+      mode: (typeof modeConfig)[number]
+    ) => {
+      removeNavigationControl();
+
+      const control = document.createElement("div");
+      control.dataset.travelquestNavigationControl = "true";
+      control.style.position = "fixed";
+      control.style.left = "16px";
+      control.style.top = "76px";
+      control.style.zIndex = "9000";
+      control.style.display = "flex";
+      control.style.alignItems = "center";
+      control.style.gap = "8px";
+      control.style.padding = "8px 10px 8px 12px";
+      control.style.borderRadius = "999px";
+      control.style.background = "rgba(255,255,255,.96)";
+      control.style.boxShadow = "0 8px 28px rgba(0,0,0,.22)";
+      control.style.border = "1px solid rgba(15,23,42,.08)";
+      control.style.fontFamily = "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+
+      const status = document.createElement("div");
+      status.textContent = "📍 " + mode.label + " · đang chỉ đường";
+      status.style.color = "#174e57";
+      status.style.fontSize = "12px";
+      status.style.fontWeight = "800";
+
+      const stopButton = document.createElement("button");
+      stopButton.type = "button";
+      stopButton.textContent = "Dừng";
+      stopButton.style.border = "0";
+      stopButton.style.borderRadius = "999px";
+      stopButton.style.padding = "7px 10px";
+      stopButton.style.background = "#eef2f4";
+      stopButton.style.color = "#344054";
+      stopButton.style.fontSize = "12px";
+      stopButton.style.fontWeight = "800";
+      stopButton.style.cursor = "pointer";
+
+      stopButton.addEventListener("click", () => {
+        stopNavigationTracking();
+        routeRequestId += 1;
+        clearRouteFromMap();
+        removeNavigationControl();
+      });
+
+      control.appendChild(status);
+      control.appendChild(stopButton);
+      document.body.appendChild(control);
+      navigationControl = control;
     };
 
     const renderRouteResult = (
@@ -1304,8 +1366,17 @@ function createCheckpointDetailsModal({
       );
     };
 
-    const drawRoute = async (
+    const minimizeDirectionsPanel = (
       mode: (typeof modeConfig)[number]
+    ) => {
+      document.removeEventListener("keydown", onRouteKeyDown);
+      panel.remove();
+      showNavigationControl(mode);
+    };
+
+    const drawRoute = async (
+      mode: (typeof modeConfig)[number],
+      minimizeAfterSuccess = false
     ) => {
       const requestId = ++routeRequestId;
 
@@ -1340,6 +1411,10 @@ function createCheckpointDetailsModal({
         }
 
         startNavigationTracking(mode);
+
+        if (minimizeAfterSuccess) {
+          minimizeDirectionsPanel(mode);
+        }
       } catch (error) {
         if (requestId !== routeRequestId) {
           return;
@@ -1377,7 +1452,7 @@ function createCheckpointDetailsModal({
           other.style.border = config.key === activeMode ? "2px solid #00897b" : "1px solid #dbe3ea";
           other.style.background = config.key === activeMode ? "#e0f5f5" : "#fff";
         });
-        void drawRoute(mode);
+        void drawRoute(mode, true);
       });
       modes.appendChild(button);
     });
@@ -1403,6 +1478,7 @@ function createCheckpointDetailsModal({
     closePanel = () => {
       routeRequestId += 1;
       stopNavigationTracking();
+      removeNavigationControl();
       document.removeEventListener("keydown", onRouteKeyDown);
       panel.remove();
       clearRouteFromMap();
