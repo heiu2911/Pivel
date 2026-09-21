@@ -1366,17 +1366,8 @@ function createCheckpointDetailsModal({
       );
     };
 
-    const minimizeDirectionsPanel = (
-      mode: (typeof modeConfig)[number]
-    ) => {
-      document.removeEventListener("keydown", onRouteKeyDown);
-      panel.remove();
-      showNavigationControl(mode);
-    };
-
     const drawRoute = async (
-      mode: (typeof modeConfig)[number],
-      minimizeAfterSuccess = false
+      mode: (typeof modeConfig)[number]
     ) => {
       const requestId = ++routeRequestId;
 
@@ -1411,10 +1402,6 @@ function createCheckpointDetailsModal({
         }
 
         startNavigationTracking(mode);
-
-        if (minimizeAfterSuccess) {
-          minimizeDirectionsPanel(mode);
-        }
       } catch (error) {
         if (requestId !== routeRequestId) {
           return;
@@ -1447,12 +1434,28 @@ function createCheckpointDetailsModal({
       button.style.cursor = "pointer";
       button.addEventListener("click", () => {
         activeMode = mode.key;
+
         modeConfig.forEach((config, index) => {
           const other = modes.children[index] as HTMLButtonElement;
-          other.style.border = config.key === activeMode ? "2px solid #00897b" : "1px solid #dbe3ea";
-          other.style.background = config.key === activeMode ? "#e0f5f5" : "#fff";
+          other.style.border =
+            config.key === activeMode
+              ? "2px solid #00897b"
+              : "1px solid #dbe3ea";
+          other.style.background =
+            config.key === activeMode
+              ? "#e0f5f5"
+              : "#fff";
         });
-        void drawRoute(mode, true);
+
+        // Đóng bảng ngay khi người dùng chọn phương tiện.
+        // Tuyến sẽ tiếp tục được tính/vẽ trực tiếp trên bản đồ.
+        document.removeEventListener("keydown", onRouteKeyDown);
+        panel.remove();
+        showNavigationControl(mode);
+
+        void drawRoute(mode).catch(() => {
+          // drawRoute tự hiển thị lỗi nếu GPS/Mapbox không lấy được tuyến.
+        });
       });
       modes.appendChild(button);
     });
