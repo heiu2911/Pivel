@@ -493,6 +493,213 @@ function createCheckpointDetailsModal({
     }
   };
 
+  const openFullGallery = () => {
+    if (!galleryImages.length) {
+      return;
+    }
+
+    let fullGalleryIndex = activeImageIndex;
+
+    const lightbox = document.createElement("div");
+    lightbox.style.position = "fixed";
+    lightbox.style.inset = "0";
+    lightbox.style.zIndex = "10000";
+    lightbox.style.background = "rgba(0,0,0,.94)";
+    lightbox.style.display = "flex";
+    lightbox.style.flexDirection = "column";
+    lightbox.style.alignItems = "center";
+    lightbox.style.justifyContent = "center";
+    lightbox.style.padding = "24px";
+
+    const title = document.createElement("div");
+    title.textContent = checkpoint.name;
+    title.style.position = "absolute";
+    title.style.top = "20px";
+    title.style.left = "24px";
+    title.style.color = "#fff";
+    title.style.fontSize = "18px";
+    title.style.fontWeight = "800";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.textContent = "×";
+    closeButton.setAttribute("aria-label", "Đóng thư viện ảnh");
+    closeButton.style.position = "absolute";
+    closeButton.style.top = "14px";
+    closeButton.style.right = "18px";
+    closeButton.style.width = "44px";
+    closeButton.style.height = "44px";
+    closeButton.style.border = "0";
+    closeButton.style.borderRadius = "50%";
+    closeButton.style.background = "rgba(255,255,255,.14)";
+    closeButton.style.color = "#fff";
+    closeButton.style.fontSize = "30px";
+    closeButton.style.cursor = "pointer";
+
+    const fullImage = document.createElement("img");
+    fullImage.alt = checkpoint.name;
+    fullImage.style.maxWidth = "min(1200px, 92vw)";
+    fullImage.style.maxHeight = "72vh";
+    fullImage.style.width = "auto";
+    fullImage.style.height = "auto";
+    fullImage.style.objectFit = "contain";
+    fullImage.style.borderRadius = "12px";
+    fullImage.style.boxShadow = "0 20px 70px rgba(0,0,0,.55)";
+
+    const fullCounter = document.createElement("div");
+    fullCounter.style.marginTop = "14px";
+    fullCounter.style.color = "rgba(255,255,255,.82)";
+    fullCounter.style.fontSize = "13px";
+    fullCounter.style.fontWeight = "700";
+
+    const fullPrevious = document.createElement("button");
+    fullPrevious.type = "button";
+    fullPrevious.textContent = "‹";
+    fullPrevious.setAttribute("aria-label", "Ảnh trước");
+    fullPrevious.style.position = "absolute";
+    fullPrevious.style.left = "24px";
+    fullPrevious.style.top = "50%";
+    fullPrevious.style.transform = "translateY(-50%)";
+    fullPrevious.style.width = "48px";
+    fullPrevious.style.height = "48px";
+    fullPrevious.style.border = "0";
+    fullPrevious.style.borderRadius = "50%";
+    fullPrevious.style.background = "rgba(255,255,255,.14)";
+    fullPrevious.style.color = "#fff";
+    fullPrevious.style.fontSize = "34px";
+    fullPrevious.style.cursor = "pointer";
+
+    const fullNext = document.createElement("button");
+    fullNext.type = "button";
+    fullNext.textContent = "›";
+    fullNext.setAttribute("aria-label", "Ảnh tiếp theo");
+    fullNext.style.position = "absolute";
+    fullNext.style.right = "24px";
+    fullNext.style.top = "50%";
+    fullNext.style.transform = "translateY(-50%)";
+    fullNext.style.width = "48px";
+    fullNext.style.height = "48px";
+    fullNext.style.border = "0";
+    fullNext.style.borderRadius = "50%";
+    fullNext.style.background = "rgba(255,255,255,.14)";
+    fullNext.style.color = "#fff";
+    fullNext.style.fontSize = "34px";
+    fullNext.style.cursor = "pointer";
+
+    const fullThumbs = document.createElement("div");
+    fullThumbs.style.display = "flex";
+    fullThumbs.style.gap = "8px";
+    fullThumbs.style.marginTop = "16px";
+    fullThumbs.style.maxWidth = "92vw";
+    fullThumbs.style.overflowX = "auto";
+
+    const renderFullGallery = () => {
+      fullImage.src = galleryImages[fullGalleryIndex];
+      fullCounter.textContent =
+        (fullGalleryIndex + 1) + " / " + galleryImages.length;
+
+      fullThumbs.innerHTML = "";
+      galleryImages.forEach((url, index) => {
+        const thumb = document.createElement("button");
+        thumb.type = "button";
+        thumb.style.width = "74px";
+        thumb.style.height = "52px";
+        thumb.style.padding = "0";
+        thumb.style.flexShrink = "0";
+        thumb.style.border =
+          index === fullGalleryIndex
+            ? "2px solid #fff"
+            : "2px solid rgba(255,255,255,.28)";
+        thumb.style.borderRadius = "8px";
+        thumb.style.overflow = "hidden";
+        thumb.style.background = "#111";
+        thumb.style.cursor = "pointer";
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = checkpoint.name + " - ảnh " + (index + 1);
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+
+        thumb.appendChild(img);
+        thumb.addEventListener("click", () => {
+          fullGalleryIndex = index;
+          renderFullGallery();
+        });
+        fullThumbs.appendChild(thumb);
+      });
+    };
+
+    const closeFullGallery = () => {
+      document.removeEventListener("keydown", onFullGalleryKeyDown);
+      lightbox.remove();
+    };
+
+    const onFullGalleryKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeFullGallery();
+      } else if (event.key === "ArrowLeft") {
+        fullGalleryIndex =
+          (fullGalleryIndex - 1 + galleryImages.length) %
+          galleryImages.length;
+        renderFullGallery();
+      } else if (event.key === "ArrowRight") {
+        fullGalleryIndex =
+          (fullGalleryIndex + 1) % galleryImages.length;
+        renderFullGallery();
+      }
+    };
+
+    closeButton.addEventListener("click", closeFullGallery);
+    lightbox.addEventListener("click", (event) => {
+      if (event.target === lightbox) {
+        closeFullGallery();
+      }
+    });
+    fullPrevious.addEventListener("click", () => {
+      fullGalleryIndex =
+        (fullGalleryIndex - 1 + galleryImages.length) %
+        galleryImages.length;
+      renderFullGallery();
+    });
+    fullNext.addEventListener("click", () => {
+      fullGalleryIndex =
+        (fullGalleryIndex + 1) % galleryImages.length;
+      renderFullGallery();
+    });
+
+    lightbox.appendChild(title);
+    lightbox.appendChild(closeButton);
+    lightbox.appendChild(fullPrevious);
+    lightbox.appendChild(fullImage);
+    lightbox.appendChild(fullNext);
+    lightbox.appendChild(fullCounter);
+    lightbox.appendChild(fullThumbs);
+    document.body.appendChild(lightbox);
+
+    renderFullGallery();
+    document.addEventListener("keydown", onFullGalleryKeyDown);
+  };
+
+  const viewAllImagesButton = document.createElement("button");
+  viewAllImagesButton.type = "button";
+  viewAllImagesButton.textContent = "Xem toàn bộ hình ảnh";
+  viewAllImagesButton.style.position = "absolute";
+  viewAllImagesButton.style.right = "14px";
+  viewAllImagesButton.style.bottom = "14px";
+  viewAllImagesButton.style.padding = "9px 13px";
+  viewAllImagesButton.style.border = "0";
+  viewAllImagesButton.style.borderRadius = "10px";
+  viewAllImagesButton.style.background = "rgba(0,0,0,.72)";
+  viewAllImagesButton.style.color = "#fff";
+  viewAllImagesButton.style.fontSize = "12px";
+  viewAllImagesButton.style.fontWeight = "800";
+  viewAllImagesButton.style.cursor = "pointer";
+  viewAllImagesButton.style.backdropFilter = "blur(5px)";
+  viewAllImagesButton.addEventListener("click", openFullGallery);
+  imageSection.appendChild(viewAllImagesButton);
+
   const address = escapeHtml(details.address ?? "Chưa cập nhật địa chỉ");
   const hours = escapeHtml(details.hours ?? "Chưa cập nhật giờ mở cửa");
   const phone = escapeHtml(details.phone ?? "Chưa cập nhật");
