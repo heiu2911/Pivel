@@ -3,7 +3,7 @@
 export type GPSLocation = {
   latitude: number;
   longitude: number;
-  accuracy: number;
+  accuracy?: number;
 };
 
 const DEFAULT_TIMEOUT = 10000;
@@ -58,14 +58,15 @@ function toGPSLocation(
 /**
  * Lấy vị trí hiện tại.
  *
- * Ưu tiên vị trí đã được thiết bị/browser cache.
- * Nếu không có thì mới yêu cầu GPS chính xác cao.
+ * Ưu tiên vị trí cache / network location trước.
+ * Chỉ yêu cầu GPS độ chính xác cao nếu lần đầu thất bại.
  */
 export function getCurrentLocation(): Promise<GPSLocation> {
   ensureBrowser();
 
   return new Promise((resolve, reject) => {
     let finished = false;
+
     let highAccuracyTimer:
       ReturnType<typeof setTimeout> | null = null;
 
@@ -80,10 +81,14 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         clearTimeout(highAccuracyTimer);
       }
 
-      resolve(toGPSLocation(position));
+      resolve(
+        toGPSLocation(position)
+      );
     };
 
-    const finishReject = (error: Error) => {
+    const finishReject = (
+      error: Error
+    ) => {
       if (finished) return;
 
       finished = true;
@@ -96,10 +101,8 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     };
 
     /*
-     * LẦN 1
-     *
-     * Không ép GPS độ chính xác cao.
-     * Trên điện thoại cách này thường phản hồi nhanh hơn.
+     * LẦN 1:
+     * Không ép high accuracy.
      */
     navigator.geolocation.getCurrentPosition(
       finishResolve,
@@ -107,10 +110,8 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         if (finished) return;
 
         /*
-         * LẦN 2
-         *
-         * Nếu lần đầu không lấy được vị trí,
-         * mới yêu cầu high accuracy.
+         * LẦN 2:
+         * Chỉ bật high accuracy khi lần đầu thất bại.
          */
         navigator.geolocation.getCurrentPosition(
           finishResolve,
@@ -127,8 +128,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         );
 
         /*
-         * Chặn trường hợp trình duyệt/GPS
-         * chờ quá lâu.
+         * Không để GPS chờ vô hạn.
          */
         highAccuracyTimer = setTimeout(() => {
           finishReject(
@@ -148,16 +148,15 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 }
 
 /**
- * Theo dõi vị trí liên tục.
- *
- * Không ép high accuracy liên tục để:
- * - giảm timeout
- * - giảm hao pin
- * - hoạt động ổn định hơn trên mobile
+ * Theo dõi GPS liên tục.
  */
 export function watchCurrentLocation(
-  onLocation: (location: GPSLocation) => void,
-  onError?: (error: Error) => void
+  onLocation: (
+    location: GPSLocation
+  ) => void,
+  onError?: (
+    error: Error
+  ) => void
 ): number {
   ensureBrowser();
 
@@ -181,12 +180,16 @@ export function watchCurrentLocation(
 }
 
 /**
- * Dừng theo dõi GPS.
+ * Dừng GPS watcher.
+ *
+ * Chấp nhận cả number và null
+ * để tương thích với state trong page.tsx.
  */
 export function stopWatchingLocation(
-  watchId: number
+  watchId: number | null
 ): void {
   if (
+    watchId === null ||
     typeof navigator === "undefined" ||
     !("geolocation" in navigator)
   ) {
@@ -199,16 +202,87 @@ export function stopWatchingLocation(
 }
 
 /**
- * Tính khoảng cách giữa hai tọa độ.
+ * Tính khoảng cách giữa hai vị trí.
  *
- * Kết quả: mét.
+ * Hỗ trợ:
+ *
+ * calculateDistance(location1, location2)
+ *
+ * và:
+ *
+ * calculateDistance(
+ *   latitude1,
+ *   longitude1,
+ *   latitude2,
+ *   longitude2
+ * )
  */
+
+export function calculateDistance(
+  location1: GPSLocation,
+  location2: GPSLocation
+): number;
+
 export function calculateDistance(
   latitude1: number,
   longitude1: number,
   latitude2: number,
   longitude2: number
+): number;
+
+export function calculateDistance(
+  a: GPSLocation | number,
+  b: GPSLocation | number,
+  c?: number,
+  d?: number
 ): number {
+  let latitude1: number;
+  let longitude1: number;
+  let latitude2: number;
+  let longitude2: number;
+
+  /*
+   * Dạng:
+   * calculateDistance(location1, location2)
+   */
+  if (
+    typeof a === "object" &&
+    typeof b === "object"
+  ) {
+    latitude1 = a.latitude;
+    longitude1 = a.longitude;
+
+    latitude2 = b.latitude;
+    longitude2 = b.longitude;
+  }
+
+  /*
+   * Dạng:
+   * calculateDistance(
+   *   lat1,
+   *   lng1,
+   *   lat2,
+   *   lng2
+   * )
+   */
+  else if (
+    typeof a === "number" &&
+    typeof b === "number" &&
+    typeof c === "number" &&
+    typeof d === "number"
+  ) {
+    latitude1 = a;
+    longitude1 = b;
+    latitude2 = c;
+    longitude2 = d;
+  }
+
+  else {
+    throw new Error(
+      "calculateDistance cần 2 GPSLocation hoặc 4 tọa độ."
+    );
+  }
+
   const earthRadius = 6371000;
 
   const lat1 =
@@ -225,18 +299,18 @@ export function calculateDistance(
     ((longitude2 - longitude1) * Math.PI) /
     180;
 
-  const a =
+  const aValue =
     Math.sin(deltaLat / 2) ** 2 +
     Math.cos(lat1) *
       Math.cos(lat2) *
       Math.sin(deltaLng / 2) ** 2;
 
-  const c =
+  const cValue =
     2 *
     Math.atan2(
-      Math.sqrt(a),
-      Math.sqrt(1 - a)
+      Math.sqrt(aValue),
+      Math.sqrt(1 - aValue)
     );
 
-  return earthRadius * c;
+  return earthRadius * cValue;
 }
