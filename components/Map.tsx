@@ -357,6 +357,7 @@ function createCheckpointDetailsModal({
   distanceText,
   mapInstance,
   userLocation,
+  getLatestUserLocation,
   onClose,
 }: {
   checkpoint: Checkpoint;
@@ -364,6 +365,7 @@ function createCheckpointDetailsModal({
   distanceText: string;
   mapInstance: mapboxgl.Map;
   userLocation: UserLocation | null;
+  getLatestUserLocation?: () => UserLocation | null;
   onClose: () => void;
 }): HTMLDivElement {
   const overlay = document.createElement("div");
@@ -982,7 +984,7 @@ function createCheckpointDetailsModal({
     };
 
     const getOrigin = async (): Promise<UserLocation> => {
-      const liveLocation = latestUserLocation.current;
+      const liveLocation = getLatestUserLocation?.() ?? userLocation;
 
       if (
         liveLocation &&
@@ -2054,6 +2056,7 @@ export default function Map({
           distanceText,
           mapInstance,
           userLocation: latestUserLocation.current,
+          getLatestUserLocation: () => latestUserLocation.current,
           onClose: () => undefined,
         });
 
