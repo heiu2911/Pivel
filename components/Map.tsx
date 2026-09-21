@@ -757,7 +757,6 @@ export default function Map({
         anchor: "center",
       })
         .setLngLat([city.longitude, city.latitude])
-        .setPopup(popup)
         .addTo(mapInstance);
     };
 
@@ -807,16 +806,6 @@ export default function Map({
         markerIcon.style.transform = "scale(1)";
       });
 
-      const safeName = escapeHtml(checkpoint.name);
-      const safeDescription = escapeHtml(
-        checkpoint.description ??
-          "Checkpoint du lịch TravelQuest."
-      );
-      const safeBadge = escapeHtml(
-        checkpoint.badge ??
-          "🏆 Huy hiệu TravelQuest"
-      );
-
       const distanceFromUser =
         userLocation &&
         isValidCoordinate(
@@ -841,28 +830,6 @@ export default function Map({
       const details = CHECKPOINT_DETAILS[checkpoint.name] ?? {
         category: "Địa danh TravelQuest",
       };
-
-      const ratingText =
-        details.rating !== undefined
-          ? `⭐ ${details.rating.toFixed(1)}`
-          : "⭐ Chưa có đánh giá";
-
-      const reviewText =
-        details.reviewCount !== undefined
-          ? `(${details.reviewCount.toLocaleString("vi-VN")} đánh giá)`
-          : "";
-
-      const addressText =
-        details.address ?? "Chưa cập nhật địa chỉ";
-
-      const hoursText =
-        details.hours ?? "Chưa cập nhật giờ mở cửa";
-
-      const phoneText =
-        details.phone ?? "Chưa cập nhật";
-
-      const websiteText =
-        details.website ?? "Chưa cập nhật";
 
       const openDetailsModal = () => {
         const existingModal = document.querySelector(
@@ -1197,52 +1164,3 @@ export default function Map({
         ) {
           nearestDistance =
             distance;
-
-          nearestCheckpoint =
-            checkpoint;
-        }
-      }
-    );
-
-    if (
-      nearestDistance !== null &&
-      nearestCheckpoint !== null
-    ) {
-      console.log(
-        `Checkpoint gần nhất: ${Math.round(
-          nearestDistance
-        )}m`
-      );
-
-      if (
-        nearestDistance <=
-        CHECKIN_RADIUS
-      ) {
-        console.log(
-          "Bạn đang trong vùng check-in!"
-        );
-      }
-    }
-
-    mapInstance.flyTo({
-      center: [
-        longitude,
-        latitude,
-      ],
-
-      zoom: 15,
-
-      duration: 1000,
-    });
-  }, [
-    userLocation,
-    checkpoints,
-  ]);
-
-  return (
-    <div
-      ref={mapContainer}
-      className="w-full h-full"
-    />
-  );
-}
