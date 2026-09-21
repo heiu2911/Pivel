@@ -38,6 +38,76 @@ type CityGroup = CityDefinition & {
 const CHECKIN_RADIUS = 150;
 const CITY_ZOOM_LIMIT = 10.5;
 
+type CheckpointDetails = {
+  category: string;
+  address?: string;
+  rating?: number;
+  reviewCount?: number;
+  hours?: string;
+  phone?: string;
+  website?: string;
+  price?: string;
+};
+
+const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
+  "Chùa Bái Đính": {
+    category: "Địa điểm tôn giáo",
+    address: "Xóm 6, Tây Hoa Lư, Ninh Bình",
+    rating: 4.8,
+    reviewCount: 25290,
+    hours: "06:00–21:00",
+    phone: "+84 913 899 135",
+    website: "chuabaidinhninhbinh.vn",
+  },
+  "Chùa Thiên Mụ": {
+    category: "Chùa / Di tích lịch sử - văn hóa",
+    address: "Đường Nguyễn Phúc Nguyên, phường Kim Long, Huế",
+    rating: 4.6,
+    reviewCount: 20027,
+    hours: "07:00–17:30",
+  },
+  "Cầu Vàng Bà Nà Hills": {
+    category: "Điểm tham quan",
+    address: "Hòa Vang, Đà Nẵng",
+    rating: 4.6,
+    hours: "08:00–19:00",
+  },
+  "Ngũ Hành Sơn": {
+    category: "Danh thắng / Điểm tham quan",
+    address: "81 Huyền Trân Công Chúa, Ngũ Hành Sơn, Đà Nẵng",
+    hours: "07:00–17:30",
+    phone: "+84 236 3961114",
+    website: "nguhanhson.org",
+  },
+  "Tháp Bà Ponagar": {
+    category: "Di tích lịch sử - văn hóa",
+    address: "2 Tháng 4, phường Vĩnh Phước, Nha Trang, Khánh Hòa",
+    rating: 4.3,
+    reviewCount: 4842,
+    hours: "06:00–17:30",
+    phone: "+84 58 382 4525",
+  },
+  "Dinh Độc Lập": {
+    category: "Bảo tàng / Di tích lịch sử",
+    address: "135 Nam Kỳ Khởi Nghĩa, Bến Thành, TP. Hồ Chí Minh",
+    rating: 4.5,
+    hours: "07:00–18:00",
+    phone: "+84 28 3822 3652",
+    website: "dinhdoclap.gov.vn",
+  },
+  "Thác Bản Giốc": {
+    category: "Danh thắng tự nhiên",
+    address: "Trùng Khánh, Cao Bằng",
+    hours: "07:00–18:00 (mùa hè)",
+  },
+  "Nhà thờ Đá Sa Pa": {
+    category: "Nhà thờ / Điểm tham quan",
+    address: "Trung tâm thị xã Sa Pa, Lào Cai",
+    hours: "Khuôn viên mở tự do; giờ trong nhà thờ có thể thay đổi",
+  },
+};
+
+
 // Các điểm đại diện giúp gom checkpoint thành "gốc cây" ở zoom xa.
 // Khi zoom gần hơn CITY_ZOOM_LIMIT, các checkpoint thật sẽ xuất hiện.
 const CITY_DEFINITIONS: CityDefinition[] = [
@@ -506,39 +576,127 @@ export default function Map({
             : `${(distanceFromUser / 1000).toFixed(1)} km từ bạn`
           : "Khoảng cách GPS chưa xác định";
 
+      const details = CHECKPOINT_DETAILS[checkpoint.name] ?? {
+        category: "Địa danh TravelQuest",
+      };
+
+      const ratingText =
+        details.rating !== undefined
+          ? `⭐ ${details.rating.toFixed(1)}`
+          : "⭐ Chưa có đánh giá";
+
+      const reviewText =
+        details.reviewCount !== undefined
+          ? `(${details.reviewCount.toLocaleString("vi-VN")} đánh giá)`
+          : "";
+
+      const addressText =
+        details.address ?? "Chưa cập nhật địa chỉ";
+
+      const hoursText =
+        details.hours ?? "Chưa cập nhật giờ mở cửa";
+
+      const phoneText =
+        details.phone ?? "Chưa cập nhật";
+
+      const websiteText =
+        details.website ?? "Chưa cập nhật";
+
       const popup = new mapboxgl.Popup({
         offset: 30,
         closeButton: true,
         closeOnClick: false,
-        maxWidth: "300px",
+        maxWidth: "390px",
       }).setHTML(`
-        <div style="padding: 6px; min-width: 220px; font-family: system-ui, sans-serif;">
-          <div style="font-size: 28px; margin-bottom: 6px;">
-            ${escapeHtml(checkpoint.icon?.trim() || "📍")}
+        <div style="width:350px;max-width:calc(100vw - 40px);font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#202124;background:#fff;">
+          <div style="padding:14px 16px 10px;border-bottom:1px solid #e5e7eb;">
+            <div style="font-size:28px;line-height:1;margin-bottom:8px;">
+              ${escapeHtml(checkpoint.icon?.trim() || "📍")}
+            </div>
+            <div style="font-size:21px;line-height:1.25;font-weight:700;color:#202124;">
+              ${safeName}
+            </div>
+            <div style="margin-top:6px;font-size:13px;color:#5f6368;">
+              ${escapeHtml(details.category)}
+            </div>
+            <div style="margin-top:7px;font-size:13px;">
+              <span style="font-weight:700;color:#202124;">${ratingText}</span>
+              <span style="color:#5f6368;margin-left:5px;">${reviewText}</span>
+            </div>
           </div>
 
-          <strong style="font-size: 16px; color: #111827;">
-            ${safeName}
-          </strong>
-
-          <p style="margin-top: 7px; margin-bottom: 0; color: #4b5563; line-height: 1.45;">
-            ${safeDescription}
-          </p>
-
-          <div style="margin-top: 10px; padding: 7px 9px; border-radius: 8px; background: #eff6ff; color: #1d4ed8; font-size: 12px; font-weight: 600;">
-            ${safeBadge}
+          <div style="display:flex;border-bottom:1px solid #dadce0;">
+            <div style="flex:1;padding:10px 5px;text-align:center;border-bottom:3px solid #00897b;color:#00897b;font-size:12px;font-weight:700;">Tổng quan</div>
+            <div style="flex:1;padding:10px 5px;text-align:center;color:#5f6368;font-size:12px;">Vé</div>
+            <div style="flex:1;padding:10px 5px;text-align:center;color:#5f6368;font-size:12px;">Bài đánh giá</div>
+            <div style="flex:1;padding:10px 5px;text-align:center;color:#5f6368;font-size:12px;">Giới thiệu</div>
           </div>
 
-          <div style="margin-top: 8px; color: #6b7280; font-size: 11px;">
-            📍 Vùng check-in: ${CHECKIN_RADIUS}m
+          <div style="display:flex;justify-content:space-around;padding:13px 8px 11px;border-bottom:1px solid #e5e7eb;">
+            <div style="text-align:center;width:20%;">
+              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#00897b;color:white;font-size:18px;">➤</div>
+              <div style="margin-top:6px;font-size:11px;color:#174e57;">Đường đi</div>
+            </div>
+            <div style="text-align:center;width:20%;">
+              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">♡</div>
+              <div style="margin-top:6px;font-size:11px;color:#174e57;">Lưu</div>
+            </div>
+            <div style="text-align:center;width:20%;">
+              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">◎</div>
+              <div style="margin-top:6px;font-size:11px;color:#174e57;">Gần đó</div>
+            </div>
+            <div style="text-align:center;width:20%;">
+              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">▣</div>
+              <div style="margin-top:6px;font-size:11px;color:#174e57;">Gọi điện</div>
+            </div>
+            <div style="text-align:center;width:20%;">
+              <div style="margin:auto;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#d9f5f8;color:#007c91;font-size:18px;">⌯</div>
+              <div style="margin-top:6px;font-size:11px;color:#174e57;">Chia sẻ</div>
+            </div>
           </div>
 
-          <div style="margin-top: 8px; color: #6b7280; font-size: 11px;">
-            🧭 ${checkpoint.latitude.toFixed(5)}, ${checkpoint.longitude.toFixed(5)}
-          </div>
+          <div style="padding:14px 16px;">
+            <p style="margin:0;color:#3c4043;font-size:13px;line-height:1.55;">
+              ${safeDescription}
+            </p>
 
-          <div style="margin-top: 6px; color: #6b7280; font-size: 11px;">
-            📏 ${escapeHtml(distanceText)}
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid #e5e7eb;">
+              <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <div style="width:20px;color:#00897b;font-size:18px;">📍</div>
+                <div style="font-size:13px;color:#3c4043;line-height:1.45;">${escapeHtml(addressText)}</div>
+              </div>
+
+              <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <div style="width:20px;color:#00897b;font-size:18px;">◷</div>
+                <div>
+                  <div style="font-size:13px;color:#d93025;font-weight:600;">${escapeHtml(hoursText)}</div>
+                  <div style="margin-top:2px;font-size:11px;color:#80868b;">Giờ tham khảo — có thể thay đổi theo ngày/lễ.</div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <div style="width:20px;color:#00897b;font-size:18px;">☎</div>
+                <div style="font-size:13px;color:#3c4043;">${escapeHtml(phoneText)}</div>
+              </div>
+
+              <div style="display:flex;gap:10px;margin-bottom:12px;">
+                <div style="width:20px;color:#00897b;font-size:18px;">🌐</div>
+                <div style="font-size:13px;color:#007c91;">${escapeHtml(websiteText)}</div>
+              </div>
+
+              <div style="display:flex;gap:10px;">
+                <div style="width:20px;color:#00897b;font-size:18px;">📏</div>
+                <div style="font-size:13px;color:#3c4043;">${escapeHtml(distanceText)}</div>
+              </div>
+            </div>
+
+            <div style="margin-top:14px;padding:10px 11px;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;">
+              🏆 ${safeBadge}
+            </div>
+
+            <div style="margin-top:8px;color:#6b7280;font-size:11px;">
+              📍 Vùng check-in: ${CHECKIN_RADIUS}m · 🧭 ${checkpoint.latitude.toFixed(5)}, ${checkpoint.longitude.toFixed(5)}
+            </div>
           </div>
         </div>
       `);
