@@ -973,7 +973,7 @@ function createCheckpointDetailsModal({
     googleMapsButton.style.fontWeight = "800";
     googleMapsButton.style.cursor = "pointer";
 
-    const closePanel = () => {
+    let closePanel = () => {
       routeRequestId += 1;
       panel.remove();
       clearRouteFromMap();
@@ -1000,123 +1000,362 @@ function createCheckpointDetailsModal({
       });
     };
 
-    const drawRoute = async (mode: (typeof modeConfig)[number]) => {
-      const requestId = ++routeRequestId;
-      result.innerHTML =
-        "<div style='padding:20px 4px;text-align:center;color:#667085'>Đang tìm tuyến đường…</div>";
+    let navigationWatchId: number | null = null;
+    let lastRerouteLocation: UserLocation | null = null;
+    let lastRerouteAt = 0;
+    let latestOrigin: UserLocation | null = null;
+    let isInitialRoute = true;
+
+    const stopNavigationTracking = () => {
+      if (navigationWatchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(navigationWatchId);
+        navigationWatchId = null;
+      }
+
+      lastRerouteLocation = null;
+      lastRerouteAt = 0;
+    };
+
+    const renderRouteResult = (
+      route: {
+        distance: number;
+        duration: number;
+        geometry?: {
+          type: "LineString";
+          coordinates: [number, number][];
+        };
+        legs?: Array<{
+          steps?: Array<{
+            distance: number;
+            duration: number;
+            name?: string;
+            maneuver?: { instruction?: string };
+          }>;
+        }>;
+      },
+      mode: (typeof modeConfig)[number],
+      isLiveUpdate: boolean
+    ) => {
+      if (!route.geometry?.coordinates?.length) {
+        throw new Error("Không tìm thấy tuyến đường phù hợp.");
+      }
+
       clearRouteFromMap();
 
-      try {
-        const origin = await getOrigin();
-        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+      mapInstance.addSource("travelquest-route-source", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          properties: {},
+          geometry: route.geometry,
+        },
+      });
 
-        if (!token) throw new Error("Thiếu NEXT_PUBLIC_MAPBOX_TOKEN.");
+      mapInstance.addLayer({
+        id: "travelquest-route-line",
+        type: "line",
+        source: "travelquest-route-source",
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "#00897b",
+          "line-width": 7,
+          "line-opacity": 0.92,
+        },
+      });
 
-        const coordinates =
-          origin.longitude + "," + origin.latitude + ";" +
-          checkpoint.longitude + "," + checkpoint.latitude;
+      if (!isLiveUpdate || isInitialRoute) {
+        const bounds = new mapboxgl.LngLatBounds();
 
-        const response = await fetch(
-          "https://api.mapbox.com/directions/v5/mapbox/" +
+        route.geometry.coordinates.forEach(([lng, lat]) => {
+          bounds.extend([lng, lat]);
+        });
+
+        mapInstance.fitBounds(bounds, {
+          padding: 100,
+          maxZoom: 16,
+          duration: 900,
+        });
+
+        isInitialRoute = false;
+      }
+
+      const steps =
+        route.legs?.flatMap((leg) => leg.steps ?? []) ?? [];
+
+      const stepHtml = steps
+        .slice(0, 12)
+        .map(
+          (step, index) =>
+            "<div style='display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #eef0f2'>" +
+            "<div style='width:24px;height:24px;border-radius:50%;background:#e0f5f5;color:#007c91;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800'>" +
+            (index + 1) +
+            "</div><div style='flex:1;font-size:12px;line-height:1.45;color:#374151'>" +
+            escapeHtml(
+              step.maneuver?.instruction ??
+                (step.name || "Tiếp tục theo tuyến đường")
+            ) +
+            "<div style='margin-top:2px;color:#8a9199'>" +
+            formatRouteDistance(step.distance) +
+            " · " +
+            formatRouteDuration(step.duration) +
+            "</div></div></div>"
+        )
+        .join("");
+
+      const liveText = isLiveUpdate
+        ? " · GPS đã cập nhật"
+        : "";
+
+      result.innerHTML =
+        "<div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap'>" +
+        "<div style='font-size:22px;font-weight:900;color:#111827'>" +
+        formatRouteDuration(route.duration) +
+        "</div>" +
+        "<div style='color:#667085;font-size:13px'>· " +
+        formatRouteDistance(route.distance) +
+        liveText +
+        "</div></div>" +
+        "<div style='margin-top:6px;color:#667085;font-size:12px'>" +
+        escapeHtml(mode.note) +
+        "</div>" +
+        "<div style='margin-top:10px;padding:9px 11px;border-radius:10px;background:#ecfdf5;color:#047857;font-size:12px;font-weight:700'>" +
+        "📍 Đang chỉ đường trực tiếp trên bản đồ TravelQuest" +
+        "</div>" +
+        "<div style='margin-top:14px;font-size:13px;font-weight:800;color:#111827'>Các bước chỉ đường</div>" +
+        (stepHtml ||
+          "<div style='margin-top:8px;color:#667085'>Không có hướng dẫn chi tiết.</div>");
+
+      const googleTravelMode =
+        mode.key === "walking"
+          ? "walking"
+          : mode.key === "motorcycle"
+            ? "two-wheeler"
+            : "driving";
+
+      googleMapsButton.onclick = () => {
+        if (!latestOrigin) return;
+
+        const url =
+          "https://www.google.com/maps/dir/?api=1&origin=" +
+          encodeURIComponent(
+            latestOrigin.latitude + "," + latestOrigin.longitude
+          ) +
+          "&destination=" +
+          encodeURIComponent(
+            checkpoint.latitude + "," + checkpoint.longitude
+          ) +
+          "&travelmode=" +
+          googleTravelMode;
+
+        window.open(url, "_blank", "noopener,noreferrer");
+      };
+    };
+
+    const fetchAndDrawRoute = async (
+      mode: (typeof modeConfig)[number],
+      origin: UserLocation,
+      requestId: number,
+      isLiveUpdate: boolean
+    ) => {
+      const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+      if (!token) {
+        throw new Error("Thiếu NEXT_PUBLIC_MAPBOX_TOKEN.");
+      }
+
+      const coordinates =
+        origin.longitude +
+        "," +
+        origin.latitude +
+        ";" +
+        checkpoint.longitude +
+        "," +
+        checkpoint.latitude;
+
+      const response = await fetch(
+        "https://api.mapbox.com/directions/v5/mapbox/" +
           mode.profile +
           "/" +
           coordinates +
           "?alternatives=true&overview=full&geometries=geojson&steps=true&language=vi&access_token=" +
           encodeURIComponent(token)
-        );
+      );
 
-        if (!response.ok) throw new Error("Không thể lấy tuyến đường từ Mapbox.");
+      if (!response.ok) {
+        throw new Error("Không thể lấy tuyến đường từ Mapbox.");
+      }
 
-        const data = await response.json() as {
-          code?: string;
-          routes?: Array<{
-            distance: number;
-            duration: number;
-            geometry?: { type: "LineString"; coordinates: [number, number][] };
-            legs?: Array<{
-              steps?: Array<{
-                distance: number;
-                duration: number;
-                name?: string;
-                maneuver?: { instruction?: string };
-              }>;
+      const data = (await response.json()) as {
+        code?: string;
+        routes?: Array<{
+          distance: number;
+          duration: number;
+          geometry?: {
+            type: "LineString";
+            coordinates: [number, number][];
+          };
+          legs?: Array<{
+            steps?: Array<{
+              distance: number;
+              duration: number;
+              name?: string;
+              maneuver?: { instruction?: string };
             }>;
           }>;
-        };
+        }>;
+      };
 
-        if (requestId !== routeRequestId) return;
-        const route = data.routes?.[0];
+      if (requestId !== routeRequestId) {
+        return;
+      }
 
-        if (!route?.geometry?.coordinates?.length) {
-          throw new Error("Không tìm thấy tuyến đường phù hợp.");
+      const route = data.routes?.[0];
+
+      if (!route) {
+        throw new Error("Không tìm thấy tuyến đường phù hợp.");
+      }
+
+      latestOrigin = origin;
+      renderRouteResult(route, mode, isLiveUpdate);
+    };
+
+    const startNavigationTracking = (
+      mode: (typeof modeConfig)[number]
+    ) => {
+      stopNavigationTracking();
+
+      if (!navigator.geolocation) {
+        return;
+      }
+
+      navigationWatchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const nextLocation: UserLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+
+          if (
+            !isValidCoordinate(
+              nextLocation.latitude,
+              nextLocation.longitude
+            )
+          ) {
+            return;
+          }
+
+          latestOrigin = nextLocation;
+
+          const movedDistance =
+            lastRerouteLocation === null
+              ? Infinity
+              : calculateDistance(
+                  lastRerouteLocation.latitude,
+                  lastRerouteLocation.longitude,
+                  nextLocation.latitude,
+                  nextLocation.longitude
+                ) ?? Infinity;
+
+          const now = Date.now();
+          const enoughMovement = movedDistance >= 75;
+          const enoughTime = now - lastRerouteAt >= 15000;
+
+          if (!enoughMovement && !enoughTime) {
+            return;
+          }
+
+          lastRerouteLocation = nextLocation;
+          lastRerouteAt = now;
+
+          const requestId = ++routeRequestId;
+
+          result.innerHTML =
+            "<div style='padding:20px 4px;text-align:center;color:#667085'>📍 GPS đang cập nhật tuyến đường…</div>";
+
+          void fetchAndDrawRoute(
+            mode,
+            nextLocation,
+            requestId,
+            true
+          ).catch((error) => {
+            if (requestId !== routeRequestId) return;
+
+            result.innerHTML =
+              "<div style='padding:10px 0;color:#b42318;font-size:13px'>" +
+              escapeHtml(
+                error instanceof Error
+                  ? error.message
+                  : "Không thể cập nhật tuyến đường."
+              ) +
+              "</div>";
+          });
+        },
+        () => {
+          // GPS có thể mất tín hiệu tạm thời; tuyến hiện tại vẫn được giữ.
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 3000,
+        }
+      );
+    };
+
+    const drawRoute = async (
+      mode: (typeof modeConfig)[number]
+    ) => {
+      const requestId = ++routeRequestId;
+
+      stopNavigationTracking();
+      isInitialRoute = true;
+
+      result.innerHTML =
+        "<div style='padding:20px 4px;text-align:center;color:#667085'>Đang tìm tuyến đường…</div>";
+
+      clearRouteFromMap();
+
+      try {
+        const origin = await getOrigin();
+
+        if (requestId !== routeRequestId) {
+          return;
         }
 
-        mapInstance.addSource("travelquest-route-source", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: route.geometry,
-          },
-        });
+        latestOrigin = origin;
+        lastRerouteLocation = origin;
+        lastRerouteAt = Date.now();
 
-        mapInstance.addLayer({
-          id: "travelquest-route-line",
-          type: "line",
-          source: "travelquest-route-source",
-          layout: { "line-cap": "round", "line-join": "round" },
-          paint: {
-            "line-color": "#00897b",
-            "line-width": 6,
-            "line-opacity": 0.9,
-          },
-        });
+        await fetchAndDrawRoute(
+          mode,
+          origin,
+          requestId,
+          false
+        );
 
-        const bounds = new mapboxgl.LngLatBounds();
-        route.geometry.coordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
-        mapInstance.fitBounds(bounds, { padding: 100, maxZoom: 16, duration: 900 });
+        if (requestId !== routeRequestId) {
+          return;
+        }
 
-        const steps = route.legs?.flatMap((leg) => leg.steps ?? []) ?? [];
-        const stepHtml = steps.slice(0, 10).map((step, index) =>
-          "<div style='display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #eef0f2'>" +
-          "<div style='width:24px;height:24px;border-radius:50%;background:#e0f5f5;color:#007c91;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800'>" +
-          (index + 1) +
-          "</div><div style='flex:1;font-size:12px;line-height:1.45;color:#374151'>" +
-          escapeHtml(step.maneuver?.instruction ?? (step.name || "Tiếp tục theo tuyến đường")) +
-          "<div style='margin-top:2px;color:#8a9199'>" +
-          formatRouteDistance(step.distance) + " · " + formatRouteDuration(step.duration) +
-          "</div></div></div>"
-        ).join("");
-
-        result.innerHTML =
-          "<div style='display:flex;gap:8px;align-items:center'>" +
-          "<div style='font-size:22px;font-weight:900;color:#111827'>" + formatRouteDuration(route.duration) + "</div>" +
-          "<div style='color:#667085;font-size:13px'>· " + formatRouteDistance(route.distance) + "</div></div>" +
-          "<div style='margin-top:5px;color:#667085;font-size:12px'>" +
-          escapeHtml(mode.note) + "</div>" +
-          "<div style='margin-top:14px;font-size:13px;font-weight:800;color:#111827'>Các bước chỉ đường</div>" +
-          (stepHtml || "<div style='margin-top:8px;color:#667085'>Không có hướng dẫn chi tiết.</div>");
-
-        const googleTravelMode =
-          mode.key === "walking" ? "walking" : mode.key === "motorcycle" ? "two-wheeler" : "driving";
-
-        googleMapsButton.onclick = () => {
-          const url =
-            "https://www.google.com/maps/dir/?api=1&origin=" +
-            encodeURIComponent(origin.latitude + "," + origin.longitude) +
-            "&destination=" +
-            encodeURIComponent(checkpoint.latitude + "," + checkpoint.longitude) +
-            "&travelmode=" +
-            googleTravelMode;
-          window.open(url, "_blank", "noopener,noreferrer");
-        };
+        startNavigationTracking(mode);
       } catch (error) {
-        if (requestId !== routeRequestId) return;
+        if (requestId !== routeRequestId) {
+          return;
+        }
+
         result.innerHTML =
           "<div style='padding:10px 0;color:#b42318;font-size:13px'>" +
-          escapeHtml(error instanceof Error ? error.message : "Không thể tìm đường.") +
+          escapeHtml(
+            error instanceof Error
+              ? error.message
+              : "Không thể tìm đường."
+          ) +
           "</div>" +
-          "<div style='margin-top:8px;color:#667085;font-size:12px'>Cậu có thể dùng nút Google Maps bên dưới để tiếp tục chỉ đường.</div>";
+          "<div style='margin-top:8px;color:#667085;font-size:12px'>" +
+          "Hãy kiểm tra quyền GPS và kết nối mạng rồi thử lại." +
+          "</div>";
       }
     };
 
@@ -1160,11 +1399,17 @@ function createCheckpointDetailsModal({
     const onRouteKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") closePanel();
     };
-    document.addEventListener("keydown", onRouteKeyDown);
 
     const originalClosePanel = closePanel;
-    const cleanupRouteKey = () => document.removeEventListener("keydown", onRouteKeyDown);
-    closeButton.addEventListener("click", cleanupRouteKey, { once: true });
+    closePanel = () => {
+      routeRequestId += 1;
+      stopNavigationTracking();
+      document.removeEventListener("keydown", onRouteKeyDown);
+      panel.remove();
+      clearRouteFromMap();
+    };
+
+    document.addEventListener("keydown", onRouteKeyDown);
 
     void drawRoute(modeConfig.find((mode) => mode.key === activeMode) ?? modeConfig[1]);
   };
