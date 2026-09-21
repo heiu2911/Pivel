@@ -49,6 +49,13 @@ type CheckpointDetails = {
   price?: string;
 };
 
+const CHECKPOINT_LOCAL_IMAGES: Record<string, string[]> = {
+  "Hoàng thành Thăng Long": [
+    "/checkpoints/hoang-thanh-thang-long-1.jpg",
+    "/checkpoints/hoang-thanh-thang-long-2.jpg",
+    "/checkpoints/hoang-thanh-thang-long-3.jpg",
+};
+
 const CHECKPOINT_IMAGE_QUERIES: Record<string, string> = {
   "Hồ Hoàn Kiếm": "Hoan Kiem Lake Hanoi Vietnam",
   "Văn Miếu - Quốc Tử Giám": "Temple of Literature Hanoi Vietnam",
@@ -442,6 +449,15 @@ function createCheckpointDetailsModal({
 
   const loadCheckpointImages = async () => {
     try {
+      const localImages = CHECKPOINT_LOCAL_IMAGES[checkpoint.name];
+
+      if (localImages?.length) {
+        galleryImages = localImages;
+        activeImageIndex = 0;
+        renderGallery();
+        return;
+      }
+
       const query = encodeURIComponent(
         CHECKPOINT_IMAGE_QUERIES[checkpoint.name] ??
         (checkpoint.name + " Vietnam landmark")
