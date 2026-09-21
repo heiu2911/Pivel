@@ -49,6 +49,31 @@ type CheckpointDetails = {
   price?: string;
 };
 
+const CHECKPOINT_IMAGE_QUERIES: Record<string, string> = {
+  "Hồ Hoàn Kiếm": "Hoan Kiem Lake Hanoi Vietnam",
+  "Văn Miếu - Quốc Tử Giám": "Temple of Literature Hanoi Vietnam",
+  "Hoàng thành Thăng Long": "Imperial Citadel of Thang Long Hanoi Vietnam",
+  "Lăng Chủ tịch Hồ Chí Minh": "Ho Chi Minh Mausoleum Hanoi Vietnam",
+  "Vịnh Hạ Long": "Ha Long Bay Vietnam",
+  "Yên Tử": "Yen Tu Mountain Vietnam",
+  "Quần thể Tràng An": "Trang An Scenic Landscape Complex Vietnam",
+  "Hang Múa": "Mua Cave Ninh Binh Vietnam",
+  "Chùa Bái Đính": "Bai Dinh Pagoda Ninh Binh Vietnam",
+  "Đại Nội Huế": "Imperial City Hue Vietnam",
+  "Chùa Thiên Mụ": "Thien Mu Pagoda Hue Vietnam",
+  "Cầu Rồng Đà Nẵng": "Dragon Bridge Da Nang Vietnam",
+  "Cầu Vàng Bà Nà Hills": "Golden Bridge Ba Na Hills Vietnam",
+  "Ngũ Hành Sơn": "Marble Mountains Da Nang Vietnam",
+  "Phong Nha": "Phong Nha Cave Vietnam",
+  "Thác Bản Giốc": "Ban Gioc Waterfall Vietnam",
+  "Nhà thờ Đá Sa Pa": "Sapa Stone Church Vietnam",
+  "Tháp Bà Ponagar": "Po Nagar Cham Towers Nha Trang Vietnam",
+  "Dinh Độc Lập": "Independence Palace Ho Chi Minh City Vietnam",
+  "Núi Bà Đen": "Ba Den Mountain Vietnam",
+  "Chợ nổi Cái Răng": "Cai Rang Floating Market Vietnam",
+  "Thác Datanla": "Datanla Waterfall Da Lat Vietnam",
+};
+
 const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
   "Chùa Bái Đính": {
     category: "Địa điểm tôn giáo",
@@ -260,43 +285,172 @@ function createCheckpointDetailsModal({
   const imageSection = document.createElement("div");
   imageSection.style.position = "relative";
   imageSection.style.width = "100%";
-  imageSection.style.height = "250px";
+  imageSection.style.height = "300px";
   imageSection.style.background = "linear-gradient(135deg,#dbeafe,#e0f2fe)";
   imageSection.style.overflow = "hidden";
-  imageSection.innerHTML =
-    "<div style=\"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:14px;\">Đang tải hình ảnh…</div>";
 
-  const image = document.createElement("img");
-  image.alt = checkpoint.name;
-  image.style.width = "100%";
-  image.style.height = "100%";
-  image.style.objectFit = "cover";
-  image.style.display = "none";
+  const gallery = document.createElement("div");
+  gallery.style.width = "100%";
+  gallery.style.height = "100%";
+  gallery.style.position = "relative";
 
-  const imageBadge = document.createElement("div");
-  imageBadge.textContent = "Xem ảnh";
-  imageBadge.style.position = "absolute";
-  imageBadge.style.left = "14px";
-  imageBadge.style.bottom = "14px";
-  imageBadge.style.padding = "8px 12px";
-  imageBadge.style.borderRadius = "10px";
-  imageBadge.style.background = "rgba(0,0,0,.68)";
-  imageBadge.style.color = "#fff";
-  imageBadge.style.fontSize = "12px";
-  imageBadge.style.fontWeight = "800";
-  imageBadge.style.backdropFilter = "blur(4px)";
-  imageBadge.style.display = "none";
+  const mainImage = document.createElement("img");
+  mainImage.alt = checkpoint.name;
+  mainImage.style.width = "100%";
+  mainImage.style.height = "100%";
+  mainImage.style.objectFit = "cover";
+  mainImage.style.display = "none";
 
-  imageSection.appendChild(image);
-  imageSection.appendChild(imageBadge);
+  const loading = document.createElement("div");
+  loading.textContent = "Đang tải hình ảnh…";
+  loading.style.position = "absolute";
+  loading.style.inset = "0";
+  loading.style.display = "flex";
+  loading.style.alignItems = "center";
+  loading.style.justifyContent = "center";
+  loading.style.color = "#64748b";
+  loading.style.fontSize = "14px";
 
-  const loadCheckpointImage = async () => {
+  const counter = document.createElement("div");
+  counter.style.position = "absolute";
+  counter.style.right = "14px";
+  counter.style.top = "14px";
+  counter.style.padding = "7px 10px";
+  counter.style.borderRadius = "999px";
+  counter.style.background = "rgba(0,0,0,.68)";
+  counter.style.color = "#fff";
+  counter.style.fontSize = "12px";
+  counter.style.fontWeight = "800";
+  counter.style.display = "none";
+
+  const previousButton = document.createElement("button");
+  previousButton.type = "button";
+  previousButton.textContent = "‹";
+  previousButton.setAttribute("aria-label", "Ảnh trước");
+  previousButton.style.position = "absolute";
+  previousButton.style.left = "12px";
+  previousButton.style.top = "50%";
+  previousButton.style.transform = "translateY(-50%)";
+  previousButton.style.width = "42px";
+  previousButton.style.height = "42px";
+  previousButton.style.border = "0";
+  previousButton.style.borderRadius = "50%";
+  previousButton.style.background = "rgba(0,0,0,.58)";
+  previousButton.style.color = "#fff";
+  previousButton.style.fontSize = "30px";
+  previousButton.style.lineHeight = "1";
+  previousButton.style.cursor = "pointer";
+  previousButton.style.display = "none";
+
+  const nextButton = document.createElement("button");
+  nextButton.type = "button";
+  nextButton.textContent = "›";
+  nextButton.setAttribute("aria-label", "Ảnh tiếp theo");
+  nextButton.style.position = "absolute";
+  nextButton.style.right = "12px";
+  nextButton.style.top = "50%";
+  nextButton.style.transform = "translateY(-50%)";
+  nextButton.style.width = "42px";
+  nextButton.style.height = "42px";
+  nextButton.style.border = "0";
+  nextButton.style.borderRadius = "50%";
+  nextButton.style.background = "rgba(0,0,0,.58)";
+  nextButton.style.color = "#fff";
+  nextButton.style.fontSize = "30px";
+  nextButton.style.lineHeight = "1";
+  nextButton.style.cursor = "pointer";
+  nextButton.style.display = "none";
+
+  const thumbnails = document.createElement("div");
+  thumbnails.style.position = "absolute";
+  thumbnails.style.left = "14px";
+  thumbnails.style.bottom = "14px";
+  thumbnails.style.display = "flex";
+  thumbnails.style.gap = "7px";
+
+  gallery.appendChild(mainImage);
+  gallery.appendChild(loading);
+  gallery.appendChild(counter);
+  gallery.appendChild(previousButton);
+  gallery.appendChild(nextButton);
+  gallery.appendChild(thumbnails);
+  imageSection.appendChild(gallery);
+
+  let galleryImages: string[] = [];
+  let activeImageIndex = 0;
+
+  const renderGallery = () => {
+    if (!galleryImages.length) return;
+
+    mainImage.src = galleryImages[activeImageIndex];
+    mainImage.style.display = "block";
+    loading.style.display = "none";
+    counter.textContent = (activeImageIndex + 1) + " / " + galleryImages.length;
+    counter.style.display = "block";
+
+    previousButton.style.display = galleryImages.length > 1 ? "flex" : "none";
+    previousButton.style.alignItems = "center";
+    previousButton.style.justifyContent = "center";
+    nextButton.style.display = galleryImages.length > 1 ? "flex" : "none";
+    nextButton.style.alignItems = "center";
+    nextButton.style.justifyContent = "center";
+
+    thumbnails.innerHTML = "";
+    galleryImages.forEach((url, index) => {
+      const thumbnail = document.createElement("button");
+      thumbnail.type = "button";
+      thumbnail.setAttribute("aria-label", "Xem ảnh " + (index + 1));
+      thumbnail.style.width = "58px";
+      thumbnail.style.height = "42px";
+      thumbnail.style.padding = "0";
+      thumbnail.style.border = index === activeImageIndex ? "2px solid #fff" : "2px solid rgba(255,255,255,.45)";
+      thumbnail.style.borderRadius = "8px";
+      thumbnail.style.overflow = "hidden";
+      thumbnail.style.background = "#111827";
+      thumbnail.style.cursor = "pointer";
+
+      const thumbnailImage = document.createElement("img");
+      thumbnailImage.src = url;
+      thumbnailImage.alt = checkpoint.name + " - ảnh " + (index + 1);
+      thumbnailImage.style.width = "100%";
+      thumbnailImage.style.height = "100%";
+      thumbnailImage.style.objectFit = "cover";
+
+      thumbnail.appendChild(thumbnailImage);
+      thumbnail.addEventListener("click", () => {
+        activeImageIndex = index;
+        renderGallery();
+      });
+      thumbnails.appendChild(thumbnail);
+    });
+  };
+
+  previousButton.addEventListener("click", () => {
+    if (!galleryImages.length) return;
+    activeImageIndex =
+      (activeImageIndex - 1 + galleryImages.length) %
+      galleryImages.length;
+    renderGallery();
+  });
+
+  nextButton.addEventListener("click", () => {
+    if (!galleryImages.length) return;
+    activeImageIndex =
+      (activeImageIndex + 1) % galleryImages.length;
+    renderGallery();
+  });
+
+  const loadCheckpointImages = async () => {
     try {
-      const query = encodeURIComponent(checkpoint.name + " Vietnam landmark");
+      const query = encodeURIComponent(
+        CHECKPOINT_IMAGE_QUERIES[checkpoint.name] ??
+        (checkpoint.name + " Vietnam landmark")
+      );
+
       const response = await fetch(
         "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" +
           query +
-          "&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=1200&format=json&origin=*"
+          "&gsrnamespace=6&gsrlimit=3&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1400&format=json&origin=*"
       );
 
       if (!response.ok) throw new Error("Không tải được ảnh");
@@ -304,7 +458,10 @@ function createCheckpointDetailsModal({
       const data = (await response.json()) as {
         query?: {
           pages?: Record<string, {
-            imageinfo?: Array<{ thumburl?: string; url?: string }>;
+            imageinfo?: Array<{
+              thumburl?: string;
+              url?: string;
+            }>;
           }>;
         };
       };
@@ -313,21 +470,29 @@ function createCheckpointDetailsModal({
         ? Object.values(data.query.pages)
         : [];
 
-      const imageUrl =
-        pages[0]?.imageinfo?.[0]?.thumburl ??
-        pages[0]?.imageinfo?.[0]?.url;
+      galleryImages = pages
+        .map(
+          (page) =>
+            page.imageinfo?.[0]?.thumburl ??
+            page.imageinfo?.[0]?.url
+        )
+        .filter(
+          (url): url is string =>
+            typeof url === "string" && url.length > 0
+        )
+        .slice(0, 3);
 
-      if (!imageUrl) throw new Error("Không tìm thấy ảnh");
+      if (!galleryImages.length) {
+        throw new Error("Không tìm thấy ảnh");
+      }
 
-      image.src = imageUrl;
-      image.style.display = "block";
-      imageBadge.style.display = "block";
-      imageSection.querySelector("div")?.remove();
+      activeImageIndex = 0;
+      renderGallery();
     } catch {
-      imageSection.innerHTML =
-        "<div style=\"height:100%;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#64748b;font-size:13px;\">Chưa có hình ảnh cho địa danh này</div>";
+      loading.textContent = "Chưa có hình ảnh cho địa danh này";
     }
   };
+
   const address = escapeHtml(details.address ?? "Chưa cập nhật địa chỉ");
   const hours = escapeHtml(details.hours ?? "Chưa cập nhật giờ mở cửa");
   const phone = escapeHtml(details.phone ?? "Chưa cập nhật");
