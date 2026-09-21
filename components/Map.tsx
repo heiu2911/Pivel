@@ -256,6 +256,78 @@ function createCheckpointDetailsModal({
   const safeDescription = escapeHtml(checkpoint.description ?? "Checkpoint du lịch TravelQuest.");
   const safeBadge = escapeHtml(checkpoint.badge ?? "🏆 Huy hiệu TravelQuest");
   const category = escapeHtml(details.category);
+
+  const imageSection = document.createElement("div");
+  imageSection.style.position = "relative";
+  imageSection.style.width = "100%";
+  imageSection.style.height = "250px";
+  imageSection.style.background = "linear-gradient(135deg,#dbeafe,#e0f2fe)";
+  imageSection.style.overflow = "hidden";
+  imageSection.innerHTML =
+    "<div style=\"position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:14px;\">Đang tải hình ảnh…</div>";
+
+  const image = document.createElement("img");
+  image.alt = checkpoint.name;
+  image.style.width = "100%";
+  image.style.height = "100%";
+  image.style.objectFit = "cover";
+  image.style.display = "none";
+
+  const imageBadge = document.createElement("div");
+  imageBadge.textContent = "Xem ảnh";
+  imageBadge.style.position = "absolute";
+  imageBadge.style.left = "14px";
+  imageBadge.style.bottom = "14px";
+  imageBadge.style.padding = "8px 12px";
+  imageBadge.style.borderRadius = "10px";
+  imageBadge.style.background = "rgba(0,0,0,.68)";
+  imageBadge.style.color = "#fff";
+  imageBadge.style.fontSize = "12px";
+  imageBadge.style.fontWeight = "800";
+  imageBadge.style.backdropFilter = "blur(4px)";
+  imageBadge.style.display = "none";
+
+  imageSection.appendChild(image);
+  imageSection.appendChild(imageBadge);
+
+  const loadCheckpointImage = async () => {
+    try {
+      const query = encodeURIComponent(checkpoint.name + " Vietnam landmark");
+      const response = await fetch(
+        "https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" +
+          query +
+          "&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=1200&format=json&origin=*"
+      );
+
+      if (!response.ok) throw new Error("Không tải được ảnh");
+
+      const data = (await response.json()) as {
+        query?: {
+          pages?: Record<string, {
+            imageinfo?: Array<{ thumburl?: string; url?: string }>;
+          }>;
+        };
+      };
+
+      const pages = data.query?.pages
+        ? Object.values(data.query.pages)
+        : [];
+
+      const imageUrl =
+        pages[0]?.imageinfo?.[0]?.thumburl ??
+        pages[0]?.imageinfo?.[0]?.url;
+
+      if (!imageUrl) throw new Error("Không tìm thấy ảnh");
+
+      image.src = imageUrl;
+      image.style.display = "block";
+      imageBadge.style.display = "block";
+      imageSection.querySelector("div")?.remove();
+    } catch {
+      imageSection.innerHTML =
+        "<div style=\"height:100%;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center;color:#64748b;font-size:13px;\">Chưa có hình ảnh cho địa danh này</div>";
+    }
+  };
   const address = escapeHtml(details.address ?? "Chưa cập nhật địa chỉ");
   const hours = escapeHtml(details.hours ?? "Chưa cập nhật giờ mở cửa");
   const phone = escapeHtml(details.phone ?? "Chưa cập nhật");
@@ -264,14 +336,11 @@ function createCheckpointDetailsModal({
   const reviewCount = details.reviewCount !== undefined ? "(" + details.reviewCount.toLocaleString("vi-VN") + " đánh giá)" : "";
 
   const header = document.createElement("div");
-  header.style.padding = "18px 20px 16px";
+  header.style.padding = "16px 20px 16px";
   header.style.borderBottom = "1px solid #e5e7eb";
   header.style.flexShrink = "0";
   header.innerHTML =
     "<div style=\"display:flex;align-items:flex-start;gap:14px;\">" +
-      "<div style=\"width:58px;height:58px;flex:0 0 58px;border-radius:16px;background:#07182a;display:flex;align-items:center;justify-content:center;font-size:30px;border:1px solid #dbe3ea;\">" +
-        escapeHtml(checkpoint.icon?.trim() || "📍") +
-      "</div>" +
       "<div style=\"min-width:0;flex:1;\">" +
         "<div style=\"font-size:22px;line-height:1.2;font-weight:800;color:#111827;\">" + safeName + "</div>" +
         "<div style=\"margin-top:5px;font-size:13px;color:#667085;\">" + category + "</div>" +
@@ -451,11 +520,13 @@ function createCheckpointDetailsModal({
   actionButtons.forEach((button) => actions.appendChild(button));
 
   renderOverview();
+  card.appendChild(imageSection);
   card.appendChild(header);
   card.appendChild(tabs);
   card.appendChild(actions);
   card.appendChild(body);
   overlay.appendChild(card);
+  void loadCheckpointImage();
 
   const close = () => {
     document.removeEventListener("keydown", onKeyDown);
