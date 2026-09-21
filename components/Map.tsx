@@ -997,7 +997,11 @@ function createCheckpointDetailsModal({
             longitude: position.coords.longitude,
           }),
           () => reject(new Error("Không lấy được vị trí hiện tại. Hãy cho phép GPS để xem đường đi.")),
-          { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+          {
+            enableHighAccuracy: false,
+            timeout: 4000,
+            maximumAge: 30000,
+          }
         );
       });
     };
@@ -1242,7 +1246,7 @@ function createCheckpointDetailsModal({
           mode.profile +
           "/" +
           coordinates +
-          "?alternatives=true&overview=full&geometries=geojson&steps=true&language=vi&access_token=" +
+          "?alternatives=false&overview=simplified&geometries=geojson&steps=false&language=vi&access_token=" +
           encodeURIComponent(token)
       );
 
@@ -1360,8 +1364,8 @@ function createCheckpointDetailsModal({
         },
         {
           enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 3000,
+          timeout: 8000,
+          maximumAge: 5000,
         }
       );
     };
@@ -1390,6 +1394,7 @@ function createCheckpointDetailsModal({
         lastRerouteLocation = origin;
         lastRerouteAt = Date.now();
 
+        // Vẽ tuyến ngay khi có kết quả. Không chờ thêm dữ liệu chỉ dẫn chi tiết.
         await fetchAndDrawRoute(
           mode,
           origin,
