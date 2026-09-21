@@ -1260,7 +1260,7 @@ function createCheckpointDetailsModal({
           mode.profile +
           "/" +
           coordinates +
-          "?alternatives=false&overview=simplified&geometries=geojson&steps=false&language=vi&access_token=" +
+          "?alternatives=false&overview=full&geometries=geojson&steps=true&language=vi&access_token=" +
           encodeURIComponent(token)
       );
 
