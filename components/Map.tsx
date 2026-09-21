@@ -1400,7 +1400,6 @@ function createCheckpointDetailsModal({
       if (event.key === "Escape") closePanel();
     };
 
-    const originalClosePanel = closePanel;
     closePanel = () => {
       routeRequestId += 1;
       stopNavigationTracking();
