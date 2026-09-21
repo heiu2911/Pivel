@@ -83,14 +83,75 @@ const CHECKPOINT_IMAGE_QUERIES: Record<string, string> = {
 };
 
 const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
+  "Hồ Hoàn Kiếm": {
+    category: "Hồ / Danh thắng đô thị",
+    address: "Đinh Tiên Hoàng, Hoàn Kiếm, Hà Nội",
+    hours: "Mở 24 giờ",
+    website: "hanoi.gov.vn",
+  },
+  "Văn Miếu - Quốc Tử Giám": {
+    category: "Di tích lịch sử - văn hóa",
+    address: "58 Quốc Tử Giám, phường Văn Miếu - Quốc Tử Giám, Hà Nội",
+    rating: 4.6,
+    reviewCount: 24945,
+    hours: "08:00–17:00; tour đêm 18:30–22:00 Thứ 4, Thứ 7, Chủ nhật",
+    phone: "+84 24 3747 2566",
+    website: "vanmieu.gov.vn",
+    price: "70.000đ/người lớn; 35.000đ vé ưu tiên; miễn phí trẻ em dưới 16 tuổi",
+  },
+  "Hoàng thành Thăng Long": {
+    category: "Di sản văn hóa thế giới / Di tích lịch sử",
+    address: "19C Hoàng Diệu, phường Ba Đình, Hà Nội",
+    hours: "08:00–17:00 tất cả các ngày",
+    phone: "+84 24 3734 5427",
+    website: "hoangthanhthanglong.vn",
+    price: "Xem giá vé hiện hành trên website chính thức",
+  },
+  "Lăng Chủ tịch Hồ Chí Minh": {
+    category: "Di tích lịch sử",
+    address: "Quảng trường Ba Đình, Ba Đình, Hà Nội",
+    hours: "Lịch viếng thay đổi theo mùa và ngày; kiểm tra thông báo trước khi đi",
+    website: "baotanghochiminh.vn",
+  },
+  "Vịnh Hạ Long": {
+    category: "Di sản thiên nhiên thế giới / Vịnh biển",
+    address: "Thành phố Hạ Long, Quảng Ninh",
+    hours: "Theo lịch tàu và cảng; nên kiểm tra trước chuyến đi",
+    website: "halongbay.com.vn",
+  },
+  "Yên Tử": {
+    category: "Danh thắng / Quần thể di tích tâm linh",
+    address: "Khu di tích và danh thắng Yên Tử, Quảng Ninh",
+    hours: "Theo lịch vận hành cáp treo và khu di tích",
+    website: "yentutunglam.vn",
+  },
+  "Quần thể Tràng An": {
+    category: "Di sản văn hóa và thiên nhiên thế giới",
+    address: "Hoa Lư, Ninh Bình",
+    hours: "07:00–18:00",
+    website: "trangandanhthang.vn",
+  },
+  "Hang Múa": {
+    category: "Danh thắng / Điểm ngắm cảnh",
+    address: "Thôn Khê Đầu Hạ, Hoa Lư, Ninh Bình",
+    hours: "06:00–19:00",
+    phone: "+84 378 699 330",
+    price: "Từ khoảng 100.000đ/người; có thể thay đổi",
+  },
   "Chùa Bái Đính": {
-    category: "Địa điểm tôn giáo",
+    category: "Quần thể chùa / Điểm du lịch tâm linh",
     address: "Xóm 6, Tây Hoa Lư, Ninh Bình",
     rating: 4.8,
     reviewCount: 25290,
     hours: "06:00–21:00",
     phone: "+84 913 899 135",
     website: "chuabaidinhninhbinh.vn",
+  },
+  "Đại Nội Huế": {
+    category: "Di tích lịch sử - văn hóa / Di sản thế giới",
+    address: "Đường 23/8, phường Phú Xuân, thành phố Huế",
+    hours: "Mùa hè 06:30–17:30; mùa đông 07:00–17:00",
+    website: "hue.gov.vn",
   },
   "Chùa Thiên Mụ": {
     category: "Chùa / Di tích lịch sử - văn hóa",
@@ -99,44 +160,87 @@ const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
     reviewCount: 20027,
     hours: "07:00–17:30",
   },
+  "Cầu Rồng Đà Nẵng": {
+    category: "Cầu / Biểu tượng kiến trúc Đà Nẵng",
+    address: "Cầu Rồng, An Hải, Đà Nẵng",
+    rating: 4.5,
+    reviewCount: 9488,
+    hours: "Mở 24 giờ",
+    website: "visitdanang.travel",
+  },
   "Cầu Vàng Bà Nà Hills": {
-    category: "Điểm tham quan",
-    address: "Hòa Vang, Đà Nẵng",
+    category: "Điểm tham quan / Công trình kiến trúc",
+    address: "Khu du lịch Sun World Bà Nà Hills, Hòa Vang, Đà Nẵng",
     rating: 4.6,
-    hours: "08:00–19:00",
+    hours: "Khu du lịch 08:00–22:00; lịch cáp treo có thể khác",
+    phone: "+84 866 311 186",
+    website: "sunworldsbanahills.com",
   },
   "Ngũ Hành Sơn": {
-    category: "Danh thắng / Điểm tham quan",
+    category: "Danh thắng / Quần thể núi đá",
     address: "81 Huyền Trân Công Chúa, Ngũ Hành Sơn, Đà Nẵng",
     hours: "07:00–17:30",
-    phone: "+84 236 3961114",
+    phone: "+84 236 396 1114",
     website: "nguhanhson.org",
   },
+  "Phong Nha": {
+    category: "Hang động / Di sản thiên nhiên",
+    address: "Trung tâm Du lịch Phong Nha, Phong Nha, Quảng Trị",
+    hours: "07:00–18:00; giờ bán vé có thể kết thúc sớm hơn",
+    phone: "+84 918 841 455",
+    website: "phongnhatourism.com.vn",
+  },
+  "Thác Bản Giốc": {
+    category: "Danh thắng tự nhiên / Thác nước",
+    address: "Xã Đàm Thủy, Trùng Khánh, Cao Bằng",
+    hours: "Khoảng 07:00–18:00; có thể thay đổi theo mùa",
+    website: "caobangtourism.vn",
+  },
+  "Nhà thờ Đá Sa Pa": {
+    category: "Nhà thờ / Điểm tham quan",
+    address: "Trung tâm Sa Pa, Lào Cai",
+    hours: "Khuôn viên mở; giờ vào bên trong thay đổi theo lịch lễ",
+  },
   "Tháp Bà Ponagar": {
-    category: "Di tích lịch sử - văn hóa",
-    address: "2 Tháng 4, phường Vĩnh Phước, Nha Trang, Khánh Hòa",
+    category: "Di sản văn hóa Chăm",
+    address: "2 Tháng 4, Vĩnh Phước, Nha Trang, Khánh Hòa",
     rating: 4.3,
     reviewCount: 4842,
     hours: "06:00–17:30",
     phone: "+84 58 382 4525",
+    website: "vanhoacham.khanhhoa.gov.vn",
   },
   "Dinh Độc Lập": {
-    category: "Bảo tàng / Di tích lịch sử",
-    address: "135 Nam Kỳ Khởi Nghĩa, Bến Thành, TP. Hồ Chí Minh",
+    category: "Di tích lịch sử quốc gia đặc biệt",
+    address: "135 Nam Kỳ Khởi Nghĩa, phường Bến Thành, TP. Hồ Chí Minh",
     rating: 4.5,
     hours: "07:00–18:00",
     phone: "+84 28 3822 3652",
     website: "dinhdoclap.gov.vn",
+    price: "80.000đ người lớn; 40.000đ sinh viên/người cao tuổi; 20.000đ trẻ em 6–17 tuổi",
   },
-  "Thác Bản Giốc": {
-    category: "Danh thắng tự nhiên",
-    address: "Trùng Khánh, Cao Bằng",
-    hours: "07:00–18:00 (mùa hè)",
+  "Núi Bà Đen": {
+    category: "Núi / Khu du lịch tâm linh",
+    address: "Khu phố Ninh Phú, phường Bình Minh, tỉnh Tây Ninh",
+    hours: "Thứ 2–6: 06:00–20:00; Thứ 7, CN & lễ: 05:30–21:00",
+    phone: "1800 1000",
+    website: "sunworld.vn/vi/ba-den",
   },
-  "Nhà thờ Đá Sa Pa": {
-    category: "Nhà thờ / Điểm tham quan",
-    address: "Trung tâm thị xã Sa Pa, Lào Cai",
-    hours: "Khuôn viên mở tự do; giờ trong nhà thờ có thể thay đổi",
+  "Chợ nổi Cái Răng": {
+    category: "Chợ nổi / Di sản văn hóa phi vật thể",
+    address: "Sông Cái Răng, Cần Thơ",
+    hours: "Khung giờ nhộn nhịp nhất khoảng 05:00–07:30; chợ hoạt động buổi sáng",
+    phone: "+84 292 625 2527",
+    website: "dulichthongminhcantho.com",
+    price: "Giá thuyền/tour thay đổi theo loại tàu và số khách",
+  },
+  "Thác Datanla": {
+    category: "Thác nước / Khu du lịch",
+    address: "Đèo Prenn, phường 3, Đà Lạt, Lâm Đồng",
+    hours: "07:00–17:00",
+    phone: "+84 981 166 088",
+    website: "dalat.vn",
+    price: "Khoảng 30.000đ; dịch vụ vui chơi có giá riêng",
   },
 };
 
@@ -758,6 +862,313 @@ function createCheckpointDetailsModal({
       "<div style=\"margin-top:3px;font-size:14px;color:#344054;line-height:1.45;word-break:break-word;\">" + value + "</div></div>" +
     "</div>";
 
+  const clearRouteFromMap = () => {
+    const routeLayerId = "travelquest-route-line";
+    const routeSourceId = "travelquest-route-source";
+
+    if (mapInstance.getLayer(routeLayerId)) {
+      mapInstance.removeLayer(routeLayerId);
+    }
+
+    if (mapInstance.getSource(routeSourceId)) {
+      mapInstance.removeSource(routeSourceId);
+    }
+  };
+
+  const formatRouteDistance = (meters: number) =>
+    meters < 1000
+      ? Math.round(meters) + " m"
+      : (meters / 1000).toFixed(1) + " km";
+
+  const formatRouteDuration = (seconds: number) => {
+    const minutes = Math.max(1, Math.round(seconds / 60));
+    if (minutes < 60) return minutes + " phút";
+    const hours = Math.floor(minutes / 60);
+    const remaining = minutes % 60;
+    return remaining ? hours + " giờ " + remaining + " phút" : hours + " giờ";
+  };
+
+  const openDirectionsPanel = () => {
+    const existing = document.querySelector("[data-travelquest-directions='true']");
+    if (existing) existing.remove();
+
+    const panel = document.createElement("div");
+    panel.dataset.travelquestDirections = "true";
+    panel.style.position = "fixed";
+    panel.style.inset = "0";
+    panel.style.zIndex = "10001";
+    panel.style.background = "rgba(3,12,24,.58)";
+    panel.style.backdropFilter = "blur(3px)";
+    panel.style.display = "flex";
+    panel.style.alignItems = "flex-start";
+    panel.style.justifyContent = "center";
+    panel.style.padding = "22px";
+
+    const sheet = document.createElement("div");
+    sheet.style.width = "min(560px, calc(100vw - 28px))";
+    sheet.style.maxHeight = "calc(100vh - 44px)";
+    sheet.style.overflow = "hidden";
+    sheet.style.background = "#fff";
+    sheet.style.borderRadius = "22px";
+    sheet.style.boxShadow = "0 24px 80px rgba(0,0,0,.45)";
+    sheet.style.display = "flex";
+    sheet.style.flexDirection = "column";
+    sheet.style.fontFamily = "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+
+    const head = document.createElement("div");
+    head.style.padding = "18px 20px 14px";
+    head.style.borderBottom = "1px solid #e5e7eb";
+    head.innerHTML =
+      "<div style='font-size:11px;color:#8a9199;font-weight:800;text-transform:uppercase'>Chỉ đường</div>" +
+      "<div style='margin-top:4px;font-size:19px;font-weight:850;color:#111827'>" +
+      escapeHtml(checkpoint.name) +
+      "</div>" +
+      "<div style='margin-top:4px;font-size:12px;color:#667085'>Từ vị trí hiện tại của bạn → địa danh</div>";
+
+    const closeButton = document.createElement("button");
+    closeButton.type = "button";
+    closeButton.textContent = "×";
+    closeButton.setAttribute("aria-label", "Đóng chỉ đường");
+    closeButton.style.position = "absolute";
+    closeButton.style.right = "30px";
+    closeButton.style.top = "28px";
+    closeButton.style.width = "38px";
+    closeButton.style.height = "38px";
+    closeButton.style.border = "0";
+    closeButton.style.borderRadius = "50%";
+    closeButton.style.background = "#f3f4f6";
+    closeButton.style.fontSize = "24px";
+    closeButton.style.cursor = "pointer";
+
+    const modes = document.createElement("div");
+    modes.style.display = "grid";
+    modes.style.gridTemplateColumns = "repeat(3,1fr)";
+    modes.style.gap = "8px";
+    modes.style.padding = "12px 16px";
+    modes.style.borderBottom = "1px solid #e5e7eb";
+
+    const result = document.createElement("div");
+    result.style.overflowY = "auto";
+    result.style.padding = "16px";
+
+    const modeConfig = [
+      { key: "walking", label: "🚶 Đi bộ", profile: "walking", note: "Ưu tiên đường đi bộ" },
+      { key: "motorcycle", label: "🏍️ Xe máy", profile: "driving", note: "Tuyến đường xe máy theo mạng đường bộ" },
+      { key: "car", label: "🚗 Ô tô", profile: "driving-traffic", note: "Tuyến ô tô có thể dùng dữ liệu giao thông" },
+    ] as const;
+
+    let activeMode: (typeof modeConfig)[number]["key"] = "motorcycle";
+    let routeRequestId = 0;
+
+    const googleMapsButton = document.createElement("button");
+    googleMapsButton.type = "button";
+    googleMapsButton.textContent = "Mở chỉ đường Google Maps";
+    googleMapsButton.style.width = "100%";
+    googleMapsButton.style.marginTop = "12px";
+    googleMapsButton.style.padding = "12px 14px";
+    googleMapsButton.style.border = "1px solid #dbe3ea";
+    googleMapsButton.style.borderRadius = "12px";
+    googleMapsButton.style.background = "#fff";
+    googleMapsButton.style.color = "#174e57";
+    googleMapsButton.style.fontWeight = "800";
+    googleMapsButton.style.cursor = "pointer";
+
+    const closePanel = () => {
+      routeRequestId += 1;
+      panel.remove();
+      clearRouteFromMap();
+    };
+
+    const getOrigin = async (): Promise<UserLocation> => {
+      if (userLocation && isValidCoordinate(userLocation.latitude, userLocation.longitude)) {
+        return userLocation;
+      }
+
+      if (!navigator.geolocation) {
+        throw new Error("Thiết bị không hỗ trợ GPS.");
+      }
+
+      return await new Promise<UserLocation>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => resolve({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          }),
+          () => reject(new Error("Không lấy được vị trí hiện tại. Hãy cho phép GPS để xem đường đi.")),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+        );
+      });
+    };
+
+    const drawRoute = async (mode: (typeof modeConfig)[number]) => {
+      const requestId = ++routeRequestId;
+      result.innerHTML =
+        "<div style='padding:20px 4px;text-align:center;color:#667085'>Đang tìm tuyến đường…</div>";
+      clearRouteFromMap();
+
+      try {
+        const origin = await getOrigin();
+        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+
+        if (!token) throw new Error("Thiếu NEXT_PUBLIC_MAPBOX_TOKEN.");
+
+        const coordinates =
+          origin.longitude + "," + origin.latitude + ";" +
+          checkpoint.longitude + "," + checkpoint.latitude;
+
+        const response = await fetch(
+          "https://api.mapbox.com/directions/v5/mapbox/" +
+          mode.profile +
+          "/" +
+          coordinates +
+          "?alternatives=true&overview=full&geometries=geojson&steps=true&language=vi&access_token=" +
+          encodeURIComponent(token)
+        );
+
+        if (!response.ok) throw new Error("Không thể lấy tuyến đường từ Mapbox.");
+
+        const data = await response.json() as {
+          code?: string;
+          routes?: Array<{
+            distance: number;
+            duration: number;
+            geometry?: { type: "LineString"; coordinates: [number, number][] };
+            legs?: Array<{
+              steps?: Array<{
+                distance: number;
+                duration: number;
+                name?: string;
+                maneuver?: { instruction?: string };
+              }>;
+            }>;
+          }>;
+        };
+
+        if (requestId !== routeRequestId) return;
+        const route = data.routes?.[0];
+
+        if (!route?.geometry?.coordinates?.length) {
+          throw new Error("Không tìm thấy tuyến đường phù hợp.");
+        }
+
+        mapInstance.addSource("travelquest-route-source", {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            properties: {},
+            geometry: route.geometry,
+          },
+        });
+
+        mapInstance.addLayer({
+          id: "travelquest-route-line",
+          type: "line",
+          source: "travelquest-route-source",
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": "#00897b",
+            "line-width": 6,
+            "line-opacity": 0.9,
+          },
+        });
+
+        const bounds = new mapboxgl.LngLatBounds();
+        route.geometry.coordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
+        mapInstance.fitBounds(bounds, { padding: 100, maxZoom: 16, duration: 900 });
+
+        const steps = route.legs?.flatMap((leg) => leg.steps ?? []) ?? [];
+        const stepHtml = steps.slice(0, 10).map((step, index) =>
+          "<div style='display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #eef0f2'>" +
+          "<div style='width:24px;height:24px;border-radius:50%;background:#e0f5f5;color:#007c91;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800'>" +
+          (index + 1) +
+          "</div><div style='flex:1;font-size:12px;line-height:1.45;color:#374151'>" +
+          escapeHtml(step.maneuver?.instruction ?? (step.name || "Tiếp tục theo tuyến đường")) +
+          "<div style='margin-top:2px;color:#8a9199'>" +
+          formatRouteDistance(step.distance) + " · " + formatRouteDuration(step.duration) +
+          "</div></div></div>"
+        ).join("");
+
+        result.innerHTML =
+          "<div style='display:flex;gap:8px;align-items:center'>" +
+          "<div style='font-size:22px;font-weight:900;color:#111827'>" + formatRouteDuration(route.duration) + "</div>" +
+          "<div style='color:#667085;font-size:13px'>· " + formatRouteDistance(route.distance) + "</div></div>" +
+          "<div style='margin-top:5px;color:#667085;font-size:12px'>" +
+          escapeHtml(mode.note) + "</div>" +
+          "<div style='margin-top:14px;font-size:13px;font-weight:800;color:#111827'>Các bước chỉ đường</div>" +
+          (stepHtml || "<div style='margin-top:8px;color:#667085'>Không có hướng dẫn chi tiết.</div>");
+
+        const googleTravelMode =
+          mode.key === "walking" ? "walking" : mode.key === "motorcycle" ? "two-wheeler" : "driving";
+
+        googleMapsButton.onclick = () => {
+          const url =
+            "https://www.google.com/maps/dir/?api=1&origin=" +
+            encodeURIComponent(origin.latitude + "," + origin.longitude) +
+            "&destination=" +
+            encodeURIComponent(checkpoint.latitude + "," + checkpoint.longitude) +
+            "&travelmode=" +
+            googleTravelMode;
+          window.open(url, "_blank", "noopener,noreferrer");
+        };
+      } catch (error) {
+        if (requestId !== routeRequestId) return;
+        result.innerHTML =
+          "<div style='padding:10px 0;color:#b42318;font-size:13px'>" +
+          escapeHtml(error instanceof Error ? error.message : "Không thể tìm đường.") +
+          "</div>" +
+          "<div style='margin-top:8px;color:#667085;font-size:12px'>Cậu có thể dùng nút Google Maps bên dưới để tiếp tục chỉ đường.</div>";
+      }
+    };
+
+    modeConfig.forEach((mode) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = mode.label;
+      button.style.padding = "10px 6px";
+      button.style.borderRadius = "12px";
+      button.style.border = mode.key === activeMode ? "2px solid #00897b" : "1px solid #dbe3ea";
+      button.style.background = mode.key === activeMode ? "#e0f5f5" : "#fff";
+      button.style.color = "#174e57";
+      button.style.fontWeight = "800";
+      button.style.cursor = "pointer";
+      button.addEventListener("click", () => {
+        activeMode = mode.key;
+        modeConfig.forEach((config, index) => {
+          const other = modes.children[index] as HTMLButtonElement;
+          other.style.border = config.key === activeMode ? "2px solid #00897b" : "1px solid #dbe3ea";
+          other.style.background = config.key === activeMode ? "#e0f5f5" : "#fff";
+        });
+        void drawRoute(mode);
+      });
+      modes.appendChild(button);
+    });
+
+    sheet.style.position = "relative";
+    sheet.appendChild(head);
+    sheet.appendChild(closeButton);
+    sheet.appendChild(modes);
+    sheet.appendChild(result);
+    sheet.appendChild(googleMapsButton);
+    panel.appendChild(sheet);
+    document.body.appendChild(panel);
+
+    closeButton.addEventListener("click", closePanel);
+    panel.addEventListener("click", (event) => {
+      if (event.target === panel) closePanel();
+    });
+
+    const onRouteKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closePanel();
+    };
+    document.addEventListener("keydown", onRouteKeyDown);
+
+    const originalClosePanel = closePanel;
+    const cleanupRouteKey = () => document.removeEventListener("keydown", onRouteKeyDown);
+    closeButton.addEventListener("click", cleanupRouteKey, { once: true });
+
+    void drawRoute(modeConfig.find((mode) => mode.key === activeMode) ?? modeConfig[1]);
+  };
+
   const renderOverview = () => {
     body.innerHTML =
       "<div style=\"font-size:14px;line-height:1.65;color:#3c4043;\">" + safeDescription + "</div>" +
@@ -877,14 +1288,7 @@ function createCheckpointDetailsModal({
 
   const actionButtons = [
     makeAction("➤", "Đường đi", () => {
-      if (userLocation) {
-        mapInstance.fitBounds(
-          [[userLocation.longitude, userLocation.latitude], [checkpoint.longitude, checkpoint.latitude]],
-          { padding: 90, maxZoom: 15, duration: 900 }
-        );
-      } else {
-        mapInstance.flyTo({ center: [checkpoint.longitude, checkpoint.latitude], zoom: 15, duration: 900 });
-      }
+      openDirectionsPanel();
     }),
     saveButton,
     makeAction("◎", "Gần đó", () => {
@@ -919,6 +1323,9 @@ function createCheckpointDetailsModal({
 
   const close = () => {
     document.removeEventListener("keydown", onKeyDown);
+    const routePanel = document.querySelector("[data-travelquest-directions='true']");
+    if (routePanel) routePanel.remove();
+    clearRouteFromMap();
     overlay.remove();
     onClose();
   };
