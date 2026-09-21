@@ -1669,7 +1669,17 @@ function createCheckpointDetailsModal({
     document.removeEventListener("keydown", onKeyDown);
     const routePanel = document.querySelector("[data-travelquest-directions='true']");
     if (routePanel) routePanel.remove();
-    clearRouteFromMap();
+
+    // Nếu đang chỉ đường, khi đóng popup địa danh vẫn phải giữ
+    // tuyến xanh + GPS tracking trên bản đồ.
+    const navigationIsActive = Boolean(
+      document.querySelector("[data-travelquest-navigation-control='true']")
+    );
+
+    if (!navigationIsActive) {
+      clearRouteFromMap();
+    }
+
     overlay.remove();
     onClose();
   };
