@@ -26,6 +26,7 @@ type FriendLocation = {
   display_name: string;
   level: number;
   xp: number;
+  avatar_url?: string | null;
 };
 
 type MapProps = {
@@ -2310,9 +2311,22 @@ export default function Map({
           avatar.style.display = "flex";
           avatar.style.alignItems = "center";
           avatar.style.justifyContent = "center";
+          avatar.style.overflow = "hidden";
           avatar.style.boxShadow = "0 4px 16px rgba(0,0,0,.35), 0 0 0 2px #60a5fa";
           avatar.style.fontSize = "19px";
-          avatar.textContent = "👤";
+
+          if (friend.avatar_url?.startsWith("data:image/")) {
+            const avatarImage = document.createElement("img");
+            avatarImage.src = friend.avatar_url;
+            avatarImage.alt = friend.display_name;
+            avatarImage.draggable = false;
+            avatarImage.style.width = "100%";
+            avatarImage.style.height = "100%";
+            avatarImage.style.objectFit = "cover";
+            avatar.appendChild(avatarImage);
+          } else {
+            avatar.textContent = "👤";
+          }
 
           const name = document.createElement("div");
           name.style.marginTop = "-1px";
