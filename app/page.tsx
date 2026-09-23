@@ -330,6 +330,9 @@ export default function Home() {
   const [activeTab, setActiveTab] =
     useState("map");
 
+  const [bottomNavExpanded, setBottomNavExpanded] = useState(false);
+  const bottomNavTouchStart = useRef<number | null>(null);
+
   const [checkpoints, setCheckpoints] =
     useState<Checkpoint[]>([]);
 
@@ -7312,83 +7315,79 @@ export default function Home() {
 
       {/* ================= BOTTOM NAV ================= */}
 
-      <nav className="tq-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
-
-        <div className="max-w-lg mx-auto h-[72px] flex items-center justify-around px-3">
-
+      <nav
+        className={`tq-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 pb-[env(safe-area-inset-bottom)] transition-transform duration-300 ${bottomNavExpanded ? "tq-bottom-nav-expanded" : ""}`}
+        onTouchStart={(event) => {
+          bottomNavTouchStart.current = event.touches[0]?.clientY ?? null;
+        }}
+        onTouchEnd={(event) => {
+          const start = bottomNavTouchStart.current;
+          const end = event.changedTouches[0]?.clientY ?? null;
+          bottomNavTouchStart.current = null;
+          if (start === null || end === null) return;
+          const delta = end - start;
+          if (delta < -35) setBottomNavExpanded(true);
+          if (delta > 35) setBottomNavExpanded(false);
+        }}
+      >
+        <div className="mx-auto w-full max-w-lg">
           <button
-            onClick={() =>
-              setActiveTab(
-                "map"
-              )
-            }
-            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
-              activeTab === "map"
-                ? "text-white bg-white/10"
-                : "text-white/40 hover:text-white"
-            }`}
+            type="button"
+            aria-label={bottomNavExpanded ? "Thu gọn thanh điều hướng" : "Mở rộng thanh điều hướng"}
+            onClick={() => setBottomNavExpanded((value) => !value)}
+            className="mx-auto flex h-6 w-full items-center justify-center"
           >
-
-            <span className="text-xl">
-              🗺️
-            </span>
-
-            <span className="text-[11px] font-semibold">
-              Map
-            </span>
-
+            <span className="h-1 w-10 rounded-full bg-white/25" />
           </button>
 
-          <button
-            onClick={() =>
-              setActiveTab(
-                "badges"
-              )
-            }
-            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
-              activeTab === "badges"
-                ? "text-white bg-white/10"
-                : "text-white/40 hover:text-white"
-            }`}
-          >
+          {bottomNavExpanded && (
+            <div className="grid grid-cols-4 gap-2 px-3 pb-2">
+              <button type="button" onClick={openSearch} className="flex min-h-12 flex-col items-center justify-center rounded-xl bg-white/5 text-[10px] font-semibold text-white/70">
+                <span className="text-base">👤</span>
+                Tìm người
+              </button>
+              <button type="button" onClick={toggleNotifications} className="flex min-h-12 flex-col items-center justify-center rounded-xl bg-white/5 text-[10px] font-semibold text-white/70">
+                <span className="text-base">🔔</span>
+                Thông báo
+              </button>
+              <button type="button" onClick={() => setSmartTravelOpen(true)} className="flex min-h-12 flex-col items-center justify-center rounded-xl bg-white/5 text-[10px] font-semibold text-white/70">
+                <span className="text-base">✨</span>
+                Smart Travel
+              </button>
+              <button type="button" onClick={() => setChatOpen(true)} className="flex min-h-12 flex-col items-center justify-center rounded-xl bg-white/5 text-[10px] font-semibold text-white/70">
+                <span className="text-base">💬</span>
+                Chat
+              </button>
+            </div>
+          )}
 
-            <span className="text-xl">
-              🏆
-            </span>
+          <div className="flex h-[72px] items-center justify-around px-3">
+            <button
+              onClick={() => setActiveTab("map")}
+              className={`flex flex-col items-center gap-1 rounded-2xl px-6 py-2 transition ${activeTab === "map" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+            >
+              <span className="text-xl">🗺️</span>
+              <span className="text-[11px] font-semibold">Map</span>
+            </button>
 
-            <span className="text-[11px] font-semibold">
-              Huy hiệu
-            </span>
+            <button
+              onClick={() => setActiveTab("badges")}
+              className={`flex flex-col items-center gap-1 rounded-2xl px-6 py-2 transition ${activeTab === "badges" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+            >
+              <span className="text-xl">🏆</span>
+              <span className="text-[11px] font-semibold">Huy hiệu</span>
+            </button>
 
-          </button>
-
-          <button
-            onClick={() =>
-              setActiveTab(
-                "ugc"
-              )
-            }
-            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
-              activeTab === "ugc"
-                ? "text-white bg-white/10"
-                : "text-white/40 hover:text-white"
-            }`}
-          >
-
-            <span className="text-xl">
-              📸
-            </span>
-
-            <span className="text-[11px] font-semibold">
-              UGC
-            </span>
-
-          </button>
-
+            <button
+              onClick={() => setActiveTab("ugc")}
+              className={`flex flex-col items-center gap-1 rounded-2xl px-6 py-2 transition ${activeTab === "ugc" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+            >
+              <span className="text-xl">📸</span>
+              <span className="text-[11px] font-semibold">UGC</span>
+            </button>
+          </div>
         </div>
-
       </nav>
-
       {/* ============================================
           REPORT / MODERATION PANEL
       ============================================ */}
