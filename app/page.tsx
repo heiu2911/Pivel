@@ -5678,7 +5678,7 @@ export default function Home() {
           </div>
         </div>
       </header>
-     <div className="pb-24">
+     <div className={activeTab === "map" ? "pb-0" : "pb-24"}>
 
         {/* ================= MAP ================= */}
 
