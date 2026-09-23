@@ -5481,9 +5481,9 @@ export default function Home() {
       )}
 
       {/* MAP TOOLBAR */}
-      <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
-        <div className="pointer-events-auto w-full border-b border-white/10 bg-[#070b11]/95 shadow-[0_8px_30px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-          <div className="mx-auto flex max-w-[1600px] items-center gap-2 px-3 py-2 sm:px-4">
+      <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-2 pt-2 sm:px-3">
+        <div className="pointer-events-auto mx-auto max-w-[1600px]">
+          <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#07182a]/55 px-2 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:px-3">
             <div className="relative min-w-0 flex-1">
               <div className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white px-2.5 text-slate-900 shadow-sm">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-base">⌕</span>
@@ -5659,7 +5659,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto px-3 pb-2 lg:hidden [scrollbar-width:none] sm:px-4">
+          <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden [scrollbar-width:none]">
             {[
               ["all", "✨ Tất cả"],
               ["nearby", "📍 Gần tôi"],
@@ -5675,6 +5675,7 @@ export default function Home() {
                 {label}
               </button>
             ))}
+          </div>
           </div>
         </div>
       </header>
