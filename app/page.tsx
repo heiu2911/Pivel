@@ -419,8 +419,17 @@ export default function Home() {
 
   const handleClearLocalData = () => {
     try {
-      window.localStorage.removeItem("travelquest-saved-places");
-      window.localStorage.removeItem("travelquest-journey");
+      if (user?.id) {
+        window.localStorage.removeItem(
+          `travelquest-saved-places:${user.id}`
+        );
+        window.localStorage.removeItem(
+          `travelquest-journey:${user.id}`
+        );
+        window.localStorage.removeItem(
+          `travelquest-avatar-image:${user.id}`
+        );
+      }
     } catch {
       // Ignore localStorage errors.
     }
@@ -529,9 +538,19 @@ export default function Home() {
   const lastPublishedLocationAt = useRef(0);
 
   useEffect(() => {
+    if (!user?.id) {
+      setSavedPlaceIds([]);
+      return;
+    }
+
     try {
-      const raw = window.localStorage.getItem("travelquest-saved-places");
-      if (!raw) return;
+      const raw = window.localStorage.getItem(
+        `travelquest-saved-places:${user.id}`
+      );
+      if (!raw) {
+        setSavedPlaceIds([]);
+        return;
+      }
       const parsed: unknown = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         setSavedPlaceIds(
@@ -539,26 +558,42 @@ export default function Home() {
         );
       }
     } catch {
-      // Ignore invalid local saved-place data.
+      setSavedPlaceIds([]);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     try {
       window.localStorage.setItem(
-        "travelquest-saved-places",
+        `travelquest-saved-places:${user.id}`,
         JSON.stringify(savedPlaceIds)
       );
     } catch {
       // Ignore localStorage failures.
     }
-  }, [savedPlaceIds]);
+  }, [savedPlaceIds, user?.id]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setJourneyName("Hành trình Hà Nội");
+      setJourneyCheckpointIds([]);
+      setJourneyStarted(false);
+      return;
+    }
+
     queueMicrotask(() => {
       try {
-        const raw = window.localStorage.getItem("travelquest-journey");
-        if (!raw) return;
+        const raw = window.localStorage.getItem(
+          `travelquest-journey:${user.id}`
+        );
+        if (!raw) {
+          setJourneyName("Hành trình Hà Nội");
+          setJourneyCheckpointIds([]);
+          setJourneyStarted(false);
+          return;
+        }
         const parsed: unknown = JSON.parse(raw);
         if (!parsed || typeof parsed !== "object") return;
         const data = parsed as {
@@ -581,12 +616,14 @@ export default function Home() {
         // Ignore invalid local journey data.
       }
     });
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     try {
       window.localStorage.setItem(
-        "travelquest-journey",
+        `travelquest-journey:${user.id}`,
         JSON.stringify({
           name: journeyName,
           checkpointIds: journeyCheckpointIds,
@@ -596,7 +633,7 @@ export default function Home() {
     } catch {
       // Ignore localStorage failures.
     }
-  }, [journeyName, journeyCheckpointIds, journeyStarted]);
+  }, [journeyName, journeyCheckpointIds, journeyStarted, user?.id]);
 
   // ============================================
   // AUTH
@@ -607,6 +644,8 @@ export default function Home() {
 
   const [authReady, setAuthReady] =
     useState(false);
+
+  const authUserIdRef = useRef<string | null>(null);
 
   const ownCheckpointReview = user?.id
     ? checkpointReviews.find((item) => item.user_id === user.id) ?? null
@@ -970,9 +1009,10 @@ export default function Home() {
       }
 
       if (mounted) {
-        setUser(
-          data.session?.user ?? null
-        );
+        const sessionUser = data.session?.user ?? null;
+        authUserIdRef.current = sessionUser?.id ?? null;
+
+        setUser(sessionUser);
 
         setAuthReady(true);
       }
@@ -989,9 +1029,46 @@ export default function Home() {
             return;
           }
 
-          setUser(
-            session?.user ?? null
-          );
+          const nextUser = session?.user ?? null;
+
+          if (nextUser?.id !== authUserIdRef.current) {
+            if (gpsWatchId.current !== null) {
+              stopWatchingLocation(gpsWatchId.current);
+              gpsWatchId.current = null;
+            }
+
+            lastPublishedLocationAt.current = 0;
+            geofenceCheckpointId.current = null;
+            autoCheckinInProgress.current.clear();
+
+            setCheckins([]);
+            setFollowingUserIds([]);
+            setFriendLocations([]);
+            setNotifications([]);
+            setPublicProfile(null);
+            setPublicProfileOpen(false);
+            setSearchResults([]);
+            setSearchQuery("");
+            setSavedPlaceIds([]);
+            setJourneyName("Hành trình Hà Nội");
+            setJourneyCheckpointIds([]);
+            setJourneyStarted(false);
+            setUserLocation(null);
+            setDistance(null);
+            setSelectedCheckpoint(null);
+            setPosts([]);
+            setComments([]);
+            setCommentInputs({});
+            setLikedPostIds([]);
+            setSavedPostIds([]);
+            setAvatarImageUrl(null);
+            setAvatarEmoji("🧭");
+            setProfileName("Traveller");
+            setProfileNameInput("");
+          }
+
+          authUserIdRef.current = nextUser?.id ?? null;
+          setUser(nextUser);
         }
       );
 
@@ -1456,20 +1533,55 @@ export default function Home() {
       return;
     }
 
+    // Clear all account-scoped UI state before ending the session.
+    if (gpsWatchId.current !== null) {
+      stopWatchingLocation(gpsWatchId.current);
+      gpsWatchId.current = null;
+    }
+
+    lastPublishedLocationAt.current = 0;
+    geofenceCheckpointId.current = null;
+    autoCheckinInProgress.current.clear();
+    previousCheckins.current = [];
+
     setUser(null);
-
-    setProfileName(
-      "Traveller"
-    );
-
-    setProfileNameInput(
-      ""
-    );
-
-    setProfileMessage(
-      ""
-    );
-
+    setCheckins([]);
+    setFollowingUserIds([]);
+    setFriendLocations([]);
+    setNotifications([]);
+    setPublicProfile(null);
+    setPublicProfileOpen(false);
+    setPublicProfileMessage("");
+    setSearchResults([]);
+    setSearchQuery("");
+    setSearchMessage("");
+    setSavedPlaceIds([]);
+    setJourneyName("Hành trình Hà Nội");
+    setJourneyCheckpointIds([]);
+    setJourneyStarted(false);
+    setJourneys([]);
+    setJourneyStartDate("");
+    setJourneyEndDate("");
+    setRouteShareMessage("");
+    setUserLocation(null);
+    setDistance(null);
+    setLocationLoading(false);
+    setSelectedCheckpoint(null);
+    setCheckpointReviews([]);
+    setReviewText("");
+    setReviewRating(5);
+    setReviewMessage("");
+    setPosts([]);
+    setComments([]);
+    setCommentInputs({});
+    setLikedPostIds([]);
+    setSavedPostIds([]);
+    setAvatarImageUrl(null);
+    setAvatarEmoji("🧭");
+    setProfileName("Traveller");
+    setProfileNameInput("");
+    setProfileMessage("");
+    setMessage("");
     setAuthOpen(false);
     setAuthEmail("");
     setAuthPassword("");
