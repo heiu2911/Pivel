@@ -3331,14 +3331,16 @@ export default function Home() {
   // ============================================
 
   useEffect(() => {
-    if (!gpsEnabled) return;
+    if (!gpsEnabled || !authReady) return;
 
     let cancelled = false;
 
     const startGpsOnAppOpen = async () => {
       try {
-        // This triggers the browser permission prompt when needed.
+        // Lấy vị trí ngay khi app mở. Nếu quyền đã được cấp,
+        // trình duyệt sẽ không hỏi lại và GPS tự chạy.
         await updateLocation();
+
         if (!cancelled) {
           startWatchingGPS();
         }
@@ -3351,14 +3353,16 @@ export default function Home() {
 
     return () => {
       cancelled = true;
+
       if (gpsWatchId.current !== null) {
         stopWatchingLocation(gpsWatchId.current);
         gpsWatchId.current = null;
       }
     };
-    // GPS should start once when the app opens, or when the user re-enables it.
+    // Restart when authentication becomes ready or changes user.
+    // This ensures the current user's location is published after login.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gpsEnabled]);
+  }, [gpsEnabled, authReady, user?.id]);
 
   // ============================================
   // SELECT CHECKPOINT
