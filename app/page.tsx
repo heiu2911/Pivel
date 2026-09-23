@@ -5676,7 +5676,6 @@ export default function Home() {
               </button>
             ))}
           </div>
-          </div>
         </div>
       </header>
      <div className={activeTab === "map" ? "pb-0" : "pb-24"}>
