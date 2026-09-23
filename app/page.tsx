@@ -5273,8 +5273,8 @@ export default function Home() {
 
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
-              <div className="absolute top-[88px] left-3 sm:left-4 z-20 w-[min(390px,calc(100vw-24px))] pointer-events-none">
-                <div className="pointer-events-auto max-h-[calc(100vh-180px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/94 backdrop-blur-2xl shadow-2xl [scrollbar-width:thin]">
+              <div className="fixed left-1/2 top-1/2 z-[80] w-[min(420px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="pointer-events-auto max-h-[min(72vh,680px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/96 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,.45)] [scrollbar-width:thin]">
 
                 {/* SUMMARY */}
                 <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
