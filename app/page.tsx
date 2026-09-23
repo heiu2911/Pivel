@@ -444,6 +444,15 @@ export default function Home() {
   // SAVED PLACES
   // ============================================
 
+  // Auth state must be initialized before effects that depend on user.
+  const [user, setUser] =
+    useState<User | null>(null);
+
+  const [authReady, setAuthReady] =
+    useState(false);
+
+  const authUserIdRef = useRef<string | null>(null);
+
   const [savedPlaceIds, setSavedPlaceIds] =
     useState<number[]>([]);
 
@@ -638,14 +647,6 @@ export default function Home() {
   // ============================================
   // AUTH
   // ============================================
-
-  const [user, setUser] =
-    useState<User | null>(null);
-
-  const [authReady, setAuthReady] =
-    useState(false);
-
-  const authUserIdRef = useRef<string | null>(null);
 
   const ownCheckpointReview = user?.id
     ? checkpointReviews.find((item) => item.user_id === user.id) ?? null
