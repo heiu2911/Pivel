@@ -274,6 +274,58 @@ function formatPostTime(
   );
 }
 
+async function prepareAvatarImage(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Vui lòng chọn một file ảnh.");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Ảnh avatar tối đa 5MB.");
+  }
+
+  const sourceUrl = URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Không thể đọc ảnh này."));
+      image.src = sourceUrl;
+    });
+
+    const maxSize = 256;
+    const scale = Math.min(
+      1,
+      maxSize / Math.max(image.naturalWidth, image.naturalHeight)
+    );
+
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Trình duyệt không hỗ trợ xử lý ảnh.");
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    const dataUrl = canvas.toDataURL("image/webp", 0.84);
+
+    if (!dataUrl.startsWith("data:image/")) {
+      throw new Error("Không thể tạo ảnh avatar.");
+    }
+
+    return dataUrl;
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] =
     useState("map");
@@ -377,7 +429,10 @@ export default function Home() {
     useState(false);
 
   const [showExplorePanel, setShowExplorePanel] =
-    useState(true);
+    useState(false);
+
+  const [headerMenuOpen, setHeaderMenuOpen] =
+    useState(false);
 
   const [showAllDailyMissions, setShowAllDailyMissions] =
     useState(false);
@@ -736,6 +791,9 @@ export default function Home() {
   const [hashtagFilter, setHashtagFilter] = useState("");
   const [savedPostIds, setSavedPostIds] = useState<number[]>([]);
   const [avatarEmoji, setAvatarEmoji] = useState("🧭");
+  const [avatarImageUrl, setAvatarImageUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [dailyMissionClaims, setDailyMissionClaims] = useState<Record<string, string>>({});
   const [missionBonusXP, setMissionBonusXP] = useState(0);
   const [routePlannerOpen, setRoutePlannerOpen] = useState(false);
@@ -756,6 +814,11 @@ export default function Home() {
         }
         const avatar = window.localStorage.getItem("travelquest-avatar");
         if (avatar) setAvatarEmoji(avatar);
+
+        const avatarImage = window.localStorage.getItem("travelquest-avatar-image");
+        if (avatarImage?.startsWith("data:image/")) {
+          setAvatarImageUrl(avatarImage);
+        }
         const missionData = window.localStorage.getItem("travelquest-daily-missions");
         if (missionData) {
           const parsed = JSON.parse(missionData) as { claims?: unknown; bonusXP?: unknown };
@@ -1089,6 +1152,56 @@ export default function Home() {
     }
 
     setProfileLoading(false);
+  };
+
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setAvatarUploading(true);
+    setProfileMessage("");
+
+    try {
+      const dataUrl = await prepareAvatarImage(file);
+
+      window.localStorage.setItem(
+        "travelquest-avatar-image",
+        dataUrl
+      );
+
+      setAvatarImageUrl(dataUrl);
+      setProfileMessage(
+        "✅ Đã cập nhật ảnh avatar. Ảnh được lưu trên thiết bị này."
+      );
+    } catch (error) {
+      setProfileMessage(
+        error instanceof Error
+          ? `❌ ${error.message}`
+          : "❌ Không thể cập nhật ảnh avatar."
+      );
+    } finally {
+      setAvatarUploading(false);
+
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeAvatarImage = () => {
+    try {
+      window.localStorage.removeItem("travelquest-avatar-image");
+    } catch {
+      // Ignore localStorage failures.
+    }
+
+    setAvatarImageUrl(null);
+    setProfileMessage("🧭 Đã chuyển về avatar mặc định.");
   };
 
   // ============================================
@@ -4921,19 +5034,20 @@ export default function Home() {
 
       {/* HEADER */}
 
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4 bg-[#06111f]/85 backdrop-blur-xl border-b border-white/10">
+      <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-3 pt-3 sm:px-4 sm:pt-4">
+        <div className="pointer-events-auto flex items-center justify-between rounded-2xl border border-white/10 bg-[#06111f]/82 px-3 py-2.5 shadow-lg backdrop-blur-xl">
 
         <div>
-          <h1 className="text-xl font-black tracking-tight">
+          <h1 className="text-sm font-black tracking-tight">
             TravelQuest
           </h1>
 
-          <p className="text-[11px] text-white/50">
+          <p className="text-[9px] text-white/40">
             Explore • Check-in • Collect
           </p>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-1.5">
 
           {/* SEARCH TRAVELLER */}
 
@@ -4987,10 +5101,18 @@ export default function Home() {
               }
             >
 
-              <span className="text-sm">
-                {user
-                  ? avatarEmoji
-                  : "🔐"}
+              <span className="w-7 h-7 rounded-full overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
+                {user && avatarImageUrl ? (
+                  <img
+                    src={avatarImageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm">
+                    {user ? avatarEmoji : "🔐"}
+                  </span>
+                )}
               </span>
 
               <span className="hidden sm:block text-xs font-semibold max-w-[120px] truncate">
@@ -5002,35 +5124,57 @@ export default function Home() {
             </button>
           )}
 
-          <button
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-            onClick={() => {
-              updateLocation();
-              startWatchingGPS();
-            }}
-            title="Cập nhật vị trí"
-          >
-            📍
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center hover:bg-white/12 transition text-lg"
+              onClick={() => setHeaderMenuOpen((value) => !value)}
+              title="Công cụ"
+              aria-label="Công cụ"
+            >
+              ⋯
+            </button>
 
-          <button
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-            onClick={() => setSmartTravelOpen(true)}
-            title="Smart Travel"
-          >
-            ✨
-          </button>
-
-          <button
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-            onClick={() => setChatOpen(true)}
-            title="Traveller Chat"
-          >
-            💬
-          </button>
+            {headerMenuOpen && (
+              <div className="absolute right-0 top-11 z-[70] w-48 rounded-2xl border border-white/10 bg-[#07182a]/98 p-2 shadow-2xl backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    updateLocation();
+                    startWatchingGPS();
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                >
+                  📍 Cập nhật GPS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    setSmartTravelOpen(true);
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                >
+                  ✨ Smart Travel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    setChatOpen(true);
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                >
+                  💬 Traveller Chat
+                </button>
+              </div>
+            )}
+          </div>
 
         </div>
 
+        </div>
       </header>
 
       <div className="pb-24">
@@ -5038,9 +5182,9 @@ export default function Home() {
         {/* ================= MAP ================= */}
 
         {activeTab === "map" && (
-          <section className="relative min-h-[calc(100vh-72px)]">
+          <section className="relative h-[100dvh] min-h-[560px]">
 
-            <div className="absolute inset-0 pt-[72px] pb-20">
+            <div className="absolute inset-0 pb-20">
               <Map
                 userLocation={
                   userLocation
@@ -5048,184 +5192,223 @@ export default function Home() {
                 checkpoints={
                   checkpoints
                 }
+                avatarUrl={
+                  avatarImageUrl
+                }
+                avatarEmoji={
+                  avatarEmoji
+                }
               />
             </div>
 
-            {/* MAP CONTROLS / EXPLORE + ADVENTURE */}
-            <div className="absolute top-[88px] left-3 right-3 sm:left-4 sm:right-auto z-20 pointer-events-none">
-              <div className="pointer-events-auto flex items-start gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowExplorePanel((value) => !value)}
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-xl transition ${
-                    showExplorePanel
-                      ? "border-blue-400/30 bg-[#07182a]/92 text-white"
-                      : "border-white/10 bg-[#07182a]/78 text-white/65 hover:text-white"
-                  }`}
-                  aria-label={showExplorePanel ? "Ẩn phần khám phá" : "Hiện khám phá"}
-                  title={showExplorePanel ? "Ẩn khám phá" : "Hiện khám phá"}
-                >
-                  <span className="text-sm">🧭</span>
-                  <span>Hiện khám phá</span>
-                </button>
+            {/* MAP CONTROL PANEL / KHÁM PHÁ */}
+            {showExplorePanel ? (
+              <div className="absolute top-[88px] left-3 sm:left-4 z-20 w-[min(390px,calc(100vw-24px))] pointer-events-none">
+                <div className="pointer-events-auto max-h-[calc(100vh-180px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/94 backdrop-blur-2xl shadow-2xl [scrollbar-width:thin]">
 
-                <div
-                  className={`group relative overflow-hidden rounded-full border shadow-lg backdrop-blur-xl transition-all duration-300 ${
-                    showExplorePanel
-                      ? "border-white/10 bg-[#07182a]/78"
-                      : "border-emerald-400/25 bg-[#07182a]/88"
-                  }`}
-                  onPointerDown={(event) => {
-                    const target = event.currentTarget;
-                    const startX = event.clientX;
-                    const handlePointerMove = (moveEvent: PointerEvent) => {
-                      const deltaX = moveEvent.clientX - startX;
-                      if (Math.abs(deltaX) > 70) {
-                        setShowExplorePanel(deltaX < 0);
-                        target.releasePointerCapture?.(moveEvent.pointerId);
-                        target.removeEventListener("pointermove", handlePointerMove);
-                        target.removeEventListener("pointerup", handlePointerUp);
-                      }
-                    };
-                    const handlePointerUp = () => {
-                      target.removeEventListener("pointermove", handlePointerMove);
-                      target.removeEventListener("pointerup", handlePointerUp);
-                    };
-                    target.addEventListener("pointermove", handlePointerMove);
-                    target.addEventListener("pointerup", handlePointerUp);
-                    target.setPointerCapture?.(event.pointerId);
-                  }}
-                >
+                {/* SUMMARY */}
+                <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">
+                        Khám phá Hà Nội
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="text-sm font-black">Checkpoints</p>
+                        <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/45">
+                          {checkins.length}/{checkpoints.length} đã chinh phục
+                        </span>
+                      </div>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className="text-lg font-black text-blue-300">{progress}%</p>
+                      <p className="text-[9px] text-white/35">tiến độ</p>
+                    </div>
+                  </div>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowExplorePanel((value) => !value)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-white/80 hover:text-white transition"
-                    aria-label="Bật hoặc tắt Adventure Mode"
-                    title="Adventure Mode · kéo sang trái/phải để bật/tắt"
+                    onClick={() => setShowExplorePanel(false)}
+                    className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
                   >
-                    <span className="text-sm">✦</span>
-                    <span>Adventure Mode</span>
-                    <span className={`ml-0.5 h-1.5 w-1.5 rounded-full ${showExplorePanel ? "bg-emerald-300" : "bg-white/25"}`} />
+                    Ẩn phần khám phá ↑
                   </button>
                 </div>
-              </div>
 
-              {showExplorePanel && (
-                <div
-                  className="mt-2 w-[min(360px,calc(100vw-24px))] max-h-[calc(100dvh-180px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/94 backdrop-blur-2xl shadow-2xl [scrollbar-width:thin]"
-                  onPointerDown={(event) => {
-                    const target = event.currentTarget;
-                    const startX = event.clientX;
-                    const handlePointerMove = (moveEvent: PointerEvent) => {
-                      const deltaX = moveEvent.clientX - startX;
-                      if (deltaX > 70) {
-                        setShowExplorePanel(false);
-                        target.releasePointerCapture?.(moveEvent.pointerId);
-                        target.removeEventListener("pointermove", handlePointerMove);
-                        target.removeEventListener("pointerup", handlePointerUp);
-                      }
-                    };
-                    const handlePointerUp = () => {
-                      target.removeEventListener("pointermove", handlePointerMove);
-                      target.removeEventListener("pointerup", handlePointerUp);
-                    };
-                    target.addEventListener("pointermove", handlePointerMove);
-                    target.addEventListener("pointerup", handlePointerUp);
-                    target.setPointerCapture?.(event.pointerId);
-                  }}
-                >
-                  <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">Khám phá</p>
-                        <div className="mt-1 flex items-center gap-2">
-                          <p className="text-sm font-black">Checkpoints</p>
-                          <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/45">{checkins.length}/{checkpoints.length}</span>
-                        </div>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="text-lg font-black text-blue-300">{progress}%</p>
-                        <p className="text-[9px] text-white/35">tiến độ</p>
-                      </div>
-                    </div>
-                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: \`\${progress}%\` }} />
-                    </div>
-                    <p className="mt-2 text-[9px] text-white/30">Kéo sang phải để ẩn</p>
-                  </div>
-
-                  <div className="p-3">
-                    <div className="flex items-center justify-between px-1 pb-2">
-                      <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
-                      {checkpoints.length > 3 && (
-                        <button type="button" onClick={() => setShowAllMapCheckpoints((value) => !value)} className="text-[10px] font-bold text-blue-300 hover:text-blue-200">
-                          {showAllMapCheckpoints ? "Thu gọn" : \`Xem tất cả (\${checkpoints.length})\`}
-                        </button>
-                      )}
-                    </div>
-                    {loading ? (
-                      <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">Đang tải checkpoint...</div>
-                    ) : checkpoints.length === 0 ? (
-                      <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">Chưa có checkpoint.</div>
-                    ) : (
-                      <div className="space-y-1.5">
-                        {(showAllMapCheckpoints ? checkpoints : checkpoints.slice(0, 3)).map((checkpoint) => {
-                          const checked = isCheckedIn(checkpoint.id);
-                          const selected = selectedCheckpoint?.id === checkpoint.id;
-                          return (
-                            <button key={checkpoint.id} type="button" onClick={() => selectCheckpoint(checkpoint)} className={\`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition \${selected ? "border-blue-400/50 bg-blue-500/15" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}\`}>
-                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">{checkpoint.icon ?? "📍"}</span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block truncate text-xs font-bold">{checkpoint.name}</span>
-                                <span className="mt-0.5 block truncate text-[10px] text-white/35">{checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span>
-                              </span>
-                              <span className={\`shrink-0 text-[10px] \${checked ? "text-emerald-300" : "text-white/25"}\`}>{checked ? "✓" : "›"}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
+                {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
+                <div className="p-3">
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
+                    {checkpoints.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllMapCheckpoints((value) => !value)}
+                        className="text-[10px] font-bold text-blue-300 hover:text-blue-200"
+                      >
+                        {showAllMapCheckpoints ? "Thu gọn" : `Xem tất cả (${checkpoints.length})`}
+                      </button>
                     )}
                   </div>
 
-                  <div className="border-t border-white/10">
-                    <button type="button" onClick={() => setShowSavedPlaces((value) => !value)} className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5">
-                      <div className="flex min-w-0 items-center gap-3"><span className="text-lg">🔖</span><div className="min-w-0"><p className="text-xs font-bold">Địa điểm đã lưu</p><p className="text-[10px] text-white/35">{savedCheckpoints.length} điểm</p></div></div>
-                      <span className="text-xs text-white/35">{showSavedPlaces ? "▲" : "▼"}</span>
-                    </button>
-                    {showSavedPlaces && <div className="border-t border-white/5 px-3 pb-3 pt-2">{savedCheckpoints.length === 0 ? <p className="py-3 text-center text-[11px] text-white/35">Chưa lưu địa điểm nào.</p> : <div className="space-y-1.5">{savedCheckpoints.slice(0, 5).map((checkpoint) => <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.035] p-2"><button type="button" onClick={() => { selectCheckpoint(checkpoint); setShowSavedPlaces(false); }} className="flex min-w-0 flex-1 items-center gap-2 text-left"><span className="text-base">{checkpoint.icon ?? "📍"}</span><span className="min-w-0"><span className="block truncate text-[11px] font-semibold">{checkpoint.name}</span><span className="block text-[9px] text-white/30">{isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span></span></button><button type="button" onClick={() => toggleSavedPlace(checkpoint.id)} className="h-7 w-7 shrink-0 rounded-lg bg-white/5 text-xs hover:bg-white/10" title="Bỏ lưu">🔖</button></div>)}{savedCheckpoints.length > 5 && <p className="pt-1 text-center text-[9px] text-white/25">+{savedCheckpoints.length - 5} điểm khác</p>}</div>}</div>}
-                  </div>
-
-                  <div className="border-t border-white/10">
-                    <button type="button" onClick={() => setJourneyOpen(true)} className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5">
-                      <div className="flex min-w-0 items-center gap-3"><span className="text-lg">🧭</span><div className="min-w-0"><p className="truncate text-xs font-bold">{journeyName}</p><p className="text-[10px] text-white/35">{journeyCheckpoints.length === 0 ? "Chưa có checkpoint" : \`\${journeyCompletedCount}/\${journeyCheckpoints.length} checkpoint · \${journeyProgress}%\`}</p></div></div>
-                      <span className={\`shrink-0 text-[9px] font-bold \${journeyStarted ? "text-emerald-300" : "text-white/30"}\`}>{journeyStarted ? "● ĐANG ĐI" : "MỞ"}</span>
-                    </button>
-                  </div>
-
-                  <div className="border-t border-white/10">
-                    <div className="flex items-center justify-between px-4 py-3"><div><p className="text-[9px] font-bold tracking-[0.12em] text-purple-300">DAILY MISSIONS</p><p className="text-xs font-black">Nhiệm vụ hôm nay</p></div><button type="button" onClick={() => setShowAllDailyMissions((value) => !value)} className="text-[10px] font-bold text-blue-300">{showAllDailyMissions ? "Thu gọn" : "Chi tiết"}</button></div>
-                    <div className="grid grid-cols-2 gap-2 px-3 pb-3">
-                      {(showAllDailyMissions ? dailyMissions : dailyMissions.slice(0, 2)).map((mission) => {
-                        const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
-                        return <button key={mission.id} type="button" onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)} className={\`rounded-xl border p-2.5 text-left transition \${claimed ? "border-emerald-400/20 bg-emerald-500/10" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}\`}><div className="flex items-center justify-between gap-2"><span className="text-sm">{mission.icon}</span><span className="text-[9px] text-yellow-300">+{mission.reward} XP</span></div><p className="mt-1 truncate text-[10px] font-bold">{mission.title}</p><p className="mt-0.5 line-clamp-2 text-[9px] text-white/35">{mission.description}</p>{claimed && <p className="mt-1 text-[9px] font-bold text-emerald-300">✓ Đã nhận</p>}</button>;
+                  {loading ? (
+                    <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">
+                      Đang tải checkpoint...
+                    </div>
+                  ) : checkpoints.length === 0 ? (
+                    <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">
+                      Chưa có checkpoint.
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {(showAllMapCheckpoints ? checkpoints : checkpoints.slice(0, 3)).map((checkpoint) => {
+                        const checked = isCheckedIn(checkpoint.id);
+                        const selected = selectedCheckpoint?.id === checkpoint.id;
+                        return (
+                          <button
+                            key={checkpoint.id}
+                            type="button"
+                            onClick={() => selectCheckpoint(checkpoint)}
+                            className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition ${
+                              selected
+                                ? "border-blue-400/50 bg-blue-500/15"
+                                : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"
+                            }`}
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
+                              {checkpoint.icon ?? "📍"}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-bold">{checkpoint.name}</span>
+                              <span className="mt-0.5 block truncate text-[10px] text-white/35">
+                                {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
+                              </span>
+                            </span>
+                            <span className={`shrink-0 text-[10px] ${checked ? "text-emerald-300" : "text-white/25"}`}>
+                              {checked ? "✓" : "›"}
+                            </span>
+                          </button>
+                        );
                       })}
                     </div>
+                  )}
+                </div>
+
+                {/* SAVED PLACES */}
+                <div className="border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowSavedPlaces((value) => !value)}
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="text-lg">🔖</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold">Địa điểm đã lưu</p>
+                        <p className="text-[10px] text-white/35">{savedCheckpoints.length} điểm</p>
+                      </div>
+                    </div>
+                    <span className="text-xs text-white/35">{showSavedPlaces ? "▲" : "▼"}</span>
+                  </button>
+
+                  {showSavedPlaces && (
+                    <div className="border-t border-white/5 px-3 pb-3 pt-2">
+                      {savedCheckpoints.length === 0 ? (
+                        <p className="py-3 text-center text-[11px] text-white/35">Chưa lưu địa điểm nào.</p>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {savedCheckpoints.slice(0, 5).map((checkpoint) => (
+                            <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.035] p-2">
+                              <button
+                                type="button"
+                                onClick={() => { selectCheckpoint(checkpoint); setShowSavedPlaces(false); }}
+                                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                              >
+                                <span className="text-base">{checkpoint.icon ?? "📍"}</span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-[11px] font-semibold">{checkpoint.name}</span>
+                                  <span className="block text-[9px] text-white/30">{isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span>
+                                </span>
+                              </button>
+                              <button type="button" onClick={() => toggleSavedPlace(checkpoint.id)} className="h-7 w-7 shrink-0 rounded-lg bg-white/5 text-xs hover:bg-white/10" title="Bỏ lưu">🔖</button>
+                            </div>
+                          ))}
+                          {savedCheckpoints.length > 5 && <p className="pt-1 text-center text-[9px] text-white/25">+{savedCheckpoints.length - 5} điểm khác</p>}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* JOURNEY */}
+                <div className="border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setJourneyOpen(true)}
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="text-lg">🧭</span>
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold">{journeyName}</p>
+                        <p className="text-[10px] text-white/35">
+                          {journeyCheckpoints.length === 0 ? "Chưa có checkpoint" : `${journeyCompletedCount}/${journeyCheckpoints.length} checkpoint · ${journeyProgress}%`}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 text-[9px] font-bold ${journeyStarted ? "text-emerald-300" : "text-white/30"}`}>
+                      {journeyStarted ? "● ĐANG ĐI" : "MỞ"}
+                    </span>
+                  </button>
+                </div>
+
+                {/* DAILY MISSIONS — COMPACT */}
+                <div className="border-t border-white/10">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <p className="text-[9px] font-bold tracking-[0.12em] text-purple-300">DAILY MISSIONS</p>
+                      <p className="text-xs font-black">Nhiệm vụ hôm nay</p>
+                    </div>
+                    <button type="button" onClick={() => setShowAllDailyMissions((value) => !value)} className="text-[10px] font-bold text-blue-300">
+                      {showAllDailyMissions ? "Thu gọn" : "Chi tiết"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+                    {(showAllDailyMissions ? dailyMissions : dailyMissions.slice(0, 2)).map((mission) => {
+                      const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
+                      return (
+                        <button
+                          key={mission.id}
+                          type="button"
+                          onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)}
+                          className={`rounded-xl border p-2.5 text-left transition ${claimed ? "border-emerald-400/20 bg-emerald-500/10" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm">{mission.icon}</span>
+                            <span className="text-[9px] text-yellow-300">+{mission.reward} XP</span>
+                          </div>
+                          <p className="mt-1 truncate text-[10px] font-bold">{mission.title}</p>
+                          <p className="mt-0.5 line-clamp-2 text-[9px] text-white/35">{mission.description}</p>
+                          {claimed && <p className="mt-1 text-[9px] font-bold text-emerald-300">✓ Đã nhận</p>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
-            </div>
-            {/* USER LOCATION STATUS */}
-
-            {userLocation && (
-              <div className="absolute top-[205px] left-4 z-20">
-
-                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-[11px] text-white/60">
-
-                  📍 GPS đã cập nhật
-
                 </div>
-
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowExplorePanel(true)}
+                className="absolute top-[88px] left-3 sm:left-4 z-20 flex h-10 items-center gap-2 rounded-full border border-white/10 bg-[#07182a]/90 px-3.5 text-[11px] font-black text-white shadow-xl backdrop-blur-xl transition hover:bg-[#0b223b]"
+                title="Hiện khám phá"
+                aria-label="Hiện khám phá"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-sm">🧭</span>
+                <span>Hiện khám phá</span>
+              </button>
             )}
 
             {/* SELECTED CHECKPOINT */}
@@ -7046,9 +7229,9 @@ export default function Home() {
 
       {/* ================= BOTTOM NAV ================= */}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#06111f]/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#06111f]/92 backdrop-blur-2xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
 
-        <div className="max-w-xl mx-auto h-20 min-h-[72px] flex items-center justify-around px-2">
+        <div className="max-w-lg mx-auto h-[72px] flex items-center justify-around px-3">
 
           <button
             onClick={() =>
@@ -7876,8 +8059,72 @@ export default function Home() {
                 </div>
 
                 <div className="mt-5">
-                  <p className="text-xs text-white/50 mb-2">Avatar</p>
-                  <div className="flex gap-2 flex-wrap">{["🧭","🌍","🏕️","📸","🎒","🗺️","🏆","✨"].map((emoji) => <button key={emoji} onClick={() => setAvatarEmoji(emoji)} className={`w-10 h-10 rounded-xl border ${avatarEmoji === emoji ? "border-blue-400 bg-blue-500/15" : "border-white/10 bg-white/5"}`}>{emoji}</button>)}</div>
+                  <p className="text-xs text-white/50 mb-2">Ảnh avatar</p>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 shrink-0">
+                      {avatarImageUrl ? (
+                        <img
+                          src={avatarImageUrl}
+                          alt="Avatar của bạn"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl">
+                          {avatarEmoji}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(event) => void handleAvatarUpload(event)}
+                      />
+
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={avatarUploading}
+                          className="px-3 py-2 rounded-xl bg-blue-500/15 border border-blue-400/20 text-blue-200 text-xs font-bold hover:bg-blue-500/25 transition disabled:opacity-50"
+                        >
+                          {avatarUploading ? "📡 Đang xử lý..." : "📷 Chọn ảnh"}
+                        </button>
+
+                        {avatarImageUrl && (
+                          <button
+                            type="button"
+                            onClick={removeAvatarImage}
+                            className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-xs font-bold hover:bg-white/10 hover:text-white transition"
+                          >
+                            Xóa ảnh
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="text-[10px] text-white/35 mt-2">
+                        PNG, JPG hoặc WebP · tối đa 5MB. Ảnh được thu nhỏ để làm avatar.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-white/50 mt-4 mb-2">Avatar biểu tượng</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {["🧭","🌍","🏕️","📸","🎒","🗺️","🏆","✨"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setAvatarEmoji(emoji)}
+                        className={`w-10 h-10 rounded-xl border ${avatarEmoji === emoji ? "border-blue-400 bg-blue-500/15" : "border-white/10 bg-white/5"}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* ================= ACCOUNT STATS ================= */}

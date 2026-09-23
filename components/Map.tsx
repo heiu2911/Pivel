@@ -22,6 +22,8 @@ type Checkpoint = {
 type MapProps = {
   userLocation?: UserLocation | null;
   checkpoints?: Checkpoint[];
+  avatarUrl?: string | null;
+  avatarEmoji?: string;
 };
 
 type CityDefinition = {
@@ -262,6 +264,31 @@ const CITY_DEFINITIONS: CityDefinition[] = [
   { key: "can-tho", name: "Cần Thơ", latitude: 10.0452, longitude: 105.7469 },
   { key: "da-lat", name: "Đà Lạt", latitude: 11.9404, longitude: 108.4583 },
 ];
+
+function ensureGpsMarkerStyles(): void {
+  if (typeof document === "undefined") return;
+  const styleId = "travelquest-gps-marker-styles";
+  if (document.getElementById(styleId)) return;
+  const style = document.createElement("style");
+  style.id = styleId;
+  style.textContent = `
+    @keyframes tq-radar-pulse {
+      0% {
+        transform: scale(0.85);
+        opacity: 0.9;
+      }
+      70% {
+        transform: scale(2.2);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(2.4);
+        opacity: 0;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 function isValidCoordinate(
   latitude: number,
@@ -1769,6 +1796,8 @@ function createCheckpointDetailsModal({
 export default function Map({
   userLocation = null,
   checkpoints = [],
+  avatarUrl = null,
+  avatarEmoji = "🧭",
 }: MapProps) {
   const mapContainer =
     useRef<HTMLDivElement | null>(null);
@@ -2398,36 +2427,142 @@ export default function Map({
         null;
     }
 
-    const gpsElement =
-      document.createElement("div");
+    ensureGpsMarkerStyles();
 
-    gpsElement.style.width =
-      "20px";
+    const markerWrapper = document.createElement("div");
+    markerWrapper.style.position = "relative";
+    markerWrapper.style.width = "48px";
+    markerWrapper.style.height = "56px";
+    markerWrapper.style.display = "flex";
+    markerWrapper.style.flexDirection = "column";
+    markerWrapper.style.alignItems = "center";
+    markerWrapper.style.cursor = "pointer";
+    markerWrapper.title = "Vị trí của bạn";
 
-    gpsElement.style.height =
-      "20px";
+    // Vòng sóng radar tỏa ra từ GPS
+    const pulseRing = document.createElement("div");
+    pulseRing.style.position = "absolute";
+    pulseRing.style.top = "0px";
+    pulseRing.style.width = "44px";
+    pulseRing.style.height = "44px";
+    pulseRing.style.borderRadius = "50%";
+    pulseRing.style.background = "rgba(37, 99, 235, 0.35)";
+    pulseRing.style.animation = "tq-radar-pulse 2.2s infinite ease-out";
+    pulseRing.style.pointerEvents = "none";
+    pulseRing.style.zIndex = "1";
+    markerWrapper.appendChild(pulseRing);
 
-    gpsElement.style.borderRadius =
-      "50%";
+    // Khung tròn chứa avatar
+    const avatarBadge = document.createElement("div");
+    avatarBadge.style.position = "relative";
+    avatarBadge.style.zIndex = "2";
+    avatarBadge.style.width = "44px";
+    avatarBadge.style.height = "44px";
+    avatarBadge.style.borderRadius = "50%";
+    avatarBadge.style.border = "3px solid #ffffff";
+    avatarBadge.style.boxShadow =
+      "0 4px 14px rgba(0, 0, 0, 0.4), 0 0 0 2px #2563eb";
+    avatarBadge.style.background =
+      "linear-gradient(135deg, #1d4ed8, #0284c7)";
+    avatarBadge.style.overflow = "hidden";
+    avatarBadge.style.display = "flex";
+    avatarBadge.style.alignItems = "center";
+    avatarBadge.style.justifyContent = "center";
+    avatarBadge.style.transition = "transform 0.15s ease";
 
-    gpsElement.style.background =
-      "#2563eb";
+    const renderEmojiAvatar = () => {
+      avatarBadge.innerHTML = "";
+      const emojiSpan = document.createElement("span");
+      emojiSpan.style.fontSize = "22px";
+      emojiSpan.style.lineHeight = "1";
+      emojiSpan.style.userSelect = "none";
+      emojiSpan.textContent = avatarEmoji || "🧭";
+      avatarBadge.appendChild(emojiSpan);
+    };
 
-    gpsElement.style.border =
-      "4px solid white";
+    if (avatarUrl) {
+      const avatarImg = document.createElement("img");
+      avatarImg.src = avatarUrl;
+      avatarImg.alt = "Vị trí của bạn";
+      avatarImg.style.width = "100%";
+      avatarImg.style.height = "100%";
+      avatarImg.style.objectFit = "cover";
+      avatarImg.style.display = "block";
+      avatarImg.onerror = () => {
+        renderEmojiAvatar();
+      };
+      avatarBadge.appendChild(avatarImg);
+    } else {
+      renderEmojiAvatar();
+    }
 
-    gpsElement.style.boxShadow =
-      "0 0 0 6px rgba(37,99,235,0.25)";
+    markerWrapper.appendChild(avatarBadge);
 
-    userMarker.current =
-      new mapboxgl.Marker(
-        gpsElement
-      )
-        .setLngLat([
-          longitude,
-          latitude,
-        ])
-        .addTo(mapInstance);
+    // Mũi nhọn ghim định vị chỉ đúng tọa độ GPS
+    const pinTip = document.createElement("div");
+    pinTip.style.position = "relative";
+    pinTip.style.zIndex = "3";
+    pinTip.style.marginTop = "-6px";
+    pinTip.style.width = "12px";
+    pinTip.style.height = "12px";
+    pinTip.style.background = "#2563eb";
+    pinTip.style.transform = "rotate(45deg)";
+    pinTip.style.borderRight = "2.5px solid white";
+    pinTip.style.borderBottom = "2.5px solid white";
+    pinTip.style.borderRadius = "2px";
+    pinTip.style.boxShadow = "2px 2px 4px rgba(0, 0, 0, 0.25)";
+    markerWrapper.appendChild(pinTip);
+
+    // Điểm neo nhỏ ở đầu kim
+    const anchorDot = document.createElement("div");
+    anchorDot.style.position = "absolute";
+    anchorDot.style.bottom = "0";
+    anchorDot.style.width = "4px";
+    anchorDot.style.height = "4px";
+    anchorDot.style.borderRadius = "50%";
+    anchorDot.style.background = "#1d4ed8";
+    markerWrapper.appendChild(anchorDot);
+
+    // Hiệu ứng hover
+    markerWrapper.addEventListener("mouseenter", () => {
+      avatarBadge.style.transform = "scale(1.12)";
+    });
+    markerWrapper.addEventListener("mouseleave", () => {
+      avatarBadge.style.transform = "scale(1)";
+    });
+
+    // Popup tương tác khi bấm vào marker
+    const userPopup = new mapboxgl.Popup({
+      offset: [0, -56],
+      closeButton: true,
+      closeOnClick: false,
+      maxWidth: "260px",
+    }).setHTML(`
+      <div style="padding: 10px 12px; font-family: system-ui, -apple-system, sans-serif; text-align: center; color: #0f172a;">
+        <div style="font-weight: 800; font-size: 13px; margin-bottom: 3px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+          <span>${escapeHtml(avatarEmoji || "🧭")}</span>
+          <span>Vị trí hiện tại của bạn</span>
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
+          ${latitude.toFixed(5)}, ${longitude.toFixed(5)}
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 10px; font-weight: 700;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
+          GPS đang hoạt động
+        </div>
+      </div>
+    `);
+
+    userMarker.current = new mapboxgl.Marker({
+      element: markerWrapper,
+      anchor: "bottom",
+    })
+      .setLngLat([
+        longitude,
+        latitude,
+      ])
+      .setPopup(userPopup)
+      .addTo(mapInstance);
 
     // Tìm checkpoint gần nhất
     let nearestDistance:
@@ -2493,6 +2628,8 @@ export default function Map({
   }, [
     userLocation,
     checkpoints,
+    avatarUrl,
+    avatarEmoji,
   ]);
 
   return (
