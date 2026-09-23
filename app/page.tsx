@@ -431,6 +431,9 @@ export default function Home() {
   const [showExplorePanel, setShowExplorePanel] =
     useState(false);
 
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapFilter, setMapFilter] = useState<"all" | "nearby" | "unvisited" | "saved">("all");
+
   const [headerMenuOpen, setHeaderMenuOpen] =
     useState(false);
 
@@ -3209,6 +3212,34 @@ export default function Home() {
     journeyCheckpointIds.includes(checkpoint.id)
   );
 
+  const mapSearchResults = checkpoints
+    .filter((checkpoint) => {
+      const query = mapSearchQuery.trim().toLowerCase();
+      const matchesQuery =
+        !query ||
+        checkpoint.name.toLowerCase().includes(query) ||
+        (checkpoint.description ?? "").toLowerCase().includes(query);
+
+      if (!matchesQuery) return false;
+
+      if (mapFilter === "unvisited") {
+        return !isCheckedIn(checkpoint.id);
+      }
+
+      if (mapFilter === "saved") {
+        return isSavedPlace(checkpoint.id);
+      }
+
+      if (mapFilter === "nearby") {
+        if (!userLocation) return false;
+        const checkpointDistance = getValidGpsDistance(userLocation, checkpoint);
+        return checkpointDistance !== null && checkpointDistance <= 50000;
+      }
+
+      return true;
+    })
+    .slice(0, 6);
+
   const journeyCompletedCount = journeyCheckpoints.filter((checkpoint) =>
     isCheckedIn(checkpoint.id)
   ).length;
@@ -5035,7 +5066,7 @@ export default function Home() {
       {/* HEADER */}
 
       <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-3 pt-3 sm:px-4 sm:pt-4">
-        <div className="pointer-events-auto flex items-center justify-between rounded-2xl border border-white/10 bg-[#06111f]/82 px-3 py-2.5 shadow-lg backdrop-blur-xl">
+        <div className="pointer-events-auto flex items-center justify-between rounded-[1.35rem] border border-white/15 bg-[#06111f]/72 px-3 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
 
         <div>
           <h1 className="text-sm font-black tracking-tight">
@@ -5200,6 +5231,96 @@ export default function Home() {
                 }
               />
             </div>
+
+              {/* GOOGLE MAPS-STYLE DISCOVERY OVERLAY */}
+              <div className="pointer-events-none absolute inset-x-0 top-[74px] z-30 px-3 sm:px-5">
+                <div className="mx-auto flex max-w-3xl flex-col items-stretch gap-2">
+                  <div className="pointer-events-auto flex items-center gap-2 rounded-[1.35rem] border border-black/5 bg-white/95 px-3 py-2.5 text-slate-900 shadow-[0_10px_35px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg">⌕</span>
+                    <input
+                      value={mapSearchQuery}
+                      onChange={(event) => setMapSearchQuery(event.target.value)}
+                      placeholder="Tìm địa điểm, checkpoint..."
+                      className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+                      aria-label="Tìm địa điểm trên bản đồ"
+                    />
+                    {mapSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setMapSearchQuery("")}
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                        aria-label="Xóa tìm kiếm"
+                      >
+                        ×
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateLocation();
+                        startWatchingGPS();
+                      }}
+                      className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-200"
+                      title="Định vị tôi"
+                    >
+                      <span>⌖</span>
+                      <span className="hidden sm:inline">Vị trí</span>
+                    </button>
+                  </div>
+
+                  <div className="pointer-events-auto flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+                    {[
+                      ["all", "✨ Tất cả"],
+                      ["nearby", "📍 Gần tôi"],
+                      ["unvisited", "🎯 Chưa check-in"],
+                      ["saved", "🔖 Đã lưu"],
+                    ].map(([value, label]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setMapFilter(value as "all" | "nearby" | "unvisited" | "saved")}
+                        className={`tq-map-chip shrink-0 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {(mapSearchQuery.trim() || mapFilter !== "all") && (
+                    <div className="pointer-events-auto max-h-72 overflow-y-auto rounded-2xl border border-black/5 bg-white/96 p-1.5 shadow-[0_14px_45px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+                      {mapSearchResults.length === 0 ? (
+                        <div className="px-4 py-5 text-center text-xs text-slate-500">
+                          Chưa tìm thấy checkpoint phù hợp.
+                        </div>
+                      ) : (
+                        mapSearchResults.map((checkpoint) => (
+                          <button
+                            key={checkpoint.id}
+                            type="button"
+                            onClick={() => {
+                              selectCheckpoint(checkpoint);
+                              setShowExplorePanel(false);
+                              setMapSearchQuery("");
+                            }}
+                            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
+                          >
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl">
+                              {checkpoint.icon ?? "📍"}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-bold text-slate-800">{checkpoint.name}</span>
+                              <span className="mt-0.5 block truncate text-[11px] text-slate-500">
+                                {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
+                              </span>
+                            </span>
+                            <span className="text-slate-400 transition group-hover:translate-x-0.5">›</span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
@@ -7229,7 +7350,7 @@ export default function Home() {
 
       {/* ================= BOTTOM NAV ================= */}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#06111f]/92 backdrop-blur-2xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+      <nav className="tq-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
 
         <div className="max-w-lg mx-auto h-[72px] flex items-center justify-around px-3">
 
