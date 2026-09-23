@@ -464,6 +464,9 @@ export default function Home() {
   const [showAllMapCheckpoints, setShowAllMapCheckpoints] =
     useState(false);
 
+  const [showMapCheckpoints, setShowMapCheckpoints] =
+    useState(true);
+
   const [showExplorePanel, setShowExplorePanel] =
     useState(false);
 
@@ -5699,6 +5702,9 @@ export default function Home() {
                 friendLocations={
                   friendLocations
                 }
+                showCheckpoints={
+                  showMapCheckpoints
+                }
                 onFriendMarkerClick={
                   openPublicProfile
                 }
@@ -5743,9 +5749,17 @@ export default function Home() {
 
                 {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
                 <div className="p-3">
-                  <div className="flex items-center justify-between px-1 pb-2">
+                  <div className="flex items-center justify-between gap-2 px-1 pb-2">
                     <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
-                    {checkpoints.length > 3 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowMapCheckpoints((value) => !value)}
+                        className={`text-[10px] font-bold transition ${showMapCheckpoints ? "text-blue-300 hover:text-blue-200" : "text-white/40 hover:text-white/70"}`}
+                      >
+                        {showMapCheckpoints ? "Ẩn checkpoint" : "Hiển checkpoint"}
+                      </button>
+                      {checkpoints.length > 3 && (
                       <button
                         type="button"
                         onClick={() => setShowAllMapCheckpoints((value) => !value)}
@@ -5753,7 +5767,8 @@ export default function Home() {
                       >
                         {showAllMapCheckpoints ? "Thu gọn" : `Xem tất cả (${checkpoints.length})`}
                       </button>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {loading ? (
