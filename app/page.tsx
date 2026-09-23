@@ -1916,8 +1916,14 @@ export default function Home() {
             updated_at: location.updated_at,
           } satisfies FriendLocation;
         })
-        .filter((item) =>
-          isValidGpsCoordinate(item.latitude, item.longitude)
+        .filter(
+          (item) =>
+            Number.isFinite(item.latitude) &&
+            Number.isFinite(item.longitude) &&
+            item.latitude >= -90 &&
+            item.latitude <= 90 &&
+            item.longitude >= -180 &&
+            item.longitude <= 180
         );
 
       console.info("TravelQuest Friend GPS:", {
