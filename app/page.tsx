@@ -5162,7 +5162,21 @@ export default function Home() {
                   className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-base transition hover:bg-white/14"
                   title="Tìm Traveller"
                 >
-                  🔎
+                  <svg
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    className="h-5 w-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="9" cy="8" r="3.2" />
+                    <path d="M3.8 19.2c.7-3 2.6-4.7 5.2-4.7s4.5 1.7 5.2 4.7" />
+                    <circle cx="17.2" cy="16.8" r="3.1" />
+                    <path d="m19.5 19.1 2 2" />
+                  </svg>
                 </button>
               )}
 
