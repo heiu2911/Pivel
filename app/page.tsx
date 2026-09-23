@@ -5268,7 +5268,7 @@ export default function Home() {
         {activeTab === "map" && (
           <section className="relative h-[100dvh] min-h-[560px]">
 
-            <div className="absolute inset-0 pb-20">
+            <div className="absolute inset-0">
               <Map
                 userLocation={
                   userLocation
