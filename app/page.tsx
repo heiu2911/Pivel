@@ -96,6 +96,16 @@ type PublicProfile = {
   level: number;
 };
 
+type FriendLocation = {
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  display_name: string;
+  level: number;
+  xp: number;
+  updated_at: string;
+};
+
 type Notification = {
   id: number;
   recipient_id: string;
@@ -512,6 +522,11 @@ export default function Home() {
 
   const [userLocation, setUserLocation] =
     useState<GPSLocation | null>(null);
+
+  const [friendLocations, setFriendLocations] =
+    useState<FriendLocation[]>([]);
+
+  const lastPublishedLocationAt = useRef(0);
 
   useEffect(() => {
     try {
@@ -1665,6 +1680,132 @@ export default function Home() {
       console.error("Lỗi load following:", error);
     }
   };
+
+  // ============================================
+  // FRIEND LOCATIONS - MUTUAL FOLLOWS
+  // ============================================
+
+  const loadFriendLocations = async () => {
+    if (!user?.id) {
+      setFriendLocations([]);
+      return;
+    }
+
+    try {
+      const [{ data: following }, { data: followers }] = await Promise.all([
+        supabase
+          .from("user_follows")
+          .select("following_id")
+          .eq("follower_id", user.id),
+        supabase
+          .from("user_follows")
+          .select("follower_id")
+          .eq("following_id", user.id),
+      ]);
+
+      const followingIds = new Set(
+        (following ?? [])
+          .map((row) => row.following_id)
+          .filter((id): id is string => typeof id === "string")
+      );
+
+      const friendIds = (followers ?? [])
+        .map((row) => row.follower_id)
+        .filter(
+          (id): id is string =>
+            typeof id === "string" && followingIds.has(id)
+        );
+
+      if (!friendIds.length) {
+        setFriendLocations([]);
+        return;
+      }
+
+      const { data: locations, error: locationError } = await supabase
+        .from("travelquest_friend_locations")
+        .select("user_id, latitude, longitude, updated_at")
+        .in("user_id", friendIds)
+        .eq("sharing_enabled", true);
+
+      if (locationError) {
+        // The SQL table may not have been created yet; keep the map usable.
+        console.warn("Friend locations chưa sẵn sàng:", locationError.message);
+        setFriendLocations([]);
+        return;
+      }
+
+      const { data: profiles } = await supabase
+        .from("travelquest_public_profiles")
+        .select("user_id, display_name, level, xp")
+        .in("user_id", friendIds);
+
+      const profileMap = new Map(
+        (profiles ?? []).map((profile) => [
+          profile.user_id,
+          profile,
+        ])
+      );
+
+      setFriendLocations(
+        (locations ?? [])
+          .map((location) => {
+            const profile = profileMap.get(location.user_id);
+            if (!profile) return null;
+
+            return {
+              user_id: location.user_id,
+              latitude: Number(location.latitude),
+              longitude: Number(location.longitude),
+              display_name: profile.display_name || "Traveller",
+              level: Number(profile.level ?? 1),
+              xp: Number(profile.xp ?? 0),
+              updated_at: location.updated_at,
+            } satisfies FriendLocation;
+          })
+          .filter((item): item is FriendLocation => item !== null)
+      );
+    } catch (error) {
+      console.warn("Lỗi tải vị trí bạn bè:", error);
+      setFriendLocations([]);
+    }
+  };
+
+  const publishOwnLocation = async (location: GPSLocation) => {
+    if (!user?.id) return;
+
+    const now = Date.now();
+    if (now - lastPublishedLocationAt.current < 15000) return;
+    lastPublishedLocationAt.current = now;
+
+    const { error } = await supabase
+      .from("travelquest_friend_locations")
+      .upsert(
+        {
+          user_id: user.id,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          sharing_enabled: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+
+    if (error) {
+      console.warn("Chưa thể chia sẻ vị trí với bạn bè:", error.message);
+    }
+  };
+
+  useEffect(() => {
+    void loadFriendLocations();
+
+    if (!user?.id) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadFriendLocations();
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [user?.id]);
 
   // ============================================
   // PUBLIC PROFILE - OPEN
@@ -3006,6 +3147,8 @@ export default function Home() {
           location
         );
 
+        void publishOwnLocation(location);
+
         await autoCheckIn(
           location
         );
@@ -3104,6 +3247,8 @@ export default function Home() {
             setUserLocation(
               location
             );
+
+            void publishOwnLocation(location);
 
             setLocationLoading(
               false
@@ -5321,6 +5466,12 @@ export default function Home() {
                 }
                 avatarEmoji={
                   avatarEmoji
+                }
+                friendLocations={
+                  friendLocations
+                }
+                onFriendMarkerClick={
+                  openPublicProfile
                 }
               />
             </div>
