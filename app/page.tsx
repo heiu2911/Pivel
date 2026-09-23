@@ -1835,7 +1835,7 @@ export default function Home() {
     }
 
     try {
-      const [{ data: following }, { data: followers }] = await Promise.all([
+      const [{ data: following, error: followingError }, { data: followers, error: followersError }] = await Promise.all([
         supabase
           .from("user_follows")
           .select("following_id")
@@ -1845,6 +1845,15 @@ export default function Home() {
           .select("follower_id")
           .eq("following_id", user.id),
       ]);
+
+      if (followingError || followersError) {
+        console.warn("Không tải được quan hệ Follow để tìm bạn bè:", {
+          followingError: followingError?.message,
+          followersError: followersError?.message,
+        });
+        setFriendLocations([]);
+        return;
+      }
 
       const followingIds = new Set(
         (following ?? [])
@@ -1877,10 +1886,14 @@ export default function Home() {
         return;
       }
 
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profileError } = await supabase
         .from("travelquest_public_profiles")
         .select("user_id, display_name, level, xp")
         .in("user_id", friendIds);
+
+      if (profileError) {
+        console.warn("Không tải được public profile bạn bè, vẫn hiển thị marker GPS:", profileError.message);
+      }
 
       const profileMap = new Map(
         (profiles ?? []).map((profile) => [
@@ -1889,24 +1902,32 @@ export default function Home() {
         ])
       );
 
-      setFriendLocations(
-        (locations ?? [])
-          .map((location) => {
-            const profile = profileMap.get(location.user_id);
-            if (!profile) return null;
+      const nextFriendLocations = (locations ?? [])
+        .map((location) => {
+          const profile = profileMap.get(location.user_id);
 
-            return {
-              user_id: location.user_id,
-              latitude: Number(location.latitude),
-              longitude: Number(location.longitude),
-              display_name: profile.display_name || "Traveller",
-              level: Number(profile.level ?? 1),
-              xp: Number(profile.xp ?? 0),
-              updated_at: location.updated_at,
-            } satisfies FriendLocation;
-          })
-          .filter((item): item is FriendLocation => item !== null)
-      );
+          return {
+            user_id: location.user_id,
+            latitude: Number(location.latitude),
+            longitude: Number(location.longitude),
+            display_name: profile?.display_name || "Traveller",
+            level: Number(profile?.level ?? 1),
+            xp: Number(profile?.xp ?? 0),
+            updated_at: location.updated_at,
+          } satisfies FriendLocation;
+        })
+        .filter((item) =>
+          isValidGpsCoordinate(item.latitude, item.longitude)
+        );
+
+      console.info("TravelQuest Friend GPS:", {
+        currentUserId: user.id,
+        mutualFriendIds: friendIds,
+        locationRows: locations?.length ?? 0,
+        visibleFriendLocations: nextFriendLocations.length,
+      });
+
+      setFriendLocations(nextFriendLocations);
     } catch (error) {
       console.warn("Lỗi tải vị trí bạn bè:", error);
       setFriendLocations([]);
@@ -1934,7 +1955,18 @@ export default function Home() {
       );
 
     if (error) {
-      console.warn("Chưa thể chia sẻ vị trí với bạn bè:", error.message);
+      console.warn("Chưa thể chia sẻ vị trí với bạn bè:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+    } else {
+      console.info("TravelQuest: đã publish GPS cho bạn bè.", {
+        userId: user.id,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
     }
   };
 
