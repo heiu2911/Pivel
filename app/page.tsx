@@ -869,20 +869,37 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setSavedPostIds([]);
+      setAvatarEmoji("🧭");
+      setAvatarImageUrl(null);
+      return;
+    }
+
     queueMicrotask(() => {
       try {
         const savedPosts = window.localStorage.getItem("travelquest-saved-posts");
         if (savedPosts) {
           const parsed: unknown = JSON.parse(savedPosts);
           if (Array.isArray(parsed)) setSavedPostIds(parsed.filter((id): id is number => typeof id === "number"));
+        } else {
+          setSavedPostIds([]);
         }
-        const avatar = window.localStorage.getItem("travelquest-avatar");
-        if (avatar) setAvatarEmoji(avatar);
 
-        const avatarImage = window.localStorage.getItem("travelquest-avatar-image");
-        if (avatarImage?.startsWith("data:image/")) {
-          setAvatarImageUrl(avatarImage);
-        }
+        const avatar = window.localStorage.getItem(
+          `travelquest-avatar:${user.id}`
+        );
+        setAvatarEmoji(avatar || "🧭");
+
+        const avatarImage = window.localStorage.getItem(
+          `travelquest-avatar-image:${user.id}`
+        );
+        setAvatarImageUrl(
+          avatarImage?.startsWith("data:image/")
+            ? avatarImage
+            : null
+        );
+
         const missionData = window.localStorage.getItem("travelquest-daily-missions");
         if (missionData) {
           const parsed = JSON.parse(missionData) as { claims?: unknown; bonusXP?: unknown };
@@ -903,19 +920,24 @@ export default function Home() {
         // Ignore invalid local feature data.
       }
     });
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     try {
       window.localStorage.setItem("travelquest-saved-posts", JSON.stringify(savedPostIds));
-      window.localStorage.setItem("travelquest-avatar", avatarEmoji);
+      window.localStorage.setItem(
+        `travelquest-avatar:${user.id}`,
+        avatarEmoji
+      );
       window.localStorage.setItem("travelquest-daily-missions", JSON.stringify({ claims: dailyMissionClaims, bonusXP: missionBonusXP }));
       window.localStorage.setItem("travelquest-journeys", JSON.stringify(journeys));
       window.localStorage.setItem("travelquest-chat", JSON.stringify(chatMessages.slice(-100)));
     } catch {
       // Ignore localStorage failures.
     }
-  }, [savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages]);
+  }, [user?.id, savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages]);
 
   useEffect(() => {
     if (!chatOpen) return;
@@ -1271,8 +1293,12 @@ export default function Home() {
     try {
       const dataUrl = await prepareAvatarImage(file);
 
+      if (!user?.id) {
+        throw new Error("Bạn cần đăng nhập để lưu avatar.");
+      }
+
       window.localStorage.setItem(
-        "travelquest-avatar-image",
+        `travelquest-avatar-image:${user.id}`,
         dataUrl
       );
 
@@ -1297,7 +1323,11 @@ export default function Home() {
 
   const removeAvatarImage = () => {
     try {
-      window.localStorage.removeItem("travelquest-avatar-image");
+      if (user?.id) {
+        window.localStorage.removeItem(
+          `travelquest-avatar-image:${user.id}`
+        );
+      }
     } catch {
       // Ignore localStorage failures.
     }
