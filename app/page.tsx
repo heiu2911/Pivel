@@ -5051,213 +5051,169 @@ export default function Home() {
               />
             </div>
 
-            {/* MAP CONTROL PANEL / KHÁM PHÁ */}
-            {showExplorePanel ? (
-              <div className="absolute top-[88px] left-3 sm:left-4 z-20 w-[min(390px,calc(100vw-24px))] pointer-events-none">
-                <div className="pointer-events-auto max-h-[calc(100vh-180px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/94 backdrop-blur-2xl shadow-2xl [scrollbar-width:thin]">
+            {/* MAP CONTROLS / EXPLORE + ADVENTURE */}
+            <div className="absolute top-[88px] left-3 right-3 sm:left-4 sm:right-auto z-20 pointer-events-none">
+              <div className="pointer-events-auto flex items-start gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowExplorePanel((value) => !value)}
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-xl transition ${
+                    showExplorePanel
+                      ? "border-blue-400/30 bg-[#07182a]/92 text-white"
+                      : "border-white/10 bg-[#07182a]/78 text-white/65 hover:text-white"
+                  }`}
+                  aria-label={showExplorePanel ? "Ẩn phần khám phá" : "Hiện khám phá"}
+                  title={showExplorePanel ? "Ẩn khám phá" : "Hiện khám phá"}
+                >
+                  <span className="text-sm">🧭</span>
+                  <span>Hiện khám phá</span>
+                </button>
 
-                {/* SUMMARY */}
-                <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">
-                        Khám phá Hà Nội
-                      </p>
-                      <div className="mt-1 flex items-center gap-2">
-                        <p className="text-sm font-black">Checkpoints</p>
-                        <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/45">
-                          {checkins.length}/{checkpoints.length} đã chinh phục
-                        </span>
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-lg font-black text-blue-300">{progress}%</p>
-                      <p className="text-[9px] text-white/35">tiến độ</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
-                  </div>
+                <div
+                  className={`group relative overflow-hidden rounded-full border shadow-lg backdrop-blur-xl transition-all duration-300 ${
+                    showExplorePanel
+                      ? "border-white/10 bg-[#07182a]/78"
+                      : "border-emerald-400/25 bg-[#07182a]/88"
+                  }`}
+                  onPointerDown={(event) => {
+                    const target = event.currentTarget;
+                    const startX = event.clientX;
+                    const handlePointerMove = (moveEvent: PointerEvent) => {
+                      const deltaX = moveEvent.clientX - startX;
+                      if (Math.abs(deltaX) > 70) {
+                        setShowExplorePanel(deltaX < 0);
+                        target.releasePointerCapture?.(moveEvent.pointerId);
+                        target.removeEventListener("pointermove", handlePointerMove);
+                        target.removeEventListener("pointerup", handlePointerUp);
+                      }
+                    };
+                    const handlePointerUp = () => {
+                      target.removeEventListener("pointermove", handlePointerMove);
+                      target.removeEventListener("pointerup", handlePointerUp);
+                    };
+                    target.addEventListener("pointermove", handlePointerMove);
+                    target.addEventListener("pointerup", handlePointerUp);
+                    target.setPointerCapture?.(event.pointerId);
+                  }}
+                >
                   <button
                     type="button"
-                    onClick={() => setShowExplorePanel(false)}
-                    className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
+                    onClick={() => setShowExplorePanel((value) => !value)}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-white/80 hover:text-white transition"
+                    aria-label="Bật hoặc tắt Adventure Mode"
+                    title="Adventure Mode · kéo sang trái/phải để bật/tắt"
                   >
-                    Ẩn phần khám phá ↑
+                    <span className="text-sm">✦</span>
+                    <span>Adventure Mode</span>
+                    <span className={`ml-0.5 h-1.5 w-1.5 rounded-full ${showExplorePanel ? "bg-emerald-300" : "bg-white/25"}`} />
                   </button>
                 </div>
+              </div>
 
-                {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
-                <div className="p-3">
-                  <div className="flex items-center justify-between px-1 pb-2">
-                    <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
-                    {checkpoints.length > 3 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllMapCheckpoints((value) => !value)}
-                        className="text-[10px] font-bold text-blue-300 hover:text-blue-200"
-                      >
-                        {showAllMapCheckpoints ? "Thu gọn" : `Xem tất cả (${checkpoints.length})`}
-                      </button>
+              {showExplorePanel && (
+                <div
+                  className="mt-2 w-[min(360px,calc(100vw-24px))] max-h-[calc(100dvh-180px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/94 backdrop-blur-2xl shadow-2xl [scrollbar-width:thin]"
+                  onPointerDown={(event) => {
+                    const target = event.currentTarget;
+                    const startX = event.clientX;
+                    const handlePointerMove = (moveEvent: PointerEvent) => {
+                      const deltaX = moveEvent.clientX - startX;
+                      if (deltaX > 70) {
+                        setShowExplorePanel(false);
+                        target.releasePointerCapture?.(moveEvent.pointerId);
+                        target.removeEventListener("pointermove", handlePointerMove);
+                        target.removeEventListener("pointerup", handlePointerUp);
+                      }
+                    };
+                    const handlePointerUp = () => {
+                      target.removeEventListener("pointermove", handlePointerMove);
+                      target.removeEventListener("pointerup", handlePointerUp);
+                    };
+                    target.addEventListener("pointermove", handlePointerMove);
+                    target.addEventListener("pointerup", handlePointerUp);
+                    target.setPointerCapture?.(event.pointerId);
+                  }}
+                >
+                  <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">Khám phá</p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <p className="text-sm font-black">Checkpoints</p>
+                          <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/45">{checkins.length}/{checkpoints.length}</span>
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-lg font-black text-blue-300">{progress}%</p>
+                        <p className="text-[9px] text-white/35">tiến độ</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: \`\${progress}%\` }} />
+                    </div>
+                    <p className="mt-2 text-[9px] text-white/30">Kéo sang phải để ẩn</p>
+                  </div>
+
+                  <div className="p-3">
+                    <div className="flex items-center justify-between px-1 pb-2">
+                      <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
+                      {checkpoints.length > 3 && (
+                        <button type="button" onClick={() => setShowAllMapCheckpoints((value) => !value)} className="text-[10px] font-bold text-blue-300 hover:text-blue-200">
+                          {showAllMapCheckpoints ? "Thu gọn" : \`Xem tất cả (\${checkpoints.length})\`}
+                        </button>
+                      )}
+                    </div>
+                    {loading ? (
+                      <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">Đang tải checkpoint...</div>
+                    ) : checkpoints.length === 0 ? (
+                      <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">Chưa có checkpoint.</div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {(showAllMapCheckpoints ? checkpoints : checkpoints.slice(0, 3)).map((checkpoint) => {
+                          const checked = isCheckedIn(checkpoint.id);
+                          const selected = selectedCheckpoint?.id === checkpoint.id;
+                          return (
+                            <button key={checkpoint.id} type="button" onClick={() => selectCheckpoint(checkpoint)} className={\`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition \${selected ? "border-blue-400/50 bg-blue-500/15" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}\`}>
+                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">{checkpoint.icon ?? "📍"}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-xs font-bold">{checkpoint.name}</span>
+                                <span className="mt-0.5 block truncate text-[10px] text-white/35">{checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span>
+                              </span>
+                              <span className={\`shrink-0 text-[10px] \${checked ? "text-emerald-300" : "text-white/25"}\`}>{checked ? "✓" : "›"}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
 
-                  {loading ? (
-                    <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">
-                      Đang tải checkpoint...
-                    </div>
-                  ) : checkpoints.length === 0 ? (
-                    <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">
-                      Chưa có checkpoint.
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5">
-                      {(showAllMapCheckpoints ? checkpoints : checkpoints.slice(0, 3)).map((checkpoint) => {
-                        const checked = isCheckedIn(checkpoint.id);
-                        const selected = selectedCheckpoint?.id === checkpoint.id;
-                        return (
-                          <button
-                            key={checkpoint.id}
-                            type="button"
-                            onClick={() => selectCheckpoint(checkpoint)}
-                            className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition ${
-                              selected
-                                ? "border-blue-400/50 bg-blue-500/15"
-                                : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"
-                            }`}
-                          >
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
-                              {checkpoint.icon ?? "📍"}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs font-bold">{checkpoint.name}</span>
-                              <span className="mt-0.5 block truncate text-[10px] text-white/35">
-                                {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
-                              </span>
-                            </span>
-                            <span className={`shrink-0 text-[10px] ${checked ? "text-emerald-300" : "text-white/25"}`}>
-                              {checked ? "✓" : "›"}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                  <div className="border-t border-white/10">
+                    <button type="button" onClick={() => setShowSavedPlaces((value) => !value)} className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5">
+                      <div className="flex min-w-0 items-center gap-3"><span className="text-lg">🔖</span><div className="min-w-0"><p className="text-xs font-bold">Địa điểm đã lưu</p><p className="text-[10px] text-white/35">{savedCheckpoints.length} điểm</p></div></div>
+                      <span className="text-xs text-white/35">{showSavedPlaces ? "▲" : "▼"}</span>
+                    </button>
+                    {showSavedPlaces && <div className="border-t border-white/5 px-3 pb-3 pt-2">{savedCheckpoints.length === 0 ? <p className="py-3 text-center text-[11px] text-white/35">Chưa lưu địa điểm nào.</p> : <div className="space-y-1.5">{savedCheckpoints.slice(0, 5).map((checkpoint) => <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.035] p-2"><button type="button" onClick={() => { selectCheckpoint(checkpoint); setShowSavedPlaces(false); }} className="flex min-w-0 flex-1 items-center gap-2 text-left"><span className="text-base">{checkpoint.icon ?? "📍"}</span><span className="min-w-0"><span className="block truncate text-[11px] font-semibold">{checkpoint.name}</span><span className="block text-[9px] text-white/30">{isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span></span></button><button type="button" onClick={() => toggleSavedPlace(checkpoint.id)} className="h-7 w-7 shrink-0 rounded-lg bg-white/5 text-xs hover:bg-white/10" title="Bỏ lưu">🔖</button></div>)}{savedCheckpoints.length > 5 && <p className="pt-1 text-center text-[9px] text-white/25">+{savedCheckpoints.length - 5} điểm khác</p>}</div>}</div>}
+                  </div>
 
-                {/* SAVED PLACES */}
-                <div className="border-t border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setShowSavedPlaces((value) => !value)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="text-lg">🔖</span>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold">Địa điểm đã lưu</p>
-                        <p className="text-[10px] text-white/35">{savedCheckpoints.length} điểm</p>
-                      </div>
-                    </div>
-                    <span className="text-xs text-white/35">{showSavedPlaces ? "▲" : "▼"}</span>
-                  </button>
-
-                  {showSavedPlaces && (
-                    <div className="border-t border-white/5 px-3 pb-3 pt-2">
-                      {savedCheckpoints.length === 0 ? (
-                        <p className="py-3 text-center text-[11px] text-white/35">Chưa lưu địa điểm nào.</p>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {savedCheckpoints.slice(0, 5).map((checkpoint) => (
-                            <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.035] p-2">
-                              <button
-                                type="button"
-                                onClick={() => { selectCheckpoint(checkpoint); setShowSavedPlaces(false); }}
-                                className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                              >
-                                <span className="text-base">{checkpoint.icon ?? "📍"}</span>
-                                <span className="min-w-0">
-                                  <span className="block truncate text-[11px] font-semibold">{checkpoint.name}</span>
-                                  <span className="block text-[9px] text-white/30">{isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span>
-                                </span>
-                              </button>
-                              <button type="button" onClick={() => toggleSavedPlace(checkpoint.id)} className="h-7 w-7 shrink-0 rounded-lg bg-white/5 text-xs hover:bg-white/10" title="Bỏ lưu">🔖</button>
-                            </div>
-                          ))}
-                          {savedCheckpoints.length > 5 && <p className="pt-1 text-center text-[9px] text-white/25">+{savedCheckpoints.length - 5} điểm khác</p>}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* JOURNEY */}
-                <div className="border-t border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setJourneyOpen(true)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="text-lg">🧭</span>
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-bold">{journeyName}</p>
-                        <p className="text-[10px] text-white/35">
-                          {journeyCheckpoints.length === 0 ? "Chưa có checkpoint" : `${journeyCompletedCount}/${journeyCheckpoints.length} checkpoint · ${journeyProgress}%`}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`shrink-0 text-[9px] font-bold ${journeyStarted ? "text-emerald-300" : "text-white/30"}`}>
-                      {journeyStarted ? "● ĐANG ĐI" : "MỞ"}
-                    </span>
-                  </button>
-                </div>
-
-                {/* DAILY MISSIONS — COMPACT */}
-                <div className="border-t border-white/10">
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <div>
-                      <p className="text-[9px] font-bold tracking-[0.12em] text-purple-300">DAILY MISSIONS</p>
-                      <p className="text-xs font-black">Nhiệm vụ hôm nay</p>
-                    </div>
-                    <button type="button" onClick={() => setShowAllDailyMissions((value) => !value)} className="text-[10px] font-bold text-blue-300">
-                      {showAllDailyMissions ? "Thu gọn" : "Chi tiết"}
+                  <div className="border-t border-white/10">
+                    <button type="button" onClick={() => setJourneyOpen(true)} className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5">
+                      <div className="flex min-w-0 items-center gap-3"><span className="text-lg">🧭</span><div className="min-w-0"><p className="truncate text-xs font-bold">{journeyName}</p><p className="text-[10px] text-white/35">{journeyCheckpoints.length === 0 ? "Chưa có checkpoint" : \`\${journeyCompletedCount}/\${journeyCheckpoints.length} checkpoint · \${journeyProgress}%\`}</p></div></div>
+                      <span className={\`shrink-0 text-[9px] font-bold \${journeyStarted ? "text-emerald-300" : "text-white/30"}\`}>{journeyStarted ? "● ĐANG ĐI" : "MỞ"}</span>
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 px-3 pb-3">
-                    {(showAllDailyMissions ? dailyMissions : dailyMissions.slice(0, 2)).map((mission) => {
-                      const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
-                      return (
-                        <button
-                          key={mission.id}
-                          type="button"
-                          onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)}
-                          className={`rounded-xl border p-2.5 text-left transition ${claimed ? "border-emerald-400/20 bg-emerald-500/10" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-sm">{mission.icon}</span>
-                            <span className="text-[9px] text-yellow-300">+{mission.reward} XP</span>
-                          </div>
-                          <p className="mt-1 truncate text-[10px] font-bold">{mission.title}</p>
-                          <p className="mt-0.5 line-clamp-2 text-[9px] text-white/35">{mission.description}</p>
-                          {claimed && <p className="mt-1 text-[9px] font-bold text-emerald-300">✓ Đã nhận</p>}
-                        </button>
-                      );
-                    })}
+
+                  <div className="border-t border-white/10">
+                    <div className="flex items-center justify-between px-4 py-3"><div><p className="text-[9px] font-bold tracking-[0.12em] text-purple-300">DAILY MISSIONS</p><p className="text-xs font-black">Nhiệm vụ hôm nay</p></div><button type="button" onClick={() => setShowAllDailyMissions((value) => !value)} className="text-[10px] font-bold text-blue-300">{showAllDailyMissions ? "Thu gọn" : "Chi tiết"}</button></div>
+                    <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+                      {(showAllDailyMissions ? dailyMissions : dailyMissions.slice(0, 2)).map((mission) => {
+                        const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
+                        return <button key={mission.id} type="button" onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)} className={\`rounded-xl border p-2.5 text-left transition \${claimed ? "border-emerald-400/20 bg-emerald-500/10" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}\`}><div className="flex items-center justify-between gap-2"><span className="text-sm">{mission.icon}</span><span className="text-[9px] text-yellow-300">+{mission.reward} XP</span></div><p className="mt-1 truncate text-[10px] font-bold">{mission.title}</p><p className="mt-0.5 line-clamp-2 text-[9px] text-white/35">{mission.description}</p>{claimed && <p className="mt-1 text-[9px] font-bold text-emerald-300">✓ Đã nhận</p>}</button>;
+                      })}
+                    </div>
                   </div>
                 </div>
-                </div>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowExplorePanel(true)}
-                className="absolute top-[88px] left-3 sm:left-4 z-20 rounded-2xl border border-white/10 bg-[#07182a]/95 px-4 py-3 text-xs font-bold text-white shadow-2xl backdrop-blur-xl transition hover:bg-[#0b223b]"
-              >
-                🧭 Hiện khám phá
-              </button>
-            )}
-
+              )}
+            </div>
             {/* USER LOCATION STATUS */}
 
             {userLocation && (
