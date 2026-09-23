@@ -1895,7 +1895,7 @@ export default function Home() {
         console.warn("Không tải được public profile bạn bè, vẫn hiển thị marker GPS:", profileError.message);
       }
 
-      const profileMap = new Map(
+      const profileMap = new globalThis.Map(
         (profiles ?? []).map((profile) => [
           profile.user_id,
           profile,
