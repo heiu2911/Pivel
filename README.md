@@ -40,3 +40,6 @@ npm run build
 2. Import repository vào Vercel.
 3. Thêm ba biến trong `.env.example` vào **Environment Variables** trên Vercel.
 4. Deploy và thử lại Mapbox, Supabase Auth, GPS trên URL HTTPS. GPS yêu cầu HTTPS khi truy cập bằng thiết bị thật.
+## Development
+
+Current development branch: `feature/gps`

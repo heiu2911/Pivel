@@ -30,10 +30,26 @@ type Checkpoint = {
   latitude: number;
 };
 
+// Các checkpoint nổi tiếng bổ sung.
+// Tọa độ được chọn theo đúng tỉnh/thành hiện hành của địa danh.
+// Hà Nội giữ nguyên 4 checkpoint cũ trong Supabase.
+
+
 type Checkin = {
   checkpoint_id: number;
   user_id: string | null;
   created_at?: string | null;
+};
+
+type CheckpointReview = {
+  id: number;
+  checkpoint_id: number;
+  user_id: string;
+  rating: number;
+  review: string;
+  created_at: string;
+  updated_at: string;
+  display_name: string;
 };
 
 type Post = {
@@ -91,14 +107,30 @@ type Notification = {
   created_at: string;
 };
 
-type ReportTargetType = "post" | "comment" | "user";
+type ReportTargetType = "post" | "comment";
 
 type ReportReason =
   | "spam"
   | "harassment"
   | "inappropriate"
-  | "misinformation"
+  | "misleading"
   | "other";
+
+type JourneyRecord = {
+  id: string;
+  name: string;
+  checkpointIds: number[];
+  started: boolean;
+  startDate: string;
+  endDate: string;
+};
+
+type ChatMessage = {
+  id: string;
+  text: string;
+  sender: string;
+  createdAt: string;
+};
 
 type WeatherData = {
   current: {
@@ -242,6 +274,58 @@ function formatPostTime(
   );
 }
 
+async function prepareAvatarImage(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Vui lòng chọn một file ảnh.");
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error("Ảnh avatar tối đa 5MB.");
+  }
+
+  const sourceUrl = URL.createObjectURL(file);
+
+  try {
+    const image = new Image();
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("Không thể đọc ảnh này."));
+      image.src = sourceUrl;
+    });
+
+    const maxSize = 256;
+    const scale = Math.min(
+      1,
+      maxSize / Math.max(image.naturalWidth, image.naturalHeight)
+    );
+
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      throw new Error("Trình duyệt không hỗ trợ xử lý ảnh.");
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+
+    const dataUrl = canvas.toDataURL("image/webp", 0.84);
+
+    if (!dataUrl.startsWith("data:image/")) {
+      throw new Error("Không thể tạo ảnh avatar.");
+    }
+
+    return dataUrl;
+  } finally {
+    URL.revokeObjectURL(sourceUrl);
+  }
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] =
     useState("map");
@@ -341,6 +425,18 @@ export default function Home() {
   const [showSavedPlaces, setShowSavedPlaces] =
     useState(false);
 
+  const [showAllMapCheckpoints, setShowAllMapCheckpoints] =
+    useState(false);
+
+  const [showExplorePanel, setShowExplorePanel] =
+    useState(false);
+
+  const [headerMenuOpen, setHeaderMenuOpen] =
+    useState(false);
+
+  const [showAllDailyMissions, setShowAllDailyMissions] =
+    useState(false);
+
   // ============================================
   // JOURNEY / TRIP
   // ============================================
@@ -349,6 +445,10 @@ export default function Home() {
   const [journeyName, setJourneyName] = useState("Hành trình Hà Nội");
   const [journeyCheckpointIds, setJourneyCheckpointIds] = useState<number[]>([]);
   const [journeyStarted, setJourneyStarted] = useState(false);
+  const [journeys, setJourneys] = useState<JourneyRecord[]>([]);
+  const [journeyStartDate, setJourneyStartDate] = useState("");
+  const [journeyEndDate, setJourneyEndDate] = useState("");
+  const [routeShareMessage, setRouteShareMessage] = useState("");
 
   // ============================================
   // CHECKPOINT DETAIL
@@ -356,6 +456,24 @@ export default function Home() {
 
   const [checkpointDetailOpen, setCheckpointDetailOpen] =
     useState(false);
+
+  // ============================================
+  // CHECKPOINT REVIEWS
+  // ============================================
+
+  const [checkpointReviews, setCheckpointReviews] =
+    useState<CheckpointReview[]>([]);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState("");
+
+  const reviewAverage =
+    checkpointReviews.length > 0
+      ? checkpointReviews.reduce((sum, item) => sum + item.rating, 0) /
+        checkpointReviews.length
+      : 0;
 
   // ============================================
   // WEATHER
@@ -465,6 +583,10 @@ export default function Home() {
 
   const [authReady, setAuthReady] =
     useState(false);
+
+  const ownCheckpointReview = user?.id
+    ? checkpointReviews.find((item) => item.user_id === user.id) ?? null
+    : null;
 
   const [authOpen, setAuthOpen] =
     useState(false);
@@ -611,6 +733,7 @@ export default function Home() {
 
   const [feedMode, setFeedMode] =
     useState<"all" | "following">("all");
+  const [feedCheckpointId, setFeedCheckpointId] = useState<number | null>(null);
 
   const [postContent, setPostContent] =
     useState("");
@@ -658,6 +781,89 @@ export default function Home() {
 
   const [selectedImage, setSelectedImage] =
     useState<File | null>(null);
+
+  // ============================================
+  // EXTRA TRAVEL / SOCIAL FEATURES
+  // ============================================
+
+  const [editPostId, setEditPostId] = useState<number | null>(null);
+  const [editPostContent, setEditPostContent] = useState("");
+  const [hashtagFilter, setHashtagFilter] = useState("");
+  const [savedPostIds, setSavedPostIds] = useState<number[]>([]);
+  const [avatarEmoji, setAvatarEmoji] = useState("🧭");
+  const [avatarImageUrl, setAvatarImageUrl] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const [dailyMissionClaims, setDailyMissionClaims] = useState<Record<string, string>>({});
+  const [missionBonusXP, setMissionBonusXP] = useState(0);
+  const [routePlannerOpen, setRoutePlannerOpen] = useState(false);
+  const [smartTravelOpen, setSmartTravelOpen] = useState(false);
+  const [assistantInput, setAssistantInput] = useState("");
+  const [assistantReply, setAssistantReply] = useState("");
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const savedPosts = window.localStorage.getItem("travelquest-saved-posts");
+        if (savedPosts) {
+          const parsed: unknown = JSON.parse(savedPosts);
+          if (Array.isArray(parsed)) setSavedPostIds(parsed.filter((id): id is number => typeof id === "number"));
+        }
+        const avatar = window.localStorage.getItem("travelquest-avatar");
+        if (avatar) setAvatarEmoji(avatar);
+
+        const avatarImage = window.localStorage.getItem("travelquest-avatar-image");
+        if (avatarImage?.startsWith("data:image/")) {
+          setAvatarImageUrl(avatarImage);
+        }
+        const missionData = window.localStorage.getItem("travelquest-daily-missions");
+        if (missionData) {
+          const parsed = JSON.parse(missionData) as { claims?: unknown; bonusXP?: unknown };
+          if (parsed.claims && typeof parsed.claims === "object") setDailyMissionClaims(parsed.claims as Record<string, string>);
+          if (typeof parsed.bonusXP === "number") setMissionBonusXP(parsed.bonusXP);
+        }
+        const journeysRaw = window.localStorage.getItem("travelquest-journeys");
+        if (journeysRaw) {
+          const parsed: unknown = JSON.parse(journeysRaw);
+          if (Array.isArray(parsed)) setJourneys(parsed as JourneyRecord[]);
+        }
+        const chatRaw = window.localStorage.getItem("travelquest-chat");
+        if (chatRaw) {
+          const parsed: unknown = JSON.parse(chatRaw);
+          if (Array.isArray(parsed)) setChatMessages(parsed as ChatMessage[]);
+        }
+      } catch {
+        // Ignore invalid local feature data.
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("travelquest-saved-posts", JSON.stringify(savedPostIds));
+      window.localStorage.setItem("travelquest-avatar", avatarEmoji);
+      window.localStorage.setItem("travelquest-daily-missions", JSON.stringify({ claims: dailyMissionClaims, bonusXP: missionBonusXP }));
+      window.localStorage.setItem("travelquest-journeys", JSON.stringify(journeys));
+      window.localStorage.setItem("travelquest-chat", JSON.stringify(chatMessages.slice(-100)));
+    } catch {
+      // Ignore localStorage failures.
+    }
+  }, [savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages]);
+
+  useEffect(() => {
+    if (!chatOpen) return;
+    const channel = supabase.channel("travelquest-traveller-chat", { config: { broadcast: { self: false } } });
+    channel.on("broadcast", { event: "message" }, ({ payload }) => {
+      if (!payload || typeof payload !== "object") return;
+      const data = payload as Partial<ChatMessage>;
+      if (typeof data.id !== "string" || typeof data.text !== "string" || typeof data.sender !== "string") return;
+      setChatMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data as ChatMessage].slice(-100));
+    }).subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [chatOpen]);
 
   const [imagePreview, setImagePreview] =
     useState<string | null>(null);
@@ -946,6 +1152,56 @@ export default function Home() {
     }
 
     setProfileLoading(false);
+  };
+
+  const handleAvatarUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    setAvatarUploading(true);
+    setProfileMessage("");
+
+    try {
+      const dataUrl = await prepareAvatarImage(file);
+
+      window.localStorage.setItem(
+        "travelquest-avatar-image",
+        dataUrl
+      );
+
+      setAvatarImageUrl(dataUrl);
+      setProfileMessage(
+        "✅ Đã cập nhật ảnh avatar. Ảnh được lưu trên thiết bị này."
+      );
+    } catch (error) {
+      setProfileMessage(
+        error instanceof Error
+          ? `❌ ${error.message}`
+          : "❌ Không thể cập nhật ảnh avatar."
+      );
+    } finally {
+      setAvatarUploading(false);
+
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeAvatarImage = () => {
+    try {
+      window.localStorage.removeItem("travelquest-avatar-image");
+    } catch {
+      // Ignore localStorage failures.
+    }
+
+    setAvatarImageUrl(null);
+    setProfileMessage("🧭 Đã chuyển về avatar mặc định.");
   };
 
   // ============================================
@@ -1819,12 +2075,16 @@ export default function Home() {
           return;
         }
 
+        const loadedCheckpoints = checkpointData ?? [];
+
+        // Checkpoints được quản lý bằng master SQL.
+        // Client chỉ đọc dữ liệu, không tự INSERT để tránh vi phạm RLS.
         setCheckpoints(
-          checkpointData ?? []
+          loadedCheckpoints
         );
 
         checkpointsRef.current =
-          checkpointData ?? [];
+          loadedCheckpoints;
 
         let checkinQuery =
           supabase
@@ -3128,10 +3388,181 @@ export default function Home() {
       month: "2-digit",
     });
 
+  const loadCheckpointReviews = async (checkpointId: number) => {
+    setReviewLoading(true);
+    setReviewMessage("");
+
+    try {
+      const { data, error } = await supabase
+        .from("checkpoint_reviews")
+        .select(
+          "id, checkpoint_id, user_id, rating, review, created_at, updated_at"
+        )
+        .eq("checkpoint_id", checkpointId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Lỗi tải đánh giá checkpoint:", error);
+        setCheckpointReviews([]);
+        setReviewMessage("❌ Không thể tải đánh giá lúc này.");
+        return;
+      }
+
+      const rows = (data ?? []) as Array<{
+        id: number;
+        checkpoint_id: number;
+        user_id: string;
+        rating: number;
+        review: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+
+      const userIds = Array.from(new Set(rows.map((row) => row.user_id)));
+      let profileMap = new globalThis.Map<string, string>();
+
+      if (userIds.length > 0) {
+        const { data: profiles, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", userIds);
+
+        if (!profileError) {
+          profileMap = new globalThis.Map(
+            (profiles ?? []).map((profile) => [
+              profile.id as string,
+              (profile.display_name as string) || "Traveller",
+            ])
+          );
+        }
+      }
+
+      setCheckpointReviews(
+        rows.map((row) => ({
+          ...row,
+          display_name: profileMap.get(row.user_id) || "Traveller",
+        }))
+      );
+
+      if (user?.id) {
+        const ownReview = rows.find((row) => row.user_id === user.id);
+        setReviewRating(ownReview?.rating ?? 5);
+        setReviewText(ownReview?.review ?? "");
+      }
+    } catch (error) {
+      console.error("Lỗi load đánh giá checkpoint:", error);
+      setCheckpointReviews([]);
+      setReviewMessage("❌ Có lỗi khi tải đánh giá.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const submitCheckpointReview = async () => {
+    if (!selectedCheckpoint) return;
+
+    if (!user?.id) {
+      setReviewMessage("🔐 Hãy đăng nhập để đánh giá checkpoint.");
+      return;
+    }
+
+    const trimmedReview = reviewText.trim();
+
+    if (!trimmedReview) {
+      setReviewMessage("✍️ Hãy viết vài dòng đánh giá.");
+      return;
+    }
+
+    if (trimmedReview.length > 500) {
+      setReviewMessage("✍️ Đánh giá tối đa 500 ký tự.");
+      return;
+    }
+
+    if (!Number.isInteger(reviewRating) || reviewRating < 1 || reviewRating > 5) {
+      setReviewMessage("⭐ Số sao phải từ 1 đến 5.");
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setReviewMessage("");
+
+    try {
+      const { error } = await supabase.from("checkpoint_reviews").upsert(
+        {
+          checkpoint_id: selectedCheckpoint.id,
+          user_id: user.id,
+          rating: reviewRating,
+          review: trimmedReview,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "checkpoint_id,user_id" }
+      );
+
+      if (error) {
+        console.error("Lỗi lưu đánh giá checkpoint:", error);
+        setReviewMessage(
+          "❌ Không thể lưu đánh giá. Kiểm tra database/RLS."
+        );
+        return;
+      }
+
+      setReviewMessage("✅ Đã lưu đánh giá của bạn.");
+      await loadCheckpointReviews(selectedCheckpoint.id);
+    } catch (error) {
+      console.error("Lỗi submit đánh giá checkpoint:", error);
+      setReviewMessage("❌ Có lỗi khi lưu đánh giá.");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  const deleteCheckpointReview = async () => {
+    if (!selectedCheckpoint || !user?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn xóa đánh giá của mình tại checkpoint này?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setReviewSubmitting(true);
+    setReviewMessage("");
+
+    try {
+      const { error } = await supabase
+        .from("checkpoint_reviews")
+        .delete()
+        .eq("checkpoint_id", selectedCheckpoint.id)
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.error("Lỗi xóa đánh giá checkpoint:", error);
+        setReviewMessage("❌ Không thể xóa đánh giá. Hãy thử lại.");
+        return;
+      }
+
+      setReviewRating(5);
+      setReviewText("");
+      setReviewMessage("🗑️ Đã xóa đánh giá của bạn.");
+      await loadCheckpointReviews(selectedCheckpoint.id);
+    } catch (error) {
+      console.error("Lỗi delete review checkpoint:", error);
+      setReviewMessage("❌ Có lỗi khi xóa đánh giá.");
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   const openCheckpointDetail = () => {
     if (!selectedCheckpoint) return;
     setCheckpointDetailOpen(true);
+    setReviewMessage("");
     void loadCheckpointWeather(selectedCheckpoint);
+    void loadCheckpointReviews(selectedCheckpoint.id);
   };
 
 
@@ -3615,10 +4046,10 @@ export default function Home() {
         .from("content_reports")
         .insert({
           reporter_id: user.id,
-          target_type: reportTargetType,
-          target_id: reportTargetId,
+          post_id: reportTargetType === "post" ? Number(reportTargetId) : null,
+          comment_id: reportTargetType === "comment" ? Number(reportTargetId) : null,
           reason: reportReason,
-          details: reportDetails.trim() || null,
+          description: reportDetails.trim() || null,
         });
 
       if (error) {
@@ -3908,7 +4339,8 @@ export default function Home() {
 
   const totalXP =
     checkins.length *
-    XP_PER_CHECKPOINT;
+    XP_PER_CHECKPOINT +
+    missionBonusXP;
 
   const currentLevel =
     Math.floor(
@@ -3943,15 +4375,17 @@ export default function Home() {
       : 0;
 
   const visiblePosts =
-    feedMode === "following"
-      ? posts.filter(
-          (post) =>
-            post.user_id !== null &&
-            followingUserIds.includes(
-              post.user_id
-            )
-        )
-      : posts;
+    posts.filter((post) => {
+      const followingMatch =
+        feedMode === "all" ||
+        (post.user_id !== null && followingUserIds.includes(post.user_id));
+      const checkpointMatch =
+        !feedCheckpointId || post.checkpoint_id === feedCheckpointId;
+      const hashtagMatch =
+        !hashtagFilter.trim() ||
+        post.content.toLowerCase().includes(hashtagFilter.trim().toLowerCase());
+      return followingMatch && checkpointMatch && hashtagMatch;
+    });
 
   // ============================================
   // GAMIFICATION - STREAK
@@ -4204,6 +4638,138 @@ export default function Home() {
         achievement.unlocked
     ).length;
 
+
+  const regionalBadges = [
+    { id: "old-quarter", icon: "🏮", name: "Phố cổ", description: "Chinh phục điểm khám phá khu phố cổ.", unlocked: checkins.length >= 1 },
+    { id: "ba-dinh", icon: "🏛️", name: "Ba Đình", description: "Chinh phục điểm khám phá khu vực Ba Đình.", unlocked: checkins.some((item) => checkpoints.find((c) => c.id === item.checkpoint_id)?.name.includes("Lăng") || checkpoints.find((c) => c.id === item.checkpoint_id)?.name.includes("Hoàng thành")) },
+    { id: "dong-da", icon: "🎓", name: "Đống Đa", description: "Chinh phục Văn Miếu - Quốc Tử Giám.", unlocked: checkins.some((item) => checkpoints.find((c) => c.id === item.checkpoint_id)?.name.includes("Văn Miếu")) },
+  ];
+
+  const dailyMissionKey = getLocalDateKey(new Date()) ?? "unknown";
+  const dailyMissions = [
+    { id: "checkin", icon: "📍", title: "Khám phá hôm nay", description: "Chinh phục 1 checkpoint hôm nay", reward: 50, done: checkins.some((item) => item.created_at && getLocalDateKey(item.created_at) === dailyMissionKey) },
+    { id: "save", icon: "🔖", title: "Lên lịch khám phá", description: "Lưu 1 checkpoint mới", reward: 25, done: savedPlaceIds.length > 0 },
+    { id: "ugc", icon: "📸", title: "Kể chuyện", description: "Đăng 1 bài UGC", reward: 50, done: userPostCount > 0 },
+    { id: "follow", icon: "🤝", title: "Kết nối", description: "Theo dõi 1 Traveller", reward: 25, done: followingUserIds.length > 0 },
+  ];
+
+  const claimDailyMission = (missionId: string, reward: number, done: boolean) => {
+    if (!done || dailyMissionClaims[missionId] === dailyMissionKey) return;
+    setDailyMissionClaims((current) => ({ ...current, [missionId]: dailyMissionKey }));
+    setMissionBonusXP((current) => current + reward);
+    setMessage(`🎁 +${reward} XP từ nhiệm vụ hôm nay!`);
+  };
+
+  const missingAchievements = achievements.filter((achievement) => !achievement.unlocked);
+
+  const advancedAchievements = [
+    { id: "five-checkpoints", icon: "🧭", name: "Nhà thám hiểm", description: "Chinh phục 5 checkpoint.", unlocked: checkins.length >= 5 },
+    { id: "seven-streak", icon: "🔥", name: "Bền bỉ", description: "Streak 7 ngày.", unlocked: bestStreak >= 7 },
+    { id: "three-saved", icon: "🔖", name: "Người lập kế hoạch", description: "Lưu 3 checkpoint.", unlocked: savedPlaceIds.length >= 3 },
+    { id: "ten-posts", icon: "📚", name: "Nhật ký hành trình", description: "Đăng 10 bài UGC.", unlocked: userPostCount >= 10 },
+    { id: "five-following", icon: "🧑‍🤝‍🧑", name: "Kết nối cộng đồng", description: "Theo dõi 5 Traveller.", unlocked: followingUserIds.length >= 5 },
+  ];
+
+  const openRoutePlanner = () => setRoutePlannerOpen(true);
+
+  const shareJourney = async () => {
+    const ids = journeyCheckpointIds.join(",");
+    const url = `${window.location.origin}${window.location.pathname}?journey=${encodeURIComponent(journeyName)}&checkpoints=${ids}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setRouteShareMessage("🔗 Đã sao chép link chia sẻ hành trình.");
+    } catch {
+      setRouteShareMessage(url);
+    }
+  };
+
+  const buildRouteUrl = () => {
+    const selected = checkpoints.filter((checkpoint) => journeyCheckpointIds.includes(checkpoint.id));
+    if (selected.length < 2) return "";
+    const origin = selected[0];
+    const destination = selected[selected.length - 1];
+    const waypoints = selected.slice(1, -1).map((checkpoint) => `${checkpoint.latitude},${checkpoint.longitude}`).join("|");
+    return `https://www.google.com/maps/dir/?api=1&origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ""}`;
+  };
+
+  const startNewJourney = () => {
+    const record: JourneyRecord = {
+      id: crypto.randomUUID ? crypto.randomUUID() : `journey-${Date.now()}`,
+      name: journeyName.trim() || `Hành trình ${journeys.length + 1}`,
+      checkpointIds: journeyCheckpointIds,
+      started: journeyStarted,
+      startDate: journeyStartDate,
+      endDate: journeyEndDate,
+    };
+    setJourneys((current) => [record, ...current]);
+    setMessage(`🧭 Đã lưu ${record.name}.`);
+  };
+
+  const savePost = (postId: number) => {
+    setSavedPostIds((current) => current.includes(postId) ? current.filter((id) => id !== postId) : [...current, postId]);
+  };
+
+  const startEditPost = (post: Post) => {
+    setEditPostId(post.id);
+    setEditPostContent(post.content);
+  };
+
+  const saveEditedPost = async () => {
+    if (!editPostId || !user?.id) return;
+    const content = editPostContent.trim();
+    if (content.length < 3 || content.length > 1000) {
+      setPostMessage("Bài viết cần từ 3 đến 1000 ký tự.");
+      return;
+    }
+    const { error } = await supabase.from("posts").update({ content }).eq("id", editPostId).eq("user_id", user.id);
+    if (error) {
+      setPostMessage("❌ Không thể sửa bài viết.");
+      return;
+    }
+    setPosts((current) => current.map((post) => post.id === editPostId ? { ...post, content } : post));
+    setEditPostId(null);
+    setEditPostContent("");
+    setPostMessage("✅ Đã cập nhật bài viết.");
+  };
+
+  const deletePost = async (postId: number) => {
+    if (!user?.id || !window.confirm("Xóa bài viết này?")) return;
+    const { error } = await supabase.from("posts").delete().eq("id", postId).eq("user_id", user.id);
+    if (error) {
+      setPostMessage("❌ Không thể xóa bài viết.");
+      return;
+    }
+    setPosts((current) => current.filter((post) => post.id !== postId));
+    setSavedPostIds((current) => current.filter((id) => id !== postId));
+    setPostMessage("🗑️ Đã xóa bài viết.");
+  };
+
+  const askTravelAssistant = () => {
+    const question = assistantInput.trim().toLowerCase();
+    if (!question) return;
+    const nearest = checkpoints
+      .map((checkpoint) => ({ checkpoint, distance: userLocation ? getValidGpsDistance(userLocation, checkpoint) : null }))
+      .filter((item) => item.distance !== null)
+      .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))[0];
+    if (question.includes("thời tiết") || question.includes("weather")) {
+      setAssistantReply(weather ? `${weatherDescription(weather.current.weatherCode).icon} ${weatherDescription(weather.current.weatherCode).label}, ${weather.current.temperature}°C tại checkpoint đang chọn.` : "Hãy mở một checkpoint để tớ tải thời tiết trước nhé.");
+    } else if (question.includes("tiếp theo") || question.includes("gần")) {
+      setAssistantReply(nearest ? `📍 Tớ gợi ý ${nearest.checkpoint.name}, cách vị trí hiện tại khoảng ${Math.round(nearest.distance ?? 0)}m.` : "Bật GPS để tớ tìm checkpoint gần bạn.");
+    } else if (question.includes("huy hiệu")) {
+      setAssistantReply(missingAchievements.length ? `🏆 Bạn còn ${missingAchievements.length} huy hiệu cơ bản chưa mở. Gần nhất: ${missingAchievements[0].name}.` : "👑 Bạn đã mở hết huy hiệu cơ bản!");
+    } else {
+      setAssistantReply(`🧭 Bạn đã chinh phục ${checkins.length}/${checkpoints.length} checkpoint, streak hiện tại ${currentStreak} ngày và level Traveller ${currentLevel}.`);
+    }
+  };
+
+  const sendChatMessage = () => {
+    const text = chatInput.trim();
+    if (!text) return;
+    const message: ChatMessage = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text, sender: profileName, createdAt: new Date().toISOString() };
+    setChatMessages((current) => [...current, message].slice(-100));
+    void supabase.channel("travelquest-traveller-chat").send({ type: "broadcast", event: "message", payload: message });
+    setChatInput("");
+  };
 
   // ============================================
   // UI
@@ -4468,19 +5034,20 @@ export default function Home() {
 
       {/* HEADER */}
 
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-5 py-4 bg-[#06111f]/85 backdrop-blur-xl border-b border-white/10">
+      <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-3 pt-3 sm:px-4 sm:pt-4">
+        <div className="pointer-events-auto flex items-center justify-between rounded-2xl border border-white/10 bg-[#06111f]/82 px-3 py-2.5 shadow-lg backdrop-blur-xl">
 
         <div>
-          <h1 className="text-xl font-black tracking-tight">
+          <h1 className="text-sm font-black tracking-tight">
             TravelQuest
           </h1>
 
-          <p className="text-[11px] text-white/50">
+          <p className="text-[9px] text-white/40">
             Explore • Check-in • Collect
           </p>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+        <div className="flex items-center gap-1.5">
 
           {/* SEARCH TRAVELLER */}
 
@@ -4534,10 +5101,18 @@ export default function Home() {
               }
             >
 
-              <span className="text-sm">
-                {user
-                  ? "👤"
-                  : "🔐"}
+              <span className="w-7 h-7 rounded-full overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
+                {user && avatarImageUrl ? (
+                  <img
+                    src={avatarImageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-sm">
+                    {user ? avatarEmoji : "🔐"}
+                  </span>
+                )}
               </span>
 
               <span className="hidden sm:block text-xs font-semibold max-w-[120px] truncate">
@@ -4549,19 +5124,57 @@ export default function Home() {
             </button>
           )}
 
-          <button
-            className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-            onClick={() => {
-              updateLocation();
-              startWatchingGPS();
-            }}
-            title="Cập nhật vị trí"
-          >
-            📍
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center hover:bg-white/12 transition text-lg"
+              onClick={() => setHeaderMenuOpen((value) => !value)}
+              title="Công cụ"
+              aria-label="Công cụ"
+            >
+              ⋯
+            </button>
+
+            {headerMenuOpen && (
+              <div className="absolute right-0 top-11 z-[70] w-48 rounded-2xl border border-white/10 bg-[#07182a]/98 p-2 shadow-2xl backdrop-blur-xl">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    updateLocation();
+                    startWatchingGPS();
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                >
+                  📍 Cập nhật GPS
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    setSmartTravelOpen(true);
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                >
+                  ✨ Smart Travel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHeaderMenuOpen(false);
+                    setChatOpen(true);
+                  }}
+                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                >
+                  💬 Traveller Chat
+                </button>
+              </div>
+            )}
+          </div>
 
         </div>
 
+        </div>
       </header>
 
       <div className="pb-24">
@@ -4569,241 +5182,241 @@ export default function Home() {
         {/* ================= MAP ================= */}
 
         {activeTab === "map" && (
-          <section className="relative min-h-screen">
+          <section className="relative h-[100dvh] min-h-[560px]">
 
-            <div className="absolute inset-0 pt-[72px] pb-20">
+            <div className="absolute inset-0 pb-20">
               <Map
                 userLocation={
                   userLocation
                 }
+                checkpoints={
+                  checkpoints
+                }
+                avatarUrl={
+                  avatarImageUrl
+                }
+                avatarEmoji={
+                  avatarEmoji
+                }
               />
             </div>
 
-            {/* CHECKPOINT LIST */}
+            {/* MAP CONTROL PANEL / KHÁM PHÁ */}
+            {showExplorePanel ? (
+              <div className="absolute top-[88px] left-3 sm:left-4 z-20 w-[min(390px,calc(100vw-24px))] pointer-events-none">
+                <div className="pointer-events-auto max-h-[calc(100vh-180px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/94 backdrop-blur-2xl shadow-2xl [scrollbar-width:thin]">
 
-            <div className="absolute top-[90px] left-4 right-4 z-20">
-
-              <div className="max-w-md">
-
-                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl">
-
-                  <div className="flex items-center justify-between mb-2 px-1">
-
-                    <div>
-                      <p className="text-sm font-bold">
-                        Checkpoints
+                {/* SUMMARY */}
+                <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">
+                        Khám phá Hà Nội
                       </p>
-
-                      <p className="text-[11px] text-white/50">
-                        {checkins.length}/
-                        {checkpoints.length}{" "}
-                        đã mở khóa
-                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className="text-sm font-black">Checkpoints</p>
+                        <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/45">
+                          {checkins.length}/{checkpoints.length} đã chinh phục
+                        </span>
+                      </div>
                     </div>
-
-                    <div className="text-xs text-white/60">
-                      {progress}%
+                    <div className="shrink-0 text-right">
+                      <p className="text-lg font-black text-blue-300">{progress}%</p>
+                      <p className="text-[9px] text-white/35">tiến độ</p>
                     </div>
+                  </div>
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowExplorePanel(false)}
+                    className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
+                  >
+                    Ẩn phần khám phá ↑
+                  </button>
+                </div>
 
+                {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
+                <div className="p-3">
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
+                    {checkpoints.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllMapCheckpoints((value) => !value)}
+                        className="text-[10px] font-bold text-blue-300 hover:text-blue-200"
+                      >
+                        {showAllMapCheckpoints ? "Thu gọn" : `Xem tất cả (${checkpoints.length})`}
+                      </button>
+                    )}
                   </div>
 
                   {loading ? (
-                    <div className="py-4 text-center text-sm text-white/50">
+                    <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">
                       Đang tải checkpoint...
                     </div>
-                  ) : checkpoints.length ===
-                    0 ? (
-                    <div className="py-4 text-center text-sm text-white/50">
+                  ) : checkpoints.length === 0 ? (
+                    <div className="rounded-2xl border border-white/5 bg-white/5 py-5 text-center text-xs text-white/40">
                       Chưa có checkpoint.
                     </div>
                   ) : (
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-
-                      {checkpoints.map(
-                        (
-                          checkpoint
-                        ) => {
-                          const checked =
-                            isCheckedIn(
-                              checkpoint.id
-                            );
-
-                          const selected =
-                            selectedCheckpoint?.id ===
-                            checkpoint.id;
-
-                          return (
-                            <button
-                              key={
-                                checkpoint.id
-                              }
-                              onClick={() =>
-                                selectCheckpoint(
-                                  checkpoint
-                                )
-                              }
-                              className={`shrink-0 px-3 py-2 rounded-xl border transition ${
-                                selected
-                                  ? "bg-blue-500/25 border-blue-400/60"
-                                  : "bg-white/5 border-white/10 hover:bg-white/10"
-                              }`}
-                            >
-
-                              <div className="flex items-center gap-2">
-
-                                <span className="text-lg">
-                                  {checkpoint.icon ??
-                                    "📍"}
-                                </span>
-
-                                <div className="text-left">
-
-                                  <p className="text-xs font-semibold">
-                                    {
-                                      checkpoint.name
-                                    }
-                                  </p>
-
-                                  <p className="text-[10px] text-white/50">
-                                    {checked
-                                      ? "✓ Đã check-in"
-                                      : "Chưa check-in"}
-                                  </p>
-
-                                </div>
-
-                              </div>
-
-                            </button>
-                          );
-                        }
-                      )}
-
+                    <div className="space-y-1.5">
+                      {(showAllMapCheckpoints ? checkpoints : checkpoints.slice(0, 3)).map((checkpoint) => {
+                        const checked = isCheckedIn(checkpoint.id);
+                        const selected = selectedCheckpoint?.id === checkpoint.id;
+                        return (
+                          <button
+                            key={checkpoint.id}
+                            type="button"
+                            onClick={() => selectCheckpoint(checkpoint)}
+                            className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition ${
+                              selected
+                                ? "border-blue-400/50 bg-blue-500/15"
+                                : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"
+                            }`}
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
+                              {checkpoint.icon ?? "📍"}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-bold">{checkpoint.name}</span>
+                              <span className="mt-0.5 block truncate text-[10px] text-white/35">
+                                {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
+                              </span>
+                            </span>
+                            <span className={`shrink-0 text-[10px] ${checked ? "text-emerald-300" : "text-white/25"}`}>
+                              {checked ? "✓" : "›"}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
-
                 </div>
 
-              </div>
-
-            </div>
-
-            {/* SAVED PLACES */}
-
-            <div className="absolute top-[205px] left-4 right-4 z-20 pointer-events-none">
-              <div className="max-w-md pointer-events-auto">
-                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                {/* SAVED PLACES */}
+                <div className="border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setShowSavedPlaces((value) => !value)}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
                   >
-                    <div className="flex items-center gap-3 text-left">
+                    <div className="flex min-w-0 items-center gap-3">
                       <span className="text-lg">🔖</span>
-                      <div>
-                        <p className="text-sm font-bold">Địa điểm đã lưu</p>
-                        <p className="text-[10px] text-white/45">
-                          {savedCheckpoints.length} điểm trong danh sách
-                        </p>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold">Địa điểm đã lưu</p>
+                        <p className="text-[10px] text-white/35">{savedCheckpoints.length} điểm</p>
                       </div>
                     </div>
-                    <span className="text-white/45 text-xs">{showSavedPlaces ? "▲" : "▼"}</span>
+                    <span className="text-xs text-white/35">{showSavedPlaces ? "▲" : "▼"}</span>
                   </button>
 
                   {showSavedPlaces && (
-                    <div className="border-t border-white/10 p-3">
+                    <div className="border-t border-white/5 px-3 pb-3 pt-2">
                       {savedCheckpoints.length === 0 ? (
-                        <div className="py-3 text-center">
-                          <p className="text-sm text-white/50">Chưa lưu địa điểm nào.</p>
-                          <p className="text-[10px] text-white/30 mt-1">Nhấn ☆ cạnh checkpoint để lưu.</p>
-                        </div>
+                        <p className="py-3 text-center text-[11px] text-white/35">Chưa lưu địa điểm nào.</p>
                       ) : (
-                        <div className="space-y-2 max-h-52 overflow-y-auto">
-                          {savedCheckpoints.map((checkpoint) => (
-                            <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl bg-white/5 border border-white/5 p-2">
+                        <div className="space-y-1.5">
+                          {savedCheckpoints.slice(0, 5).map((checkpoint) => (
+                            <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.035] p-2">
                               <button
                                 type="button"
-                                onClick={() => {
-                                  selectCheckpoint(checkpoint);
-                                  setShowSavedPlaces(false);
-                                }}
-                                className="min-w-0 flex-1 flex items-center gap-2 text-left"
+                                onClick={() => { selectCheckpoint(checkpoint); setShowSavedPlaces(false); }}
+                                className="flex min-w-0 flex-1 items-center gap-2 text-left"
                               >
-                                <span className="text-lg">{checkpoint.icon ?? "📍"}</span>
+                                <span className="text-base">{checkpoint.icon ?? "📍"}</span>
                                 <span className="min-w-0">
-                                  <span className="block text-xs font-semibold truncate">{checkpoint.name}</span>
-                                  <span className="block text-[10px] text-white/35 mt-0.5">
-                                    {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
-                                  </span>
+                                  <span className="block truncate text-[11px] font-semibold">{checkpoint.name}</span>
+                                  <span className="block text-[9px] text-white/30">{isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span>
                                 </span>
                               </button>
-                              <button
-                                type="button"
-                                onClick={() => toggleSavedPlace(checkpoint.id)}
-                                title="Bỏ lưu"
-                                className="w-8 h-8 shrink-0 rounded-lg bg-white/5 hover:bg-white/10 transition"
-                              >
-                                🔖
-                              </button>
+                              <button type="button" onClick={() => toggleSavedPlace(checkpoint.id)} className="h-7 w-7 shrink-0 rounded-lg bg-white/5 text-xs hover:bg-white/10" title="Bỏ lưu">🔖</button>
                             </div>
                           ))}
+                          {savedCheckpoints.length > 5 && <p className="pt-1 text-center text-[9px] text-white/25">+{savedCheckpoints.length - 5} điểm khác</p>}
                         </div>
                       )}
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
 
-            {/* JOURNEY / TRIP */}
-
-            <div className="absolute top-[350px] left-4 right-4 z-20 pointer-events-none">
-              <div className="max-w-md pointer-events-auto">
-                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+                {/* JOURNEY */}
+                <div className="border-t border-white/10">
                   <button
                     type="button"
                     onClick={() => setJourneyOpen(true)}
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
                   >
-                    <div className="flex items-center gap-3 text-left">
+                    <div className="flex min-w-0 items-center gap-3">
                       <span className="text-lg">🧭</span>
-                      <div>
-                        <p className="text-sm font-bold">{journeyName}</p>
-                        <p className="text-[10px] text-white/45">
-                          {journeyCheckpoints.length === 0
-                            ? "Tạo hành trình từ các checkpoint"
-                            : `${journeyCompletedCount}/${journeyCheckpoints.length} checkpoint · ${journeyProgress}%`}
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-bold">{journeyName}</p>
+                        <p className="text-[10px] text-white/35">
+                          {journeyCheckpoints.length === 0 ? "Chưa có checkpoint" : `${journeyCompletedCount}/${journeyCheckpoints.length} checkpoint · ${journeyProgress}%`}
                         </p>
                       </div>
                     </div>
-                    <span className={`text-[10px] font-bold ${journeyStarted ? "text-emerald-300" : "text-white/40"}`}>
+                    <span className={`shrink-0 text-[9px] font-bold ${journeyStarted ? "text-emerald-300" : "text-white/30"}`}>
                       {journeyStarted ? "● ĐANG ĐI" : "MỞ"}
                     </span>
                   </button>
                 </div>
-              </div>
-            </div>
 
-            {/* USER LOCATION STATUS */}
-
-            {userLocation && (
-              <div className="absolute top-[205px] left-4 z-20">
-
-                <div className="bg-[#07182a]/90 backdrop-blur-xl border border-white/10 rounded-xl px-3 py-2 text-[11px] text-white/60">
-
-                  📍 GPS đã cập nhật
-
+                {/* DAILY MISSIONS — COMPACT */}
+                <div className="border-t border-white/10">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div>
+                      <p className="text-[9px] font-bold tracking-[0.12em] text-purple-300">DAILY MISSIONS</p>
+                      <p className="text-xs font-black">Nhiệm vụ hôm nay</p>
+                    </div>
+                    <button type="button" onClick={() => setShowAllDailyMissions((value) => !value)} className="text-[10px] font-bold text-blue-300">
+                      {showAllDailyMissions ? "Thu gọn" : "Chi tiết"}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 px-3 pb-3">
+                    {(showAllDailyMissions ? dailyMissions : dailyMissions.slice(0, 2)).map((mission) => {
+                      const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
+                      return (
+                        <button
+                          key={mission.id}
+                          type="button"
+                          onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)}
+                          className={`rounded-xl border p-2.5 text-left transition ${claimed ? "border-emerald-400/20 bg-emerald-500/10" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm">{mission.icon}</span>
+                            <span className="text-[9px] text-yellow-300">+{mission.reward} XP</span>
+                          </div>
+                          <p className="mt-1 truncate text-[10px] font-bold">{mission.title}</p>
+                          <p className="mt-0.5 line-clamp-2 text-[9px] text-white/35">{mission.description}</p>
+                          {claimed && <p className="mt-1 text-[9px] font-bold text-emerald-300">✓ Đã nhận</p>}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-
+                </div>
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowExplorePanel(true)}
+                className="absolute top-[88px] left-3 sm:left-4 z-20 flex h-10 items-center gap-2 rounded-full border border-white/10 bg-[#07182a]/90 px-3.5 text-[11px] font-black text-white shadow-xl backdrop-blur-xl transition hover:bg-[#0b223b]"
+                title="Hiện khám phá"
+                aria-label="Hiện khám phá"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-sm">🧭</span>
+                <span>Hiện khám phá</span>
+              </button>
             )}
 
             {/* SELECTED CHECKPOINT */}
 
             {selectedCheckpoint && (
-              <div className="absolute bottom-28 left-4 right-4 z-30">
+              <div className="absolute bottom-24 left-3 right-3 z-30 pointer-events-none">
 
-                <div className="max-w-xl mx-auto bg-[#07182a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
+                <div className="pointer-events-auto max-w-xl mx-auto bg-[#07182a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
 
                   <div className="flex items-start gap-4">
 
@@ -5035,6 +5648,20 @@ export default function Home() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mt-6">
+                  <div className="flex gap-2 mt-3">
+                    <button type="button" onClick={() => setRoutePlannerOpen(true)} className="flex-1 rounded-xl bg-emerald-500/10 border border-emerald-400/15 px-3 py-2 text-xs font-bold">🗺️ Route planner</button>
+                    {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-xs font-bold text-center">📍 Google Maps</a>}
+                  </div>
+
+                  {journeys.length > 0 && (
+                    <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-3">
+                      <p className="text-[10px] text-white/40 font-bold">JOURNEY ĐÃ LƯU</p>
+                      <div className="space-y-2 mt-2">
+                        {journeys.slice(0, 5).map((savedJourney) => <button key={savedJourney.id} type="button" onClick={() => { setJourneyName(savedJourney.name); setJourneyCheckpointIds(savedJourney.checkpointIds); setJourneyStarted(savedJourney.started); setJourneyStartDate(savedJourney.startDate); setJourneyEndDate(savedJourney.endDate); }} className="w-full text-left rounded-xl bg-black/10 border border-white/5 p-3"><p className="text-xs font-bold">{savedJourney.name}</p><p className="text-[10px] text-white/35 mt-1">{savedJourney.checkpointIds.length} checkpoint · {savedJourney.startDate || "chưa đặt ngày"}</p></button>)}
+                      </div>
+                    </div>
+                  )}
+
                   <button
                     type="button"
                     onClick={clearJourney}
@@ -5150,6 +5777,169 @@ export default function Home() {
                   <p className="text-sm text-white/70 mt-1 font-mono">
                     {selectedCheckpoint.latitude.toFixed(5)}, {selectedCheckpoint.longitude.toFixed(5)}
                   </p>
+                </div>
+
+                {/* ================= REVIEWS ================= */}
+
+                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] text-white/40">
+                        ĐÁNH GIÁ CHECKPOINT
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-2xl font-black">
+                          {reviewAverage > 0 ? reviewAverage.toFixed(1) : "—"}
+                        </span>
+                        <span className="text-yellow-300">
+                          {"★".repeat(Math.round(reviewAverage || 0))}
+                          <span className="text-white/20">
+                            {"★".repeat(Math.max(0, 5 - Math.round(reviewAverage || 0)))}
+                          </span>
+                        </span>
+                        <span className="text-xs text-white/40">
+                          {checkpointReviews.length} đánh giá
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        selectedCheckpoint &&
+                        void loadCheckpointReviews(selectedCheckpoint.id)
+                      }
+                      disabled={reviewLoading}
+                      className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold disabled:opacity-50 transition"
+                    >
+                      {reviewLoading ? "Đang tải..." : "↻ Làm mới"}
+                    </button>
+                  </div>
+
+                  <div className="mt-4 rounded-xl bg-black/10 border border-white/5 p-4">
+                    <p className="text-xs text-white/50 font-semibold">
+                      {user ? "Đánh giá của bạn" : "Đăng nhập để đánh giá"}
+                    </p>
+
+                    {user ? (
+                      <>
+                        <div className="flex items-center gap-2 mt-3">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setReviewRating(star)}
+                              aria-label={`${star} sao`}
+                              className={`text-3xl transition ${
+                                star <= reviewRating
+                                  ? "text-yellow-300"
+                                  : "text-white/15 hover:text-white/30"
+                              }`}
+                            >
+                              ★
+                            </button>
+                          ))}
+                        </div>
+
+                        <textarea
+                          value={reviewText}
+                          onChange={(event) =>
+                            setReviewText(event.target.value.slice(0, 500))
+                          }
+                          placeholder="Chia sẻ trải nghiệm của bạn tại checkpoint..."
+                          rows={3}
+                          className="w-full mt-3 rounded-xl bg-white/5 border border-white/10 px-3 py-3 text-sm outline-none focus:border-blue-400/50 resize-none"
+                        />
+
+                        <div className="flex items-center justify-between gap-3 mt-2">
+                          <span className="text-[10px] text-white/30">
+                            {reviewText.length}/500
+                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {ownCheckpointReview && (
+                              <button
+                                type="button"
+                                onClick={() => void deleteCheckpointReview()}
+                                disabled={reviewSubmitting}
+                                className="px-3 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/15 border border-red-400/10 text-red-200 text-xs font-bold disabled:opacity-50 transition"
+                              >
+                                Xóa
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => void submitCheckpointReview()}
+                              disabled={reviewSubmitting}
+                              className="px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold disabled:opacity-50 transition"
+                            >
+                              {reviewSubmitting
+                                ? "Đang lưu..."
+                                : ownCheckpointReview
+                                  ? "✏️ Cập nhật"
+                                  : "⭐ Gửi đánh giá"}
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-xs text-white/40 mt-2">
+                        Hãy đăng nhập để chấm sao và viết đánh giá.
+                      </p>
+                    )}
+
+                    {reviewMessage && (
+                      <p className="text-xs text-white/60 mt-3">{reviewMessage}</p>
+                    )}
+                  </div>
+
+                  {checkpointReviews.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {checkpointReviews.slice(0, 5).map((item) => (
+                        <div
+                          key={item.id}
+                          className="rounded-xl bg-black/10 border border-white/5 p-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold truncate">
+                                {item.display_name}
+                              </p>
+                              <p className="text-yellow-300 text-sm mt-1">
+                                {"★".repeat(item.rating)}
+                                <span className="text-white/15">
+                                  {"★".repeat(5 - item.rating)}
+                                </span>
+                              </p>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="text-[10px] text-white/25 block">
+                                {new Date(item.created_at).toLocaleDateString("vi-VN")}
+                              </span>
+                              {item.updated_at !== item.created_at && (
+                                <span className="text-[9px] text-white/20 block mt-0.5">
+                                  Đã cập nhật
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-white/60 mt-2 leading-relaxed">
+                            {item.review}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!reviewLoading &&
+                    checkpointReviews.length === 0 &&
+                    !reviewMessage && (
+                      <p className="text-xs text-white/30 mt-4 text-center">
+                        Chưa có đánh giá. Hãy là người đầu tiên!
+                      </p>
+                    )}
                 </div>
 
                 {/* ================= WEATHER ================= */}
@@ -5724,6 +6514,49 @@ export default function Home() {
 
             </div>
 
+            {/* ================= REGIONAL BADGES ================= */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-purple-300 font-semibold">REGIONAL BADGES</p>
+                  <h3 className="text-xl font-black mt-1">🏙️ Huy hiệu theo khu vực</h3>
+                </div>
+                <span className="text-xs text-white/35">{regionalBadges.filter((item) => item.unlocked).length}/{regionalBadges.length}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {regionalBadges.map((badge) => (
+                  <div key={badge.id} className={`rounded-2xl border p-4 ${badge.unlocked ? "bg-purple-500/10 border-purple-400/20" : "bg-black/10 border-white/5 opacity-45"}`}>
+                    <p className="text-2xl">{badge.unlocked ? badge.icon : "🔒"}</p>
+                    <p className="text-sm font-bold mt-2">{badge.name}</p>
+                    <p className="text-[10px] text-white/40 mt-1">{badge.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ================= ADVANCED ACHIEVEMENTS ================= */}
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs text-orange-300 font-semibold">ADVANCED ACHIEVEMENTS</p>
+                  <h3 className="text-xl font-black mt-1">🚀 Thành tựu nâng cao</h3>
+                </div>
+                <span className="text-xs text-white/35">{advancedAchievements.filter((item) => item.unlocked).length}/{advancedAchievements.length}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {advancedAchievements.map((item) => (
+                  <div key={item.id} className={`rounded-2xl border p-4 ${item.unlocked ? "bg-orange-500/10 border-orange-400/20" : "bg-black/10 border-white/5 opacity-45"}`}>
+                    <p className="text-2xl">{item.unlocked ? item.icon : "🔒"}</p>
+                    <p className="text-sm font-bold mt-2">{item.name}</p>
+                    <p className="text-[10px] text-white/40 mt-1">{item.description}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 rounded-xl bg-blue-500/10 border border-blue-400/15 p-3">
+                <p className="text-xs text-blue-200">💡 Bạn còn thiếu: {missingAchievements.length ? missingAchievements.slice(0, 3).map((item) => item.name).join(", ") : "không còn huy hiệu cơ bản nào."}</p>
+              </div>
+            </div>
+
             {loading ? (
               <div className="text-center py-10 text-white/50">
                 Đang tải huy hiệu...
@@ -6169,6 +7002,17 @@ export default function Home() {
                             }
                           </button>
 
+                          {post.user_id === user?.id && (
+                            <>
+                              <button type="button" onClick={() => startEditPost(post)} className="text-[10px] text-white/30 hover:text-white transition">Sửa</button>
+                              <button type="button" onClick={() => void deletePost(post.id)} className="text-[10px] text-white/30 hover:text-red-300 transition">Xóa</button>
+                            </>
+                          )}
+
+                          <button type="button" onClick={() => savePost(post.id)} className={`text-[10px] transition ${savedPostIds.includes(post.id) ? "text-yellow-300" : "text-white/30 hover:text-white"}`}>
+                            {savedPostIds.includes(post.id) ? "🔖 Đã lưu" : "☆ Lưu"}
+                          </button>
+
                           <button
                             type="button"
                             onClick={() =>
@@ -6385,9 +7229,9 @@ export default function Home() {
 
       {/* ================= BOTTOM NAV ================= */}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#06111f]/95 backdrop-blur-xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#06111f]/92 backdrop-blur-2xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
 
-        <div className="max-w-xl mx-auto h-20 min-h-[72px] flex items-center justify-around px-2">
+        <div className="max-w-lg mx-auto h-[72px] flex items-center justify-around px-3">
 
           <button
             onClick={() =>
@@ -6510,7 +7354,7 @@ export default function Home() {
                 <option value="spam">Spam / quảng cáo không phù hợp</option>
                 <option value="harassment">Quấy rối / bắt nạt</option>
                 <option value="inappropriate">Nội dung không phù hợp</option>
-                <option value="misinformation">Thông tin có vẻ sai lệch</option>
+                <option value="misleading">Thông tin có vẻ sai lệch</option>
                 <option value="other">Lý do khác</option>
               </select>
 
@@ -7214,6 +8058,75 @@ export default function Home() {
 
                 </div>
 
+                <div className="mt-5">
+                  <p className="text-xs text-white/50 mb-2">Ảnh avatar</p>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 shrink-0">
+                      {avatarImageUrl ? (
+                        <img
+                          src={avatarImageUrl}
+                          alt="Avatar của bạn"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl">
+                          {avatarEmoji}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <input
+                        ref={avatarInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(event) => void handleAvatarUpload(event)}
+                      />
+
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={avatarUploading}
+                          className="px-3 py-2 rounded-xl bg-blue-500/15 border border-blue-400/20 text-blue-200 text-xs font-bold hover:bg-blue-500/25 transition disabled:opacity-50"
+                        >
+                          {avatarUploading ? "📡 Đang xử lý..." : "📷 Chọn ảnh"}
+                        </button>
+
+                        {avatarImageUrl && (
+                          <button
+                            type="button"
+                            onClick={removeAvatarImage}
+                            className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-xs font-bold hover:bg-white/10 hover:text-white transition"
+                          >
+                            Xóa ảnh
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="text-[10px] text-white/35 mt-2">
+                        PNG, JPG hoặc WebP · tối đa 5MB. Ảnh được thu nhỏ để làm avatar.
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-white/50 mt-4 mb-2">Avatar biểu tượng</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {["🧭","🌍","🏕️","📸","🎒","🗺️","🏆","✨"].map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setAvatarEmoji(emoji)}
+                        className={`w-10 h-10 rounded-xl border ${avatarEmoji === emoji ? "border-blue-400 bg-blue-500/15" : "border-white/10 bg-white/5"}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* ================= ACCOUNT STATS ================= */}
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
@@ -7308,7 +8221,56 @@ export default function Home() {
           </div>
         )}
 
-        {/* ================= ACCOUNT SETTINGS ================= */}
+        {/* ================= EXTRA FEATURE MODALS ================= */}
+      {editPostId !== null && (
+        <div className="fixed inset-0 z-[260] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-3xl bg-[#07182a] border border-white/10 p-5">
+            <div className="flex items-center justify-between"><h3 className="font-black">✏️ Sửa bài viết</h3><button onClick={() => setEditPostId(null)}>✕</button></div>
+            <textarea value={editPostContent} onChange={(event) => setEditPostContent(event.target.value)} maxLength={1000} className="w-full min-h-40 mt-4 rounded-2xl bg-black/20 border border-white/10 p-4 text-sm outline-none" />
+            <div className="flex gap-2 mt-3"><button onClick={() => setEditPostId(null)} className="flex-1 rounded-xl bg-white/5 py-3">Hủy</button><button onClick={() => void saveEditedPost()} className="flex-1 rounded-xl bg-blue-500 py-3 font-bold">Lưu</button></div>
+          </div>
+        </div>
+      )}
+
+      {routePlannerOpen && (
+        <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md rounded-3xl bg-[#07182a] border border-white/10 p-5">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-emerald-300 font-bold">ROUTE PLANNER</p><h3 className="text-xl font-black mt-1">🗺️ Lập tuyến</h3></div><button onClick={() => setRoutePlannerOpen(false)}>✕</button></div>
+            <p className="text-xs text-white/45 mt-3">{journeyCheckpointIds.length} checkpoint trong tuyến. Kéo thứ tự bằng cách bỏ/chọn lại checkpoint trong Journey.</p>
+            <div className="space-y-2 mt-4">{journeyCheckpoints.map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/5 p-3"><span className="w-7 h-7 rounded-full bg-blue-500/15 flex items-center justify-center text-xs">{index + 1}</span><span className="text-sm font-semibold">{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div>
+            {buildRouteUrl() ? <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="block text-center mt-4 rounded-xl bg-blue-500 py-3 font-bold text-sm">🚗 Mở tuyến trên Google Maps</a> : <p className="text-xs text-yellow-300 mt-4">Chọn ít nhất 2 checkpoint để tạo tuyến.</p>}
+          </div>
+        </div>
+      )}
+
+      {smartTravelOpen && (
+        <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl bg-[#07182a] border border-white/10 p-5">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-blue-300 font-bold">SMART TRAVEL</p><h3 className="text-xl font-black mt-1">✨ Trợ lý TravelQuest</h3></div><button onClick={() => setSmartTravelOpen(false)}>✕</button></div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <div className="rounded-2xl bg-white/5 border border-white/10 p-3"><p className="text-xs text-white/40">Checkpoint tiếp theo</p><p className="text-sm font-bold mt-1">{checkpoints.find((checkpoint) => !isCheckedIn(checkpoint.id))?.name ?? "Đã hoàn thành"}</p></div>
+              <div className="rounded-2xl bg-white/5 border border-white/10 p-3"><p className="text-xs text-white/40">Tiến độ</p><p className="text-sm font-bold mt-1">{progress}% · Level {currentLevel}</p></div>
+            </div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4 mt-3"><p className="text-xs text-white/40">Gợi ý lịch trình</p><div className="mt-2 space-y-2">{checkpoints.filter((checkpoint) => !isCheckedIn(checkpoint.id)).slice(0, 4).map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 text-sm"><span className="w-7 h-7 rounded-full bg-blue-500/15 flex items-center justify-center text-xs">{index + 1}</span><span>{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div></div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4 mt-3"><p className="text-xs text-white/40">🏆 Huy hiệu còn thiếu</p><p className="text-sm mt-1">{missingAchievements.length ? missingAchievements.map((item) => item.name).slice(0, 3).join(" · ") : "Bạn đã mở hết huy hiệu cơ bản."}</p></div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4 mt-3"><p className="text-xs text-white/40">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-blue-500 px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-blue-200 mt-3">{assistantReply}</p>}</div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4 mt-3"><p className="text-xs text-white/40">Journey Summary</p><p className="text-sm font-bold mt-1">{journeyName} · {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint · {journeyProgress}%</p><p className="text-[10px] text-white/35 mt-1">{journeyStartDate || "Chưa có ngày bắt đầu"} → {journeyEndDate || "Chưa có ngày kết thúc"}</p></div>
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-4 mt-3"><p className="text-xs text-white/40">Travel services</p><div className="grid grid-cols-2 gap-2 mt-2">{bookingOptions.map((option) => <div key={option.title} className="rounded-xl bg-black/10 border border-white/5 p-3"><p className="text-sm font-bold">{option.icon} {option.title}</p><div className="flex flex-wrap gap-2 mt-2">{option.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-300 hover:text-blue-200">{link.label}</a>)}</div></div>)}</div></div>
+          </div>
+        </div>
+      )}
+
+      {chatOpen && (
+        <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md max-h-[90dvh] flex flex-col rounded-3xl bg-[#07182a] border border-white/10 p-5">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-purple-300 font-bold">COMMUNITY</p><h3 className="text-xl font-black">💬 Traveller Chat</h3></div><button onClick={() => setChatOpen(false)}>✕</button></div>
+            <div className="flex-1 min-h-64 max-h-80 overflow-y-auto space-y-2 mt-4">{chatMessages.length === 0 ? <p className="text-sm text-white/40 text-center py-10">Chưa có tin nhắn. Bắt đầu trò chuyện!</p> : chatMessages.map((message) => <div key={message.id} className="rounded-xl bg-white/5 border border-white/5 p-3"><p className="text-[10px] text-white/40">{message.sender}</p><p className="text-sm mt-1">{message.text}</p></div>)}</div>
+            <div className="flex gap-2 mt-3"><input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendChatMessage(); }} placeholder="Nhắn tin..." className="flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-3 text-sm outline-none" /><button onClick={sendChatMessage} className="rounded-xl bg-blue-500 px-4 font-bold">Gửi</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ACCOUNT SETTINGS ================= */}
         {settingsOpen && user && (
           <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="w-full max-w-md max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-3xl bg-[#07152f] border border-white/10 shadow-2xl p-5 sm:p-6">
