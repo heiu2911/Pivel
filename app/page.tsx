@@ -5752,14 +5752,6 @@ export default function Home() {
                   <div className="flex items-center justify-between gap-2 px-1 pb-2">
                     <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowMapCheckpoints((value) => !value)}
-                        className={`fixed right-3 top-[4.5rem] z-[55] pointer-events-auto rounded-xl border border-white/10 bg-[#07182a]/90 px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-xl transition ${showMapCheckpoints ? "text-blue-300 hover:bg-white/10" : "text-white/60 hover:bg-white/10"}`}
-                        title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
-                      >
-                        {showMapCheckpoints ? "📍 Ẩn checkpoint" : "📍 Hiện checkpoint"}
-                      </button>
                       {checkpoints.length > 3 && (
                       <button
                         type="button"
@@ -5919,15 +5911,26 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setShowExplorePanel(true)}
-                className="fixed bottom-[92px] left-3 sm:bottom-24 sm:left-4 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/95 text-base text-white shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
-                title="Hiện khám phá"
-                aria-label="Hiện khám phá"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-base">🧭</span>
-              </button>
+              <div className="fixed bottom-[92px] left-3 sm:bottom-24 sm:left-4 z-40 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowMapCheckpoints((value) => !value)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/95 text-base text-white shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                  title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
+                  aria-label={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
+                >
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-base ${showMapCheckpoints ? "bg-blue-500/15" : "bg-white/10"}`}>📍</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowExplorePanel(true)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/95 text-base text-white shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                  title="Hiện khám phá"
+                  aria-label="Hiện khám phá"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-base">🧭</span>
+                </button>
+              </div>
             )}
 
             {/* SELECTED CHECKPOINT */}
