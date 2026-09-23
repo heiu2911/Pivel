@@ -1927,6 +1927,11 @@ export default function Home() {
             display_name: profile?.display_name || "Traveller",
             level: Number(profile?.level ?? 1),
             xp: Number(profile?.xp ?? 0),
+            avatar_url:
+              typeof profile?.avatar_url === "string" &&
+              profile.avatar_url.startsWith("data:image/")
+                ? profile.avatar_url
+                : null,
             updated_at: location.updated_at,
           } satisfies FriendLocation;
         })
