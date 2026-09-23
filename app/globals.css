@@ -143,18 +143,3 @@ select:focus-visible {
   }
 }
 
-
-.tq-bottom-nav {
-  touch-action: pan-y;
-  transition: max-height .3s ease, transform .3s ease, background .3s ease;
-}
-
-.tq-bottom-nav-expanded {
-  background: rgba(6,17,31,.94);
-}
-
-@media (min-width: 768px) {
-  .tq-bottom-nav > div {
-    max-width: 560px;
-  }
-}
