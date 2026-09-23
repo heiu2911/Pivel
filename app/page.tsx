@@ -5238,7 +5238,7 @@ export default function Home() {
               <button
                 key={value}
                 type="button"
-                onClick={() => setMapFilter(value as "all" | "nearby" | "unvisited" | "saved")}
+                onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
                 className={`tq-map-chip shrink-0 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
               >
                 {label}
