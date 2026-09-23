@@ -7751,9 +7751,9 @@ export default function Home() {
 
       {/* ================= BOTTOM NAV ================= */}
 
-      <nav className="tq-bottom-nav fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto w-full max-w-lg">
-          <div className="flex h-[72px] items-center justify-around px-3">
+      <nav className="fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)]">
+        <div className="rounded-2xl border border-white/10 bg-[#07182a]/55 p-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+          <div className="flex h-[60px] items-center justify-around px-1">
             <button
               type="button"
               onClick={() => setActiveTab("map")}
@@ -7782,7 +7782,9 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </nav>      {/* ============================================
+      </nav>
+
+      {/* ============================================
           REPORT / MODERATION PANEL
       ============================================ */}
 
