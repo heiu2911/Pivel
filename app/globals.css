@@ -24,3 +24,121 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+/* TravelQuest UI system */
+:root {
+  --tq-ink: #0f172a;
+  --tq-surface: rgba(255, 255, 255, 0.94);
+  --tq-border: rgba(15, 23, 42, 0.08);
+  --tq-brand: #2563eb;
+}
+
+html {
+  background: #06111f;
+}
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+  background: #06111f;
+  color: #fff;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(37, 99, 235, 0.28);
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(96, 165, 250, 0.45);
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.16) transparent;
+}
+
+.tq-map-chip {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  padding: 0 13px;
+  color: #334155;
+  box-shadow: 0 5px 18px rgba(15,23,42,.12);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.tq-map-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(15,23,42,.16);
+}
+
+.tq-map-chip-active {
+  background: #0f172a;
+  border-color: #0f172a;
+  color: #fff;
+}
+
+.tq-bottom-nav {
+  background: rgba(6,17,31,.82);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+  box-shadow: 0 -10px 30px rgba(0,0,0,.16);
+}
+
+.mapboxgl-popup-content {
+  border-radius: 16px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  box-shadow: 0 16px 45px rgba(15,23,42,.2) !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #fff !important;
+}
+
+@media (max-width: 640px) {
+  .tq-map-chip {
+    min-height: 34px;
+    padding-inline: 12px;
+  }
+
+  .mapboxgl-ctrl-group {
+    border: 0 !important;
+    box-shadow: 0 8px 24px rgba(15,23,42,.16) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
