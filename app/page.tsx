@@ -5102,7 +5102,7 @@ export default function Home() {
               </div>
 
               {(mapSearchQuery.trim() || mapFilter !== "all") && (
-                <div className="absolute left-0 right-0 top-12 z-[80] max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
+                <div className="fixed right-3 top-[104px] z-[90] w-[min(320px,calc(100vw-24px))] max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:top-[68px] sm:right-4">
                   {mapSearchResults.length === 0 ? (
                     <div className="px-4 py-5 text-center text-xs text-slate-500">
                       Chưa tìm thấy checkpoint phù hợp.
