@@ -35,6 +35,7 @@ type MapProps = {
   avatarUrl?: string | null;
   avatarEmoji?: string;
   friendLocations?: FriendLocation[];
+  showCheckpoints?: boolean;
   onFriendMarkerClick?: (userId: string) => void;
 };
 
@@ -1811,6 +1812,7 @@ export default function Map({
   avatarUrl = null,
   avatarEmoji = "🧭",
   friendLocations = [],
+  showCheckpoints = true,
   onFriendMarkerClick,
 }: MapProps) {
   const mapContainer =
@@ -2202,6 +2204,13 @@ export default function Map({
     };
 
     const renderMode = () => {
+      if (!showCheckpoints) {
+        clearCityMarkers();
+        clearCheckpointMarkers();
+        currentMapMode.current = "hidden";
+        return;
+      }
+
       const showCities =
         mapInstance.getZoom() <= CITY_ZOOM_LIMIT;
 
@@ -2272,7 +2281,7 @@ export default function Map({
       clearCheckpointMarkers();
       currentMapMode.current = null;
     };
-  }, [checkpoints]);
+  }, [checkpoints, showCheckpoints]);
 
   // ========================================
   // FRIEND LOCATIONS
@@ -2382,12 +2391,29 @@ export default function Map({
       return;
     }
 
-    const updateZones = () => {
-      const sourceId =
-        "checkpoint-zones";
+    const sourceId =
+      "checkpoint-zones";
 
-      const layerId =
-        "checkpoint-zone-fill";
+    const layerId =
+      "checkpoint-zone-fill";
+
+    const removeZones = () => {
+      if (mapInstance.getLayer(layerId)) {
+        mapInstance.removeLayer(layerId);
+      }
+
+      if (mapInstance.getSource(sourceId)) {
+        mapInstance.removeSource(sourceId);
+      }
+
+      checkpointZonesAdded.current = false;
+    };
+
+    const updateZones = () => {
+      if (!showCheckpoints) {
+        removeZones();
+        return;
+      }
 
       const sourceData = {
         type:
@@ -2491,7 +2517,11 @@ export default function Map({
         updateZones
       );
     }
-  }, [checkpoints]);
+
+    return () => {
+      mapInstance.off("load", updateZones);
+    };
+  }, [checkpoints, showCheckpoints]);
 
   // ========================================
   // GPS MARKER
