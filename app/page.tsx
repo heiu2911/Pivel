@@ -5755,9 +5755,10 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setShowMapCheckpoints((value) => !value)}
-                        className={`text-[10px] font-bold transition ${showMapCheckpoints ? "text-blue-300 hover:text-blue-200" : "text-white/40 hover:text-white/70"}`}
+                        className={`fixed right-3 top-[4.5rem] z-[55] pointer-events-auto rounded-xl border border-white/10 bg-[#07182a]/90 px-3 py-2 text-[11px] font-bold shadow-lg backdrop-blur-xl transition ${showMapCheckpoints ? "text-blue-300 hover:bg-white/10" : "text-white/60 hover:bg-white/10"}`}
+                        title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
                       >
-                        {showMapCheckpoints ? "Ẩn checkpoint" : "Hiển checkpoint"}
+                        {showMapCheckpoints ? "📍 Ẩn checkpoint" : "📍 Hiện checkpoint"}
                       </button>
                       {checkpoints.length > 3 && (
                       <button
