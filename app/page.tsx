@@ -432,7 +432,7 @@ export default function Home() {
     useState(false);
 
   const [mapSearchQuery, setMapSearchQuery] = useState("");
-  const [mapFilter, setMapFilter] = useState<"all" | "nearby" | "unvisited" | "saved">("all");
+  const [mapFilter, setMapFilter] = useState<"none" | "all" | "nearby" | "unvisited" | "saved">("none");
 
   const [headerMenuOpen, setHeaderMenuOpen] =
     useState(false);
@@ -5101,7 +5101,7 @@ export default function Home() {
                 </button>
               </div>
 
-              {(mapSearchQuery.trim() || mapFilter !== "all") && (
+              {(mapSearchQuery.trim() || mapFilter !== "none") && (
                 <div className="fixed right-3 top-[104px] z-[90] w-[min(320px,calc(100vw-24px))] max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:top-[68px] sm:right-4">
                   {mapSearchResults.length === 0 ? (
                     <div className="px-4 py-5 text-center text-xs text-slate-500">
@@ -5146,7 +5146,7 @@ export default function Home() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setMapFilter(value as "all" | "nearby" | "unvisited" | "saved")}
+                  onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
                   className={`tq-map-chip ${mapFilter === value ? "tq-map-chip-active" : ""}`}
                 >
                   {label}
