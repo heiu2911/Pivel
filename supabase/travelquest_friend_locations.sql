@@ -42,7 +42,7 @@ language sql
 security definer
 set search_path = public
 stable
-as $
+as $travelquest$
   select exists (
     select 1
     from public.user_follows mine
@@ -52,7 +52,7 @@ as $
     where mine.follower_id = viewer_id
       and mine.following_id = target_id
   );
-$;
+$travelquest$;
 
 revoke all on function public.travelquest_are_mutual_friends(uuid, uuid) from public;
 grant execute on function public.travelquest_are_mutual_friends(uuid, uuid) to authenticated;
