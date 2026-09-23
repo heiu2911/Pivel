@@ -33,6 +33,30 @@ to authenticated
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
+create or replace function public.travelquest_are_mutual_friends(
+  viewer_id uuid,
+  target_id uuid
+)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $
+  select exists (
+    select 1
+    from public.user_follows mine
+    join public.user_follows theirs
+      on theirs.follower_id = target_id
+     and theirs.following_id = viewer_id
+    where mine.follower_id = viewer_id
+      and mine.following_id = target_id
+  );
+$;
+
+revoke all on function public.travelquest_are_mutual_friends(uuid, uuid) from public;
+grant execute on function public.travelquest_are_mutual_friends(uuid, uuid) to authenticated;
+
 drop policy if exists "Users can read mutual friends shared locations" on public.travelquest_friend_locations;
 create policy "Users can read mutual friends shared locations"
 on public.travelquest_friend_locations
@@ -42,15 +66,7 @@ using (
   user_id = auth.uid()
   or (
     sharing_enabled = true
-    and exists (
-      select 1
-      from public.user_follows mine
-      join public.user_follows theirs
-        on theirs.follower_id = user_id
-       and theirs.following_id = auth.uid()
-      where mine.follower_id = auth.uid()
-        and mine.following_id = travelquest_friend_locations.user_id
-    )
+    and public.travelquest_are_mutual_friends(auth.uid(), user_id)
   )
 );
 
