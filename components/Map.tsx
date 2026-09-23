@@ -19,11 +19,22 @@ type Checkpoint = {
   latitude: number;
 };
 
+type FriendLocation = {
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  display_name: string;
+  level: number;
+  xp: number;
+};
+
 type MapProps = {
   userLocation?: UserLocation | null;
   checkpoints?: Checkpoint[];
   avatarUrl?: string | null;
   avatarEmoji?: string;
+  friendLocations?: FriendLocation[];
+  onFriendMarkerClick?: (userId: string) => void;
 };
 
 type CityDefinition = {
@@ -1798,6 +1809,8 @@ export default function Map({
   checkpoints = [],
   avatarUrl = null,
   avatarEmoji = "🧭",
+  friendLocations = [],
+  onFriendMarkerClick,
 }: MapProps) {
   const mapContainer =
     useRef<HTMLDivElement | null>(null);
@@ -2259,6 +2272,90 @@ export default function Map({
       currentMapMode.current = null;
     };
   }, [checkpoints]);
+
+  // ========================================
+  // FRIEND LOCATIONS
+  // ========================================
+
+  useEffect(() => {
+    const mapInstance = map.current;
+    if (!mapInstance) return;
+
+    const markers: mapboxgl.Marker[] = [];
+
+    const renderFriendMarkers = () => {
+      markers.forEach((marker) => marker.remove());
+      markers.length = 0;
+
+      friendLocations
+        .filter((friend) =>
+          isValidCoordinate(friend.latitude, friend.longitude)
+        )
+        .forEach((friend) => {
+          const wrapper = document.createElement("div");
+          wrapper.style.width = "48px";
+          wrapper.style.height = "56px";
+          wrapper.style.cursor = "pointer";
+          wrapper.style.display = "flex";
+          wrapper.style.flexDirection = "column";
+          wrapper.style.alignItems = "center";
+          wrapper.title = friend.display_name;
+
+          const avatar = document.createElement("div");
+          avatar.style.width = "42px";
+          avatar.style.height = "42px";
+          avatar.style.borderRadius = "50%";
+          avatar.style.border = "3px solid #fff";
+          avatar.style.background = "#172554";
+          avatar.style.display = "flex";
+          avatar.style.alignItems = "center";
+          avatar.style.justifyContent = "center";
+          avatar.style.boxShadow = "0 4px 16px rgba(0,0,0,.35), 0 0 0 2px #60a5fa";
+          avatar.style.fontSize = "19px";
+          avatar.textContent = "👤";
+
+          const name = document.createElement("div");
+          name.style.marginTop = "-1px";
+          name.style.maxWidth = "120px";
+          name.style.padding = "2px 7px";
+          name.style.borderRadius = "999px";
+          name.style.background = "rgba(7,24,42,.92)";
+          name.style.color = "#fff";
+          name.style.font = "700 10px system-ui, sans-serif";
+          name.style.whiteSpace = "nowrap";
+          name.style.overflow = "hidden";
+          name.style.textOverflow = "ellipsis";
+          name.textContent = friend.display_name;
+
+          wrapper.appendChild(avatar);
+          wrapper.appendChild(name);
+
+          wrapper.addEventListener("click", () => {
+            onFriendMarkerClick?.(friend.user_id);
+          });
+
+          markers.push(
+            new mapboxgl.Marker({
+              element: wrapper,
+              anchor: "bottom",
+            })
+              .setLngLat([friend.longitude, friend.latitude])
+              .addTo(mapInstance)
+          );
+        });
+    };
+
+    if (mapInstance.isStyleLoaded()) {
+      renderFriendMarkers();
+    } else {
+      mapInstance.once("load", renderFriendMarkers);
+    }
+
+    return () => {
+      mapInstance.off("load", renderFriendMarkers);
+      markers.forEach((marker) => marker.remove());
+    };
+  }, [friendLocations, onFriendMarkerClick]);
 
   // ========================================
   // VÙNG CHECK-IN
