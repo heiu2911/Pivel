@@ -5063,152 +5063,191 @@ export default function Home() {
         </div>
       )}
 
-      {/* HEADER */}
-
-      <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-3 pt-3 sm:px-4 sm:pt-4">
-        <div className="pointer-events-auto flex items-center justify-between rounded-[1.35rem] border border-white/15 bg-[#06111f]/72 px-3 py-2.5 shadow-[0_12px_40px_rgba(0,0,0,0.24)] backdrop-blur-2xl">
-
-        <div>
-          <h1 className="text-sm font-black tracking-tight">
-            TravelQuest
-          </h1>
-
-          <p className="text-[9px] text-white/40">
-            Explore • Check-in • Collect
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-
-          {/* SEARCH TRAVELLER */}
-
-          {authReady && user && (
-            <button
-              type="button"
-              onClick={openSearch}
-              className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-              title="Tìm Traveller"
-            >
-              🔎
-            </button>
-          )}
-
-          {/* NOTIFICATIONS */}
-
-          {authReady && user && (
-            <button
-              type="button"
-              onClick={toggleNotifications}
-              className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-              title="Thông báo"
-            >
-              🔔
-
-              {notifications.some(
-                (item) => !item.is_read
-              ) && (
-                <span className="absolute top-1 right-1 min-w-2.5 h-2.5 rounded-full bg-red-400 border-2 border-[#06111f]" />
-              )}
-            </button>
-          )}
-
-          {/* ACCOUNT */}
-
-          {authReady && (
-            <button
-              onClick={() => {
-                if (user) {
-                  setAuthMessage("");
-                  setAuthOpen(true);
-                } else {
-                  openAuth("login");
-                }
-              }}
-              className="h-10 rounded-full bg-white/10 hover:bg-white/15 px-3 flex items-center gap-2 transition"
-              title={
-                user
-                  ? "Tài khoản"
-                  : "Đăng nhập"
-              }
-            >
-
-              <span className="w-7 h-7 rounded-full overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
-                {user && avatarImageUrl ? (
-                  <img
-                    src={avatarImageUrl}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm">
-                    {user ? avatarEmoji : "🔐"}
-                  </span>
+      {/* MAP TOOLBAR */}
+      <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+        <div className="pointer-events-auto w-full border-b border-white/10 bg-[#070b11]/95 shadow-[0_8px_30px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+          <div className="mx-auto flex max-w-[1600px] items-center gap-2 px-3 py-2 sm:px-4">
+            <div className="relative min-w-0 flex-1">
+              <div className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white px-2.5 text-slate-900 shadow-sm">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-base">⌕</span>
+                <input
+                  value={mapSearchQuery}
+                  onChange={(event) => setMapSearchQuery(event.target.value)}
+                  placeholder="Tìm địa điểm, checkpoint..."
+                  className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+                  aria-label="Tìm địa điểm trên bản đồ"
+                />
+                {mapSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setMapSearchQuery("")}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                    aria-label="Xóa tìm kiếm"
+                  >
+                    ×
+                  </button>
                 )}
-              </span>
-
-              <span className="hidden sm:block text-xs font-semibold max-w-[120px] truncate">
-                {user
-                  ? profileName
-                  : "Đăng nhập"}
-              </span>
-
-            </button>
-          )}
-
-          <div className="relative">
-            <button
-              type="button"
-              className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center hover:bg-white/12 transition text-lg"
-              onClick={() => setHeaderMenuOpen((value) => !value)}
-              title="Công cụ"
-              aria-label="Công cụ"
-            >
-              ⋯
-            </button>
-
-            {headerMenuOpen && (
-              <div className="absolute right-0 top-11 z-[70] w-48 rounded-2xl border border-white/10 bg-[#07182a]/98 p-2 shadow-2xl backdrop-blur-xl">
                 <button
                   type="button"
                   onClick={() => {
-                    setHeaderMenuOpen(false);
                     updateLocation();
                     startWatchingGPS();
                   }}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                  className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-slate-900 px-2.5 text-xs font-bold text-white transition hover:bg-slate-700"
+                  title="Định vị tôi"
                 >
-                  📍 Cập nhật GPS
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeaderMenuOpen(false);
-                    setSmartTravelOpen(true);
-                  }}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
-                >
-                  ✨ Smart Travel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeaderMenuOpen(false);
-                    setChatOpen(true);
-                  }}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
-                >
-                  💬 Traveller Chat
+                  <span>⌖</span>
+                  <span className="hidden sm:inline">Vị trí</span>
                 </button>
               </div>
-            )}
+
+              {(mapSearchQuery.trim() || mapFilter !== "all") && (
+                <div className="absolute left-0 right-0 top-12 z-[80] max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
+                  {mapSearchResults.length === 0 ? (
+                    <div className="px-4 py-5 text-center text-xs text-slate-500">
+                      Chưa tìm thấy checkpoint phù hợp.
+                    </div>
+                  ) : (
+                    mapSearchResults.map((checkpoint) => (
+                      <button
+                        key={checkpoint.id}
+                        type="button"
+                        onClick={() => {
+                          selectCheckpoint(checkpoint);
+                          setShowExplorePanel(false);
+                          setMapSearchQuery("");
+                        }}
+                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl">
+                          {checkpoint.icon ?? "📍"}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-slate-800">{checkpoint.name}</span>
+                          <span className="mt-0.5 block truncate text-[11px] text-slate-500">
+                            {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
+                          </span>
+                        </span>
+                        <span className="text-slate-400 transition group-hover:translate-x-0.5">›</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="hidden lg:flex shrink-0 items-center gap-1.5">
+              {[
+                ["all", "✨ Tất cả"],
+                ["nearby", "📍 Gần tôi"],
+                ["unvisited", "🎯 Chưa check-in"],
+                ["saved", "🔖 Đã lưu"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMapFilter(value as "all" | "nearby" | "unvisited" | "saved")}
+                  className={`tq-map-chip ${mapFilter === value ? "tq-map-chip-active" : ""}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+              {authReady && user && (
+                <button
+                  type="button"
+                  onClick={openSearch}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-base transition hover:bg-white/14"
+                  title="Tìm Traveller"
+                >
+                  🔎
+                </button>
+              )}
+
+              {authReady && user && (
+                <button
+                  type="button"
+                  onClick={toggleNotifications}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-base transition hover:bg-white/14"
+                  title="Thông báo"
+                >
+                  🔔
+                  {notifications.some((item) => !item.is_read) && (
+                    <span className="absolute right-1 top-1 h-2.5 min-w-2.5 rounded-full border-2 border-[#070b11] bg-red-400" />
+                  )}
+                </button>
+              )}
+
+              {authReady && (
+                <button
+                  onClick={() => {
+                    if (user) {
+                      setAuthMessage("");
+                      setAuthOpen(true);
+                    } else {
+                      openAuth("login");
+                    }
+                  }}
+                  className="flex h-10 items-center gap-2 rounded-xl bg-white/8 px-2.5 transition hover:bg-white/14"
+                  title={user ? "Tài khoản" : "Đăng nhập"}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
+                    {user && avatarImageUrl ? (
+                      <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-sm">{user ? avatarEmoji : "🔐"}</span>
+                    )}
+                  </span>
+                  <span className="hidden xl:block max-w-[110px] truncate text-xs font-semibold">
+                    {user ? profileName : "Đăng nhập"}
+                  </span>
+                </button>
+              )}
+
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-lg transition hover:bg-white/14"
+                  onClick={() => setHeaderMenuOpen((value) => !value)}
+                  title="Công cụ"
+                  aria-label="Công cụ"
+                >
+                  ⋯
+                </button>
+
+                {headerMenuOpen && (
+                  <div className="absolute right-0 top-12 z-[90] w-48 rounded-2xl border border-white/10 bg-[#07182a]/98 p-2 shadow-2xl backdrop-blur-xl">
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 transition hover:bg-white/8">📍 Cập nhật GPS</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 transition hover:bg-white/8">✨ Smart Travel</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 transition hover:bg-white/8">💬 Traveller Chat</button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-        </div>
-
+          <div className="flex gap-2 overflow-x-auto px-3 pb-2 lg:hidden [scrollbar-width:none] sm:px-4">
+            {[
+              ["all", "✨ Tất cả"],
+              ["nearby", "📍 Gần tôi"],
+              ["unvisited", "🎯 Chưa check-in"],
+              ["saved", "🔖 Đã lưu"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMapFilter(value as "all" | "nearby" | "unvisited" | "saved")}
+                className={`tq-map-chip shrink-0 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
-
-      <div className="pb-24">
+     <div className="pb-24">
 
         {/* ================= MAP ================= */}
 
@@ -5231,96 +5270,6 @@ export default function Home() {
                 }
               />
             </div>
-
-              {/* GOOGLE MAPS-STYLE DISCOVERY OVERLAY */}
-              <div className="pointer-events-none absolute inset-x-0 top-[74px] z-30 px-3 sm:px-5">
-                <div className="mx-auto flex max-w-3xl flex-col items-stretch gap-2">
-                  <div className="pointer-events-auto flex items-center gap-2 rounded-[1.35rem] border border-black/5 bg-white/95 px-3 py-2.5 text-slate-900 shadow-[0_10px_35px_rgba(15,23,42,0.18)] backdrop-blur-xl">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg">⌕</span>
-                    <input
-                      value={mapSearchQuery}
-                      onChange={(event) => setMapSearchQuery(event.target.value)}
-                      placeholder="Tìm địa điểm, checkpoint..."
-                      className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
-                      aria-label="Tìm địa điểm trên bản đồ"
-                    />
-                    {mapSearchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setMapSearchQuery("")}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
-                        aria-label="Xóa tìm kiếm"
-                      >
-                        ×
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateLocation();
-                        startWatchingGPS();
-                      }}
-                      className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-slate-100 px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-200"
-                      title="Định vị tôi"
-                    >
-                      <span>⌖</span>
-                      <span className="hidden sm:inline">Vị trí</span>
-                    </button>
-                  </div>
-
-                  <div className="pointer-events-auto flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-                    {[
-                      ["all", "✨ Tất cả"],
-                      ["nearby", "📍 Gần tôi"],
-                      ["unvisited", "🎯 Chưa check-in"],
-                      ["saved", "🔖 Đã lưu"],
-                    ].map(([value, label]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setMapFilter(value as "all" | "nearby" | "unvisited" | "saved")}
-                        className={`tq-map-chip shrink-0 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {(mapSearchQuery.trim() || mapFilter !== "all") && (
-                    <div className="pointer-events-auto max-h-72 overflow-y-auto rounded-2xl border border-black/5 bg-white/96 p-1.5 shadow-[0_14px_45px_rgba(15,23,42,0.18)] backdrop-blur-xl">
-                      {mapSearchResults.length === 0 ? (
-                        <div className="px-4 py-5 text-center text-xs text-slate-500">
-                          Chưa tìm thấy checkpoint phù hợp.
-                        </div>
-                      ) : (
-                        mapSearchResults.map((checkpoint) => (
-                          <button
-                            key={checkpoint.id}
-                            type="button"
-                            onClick={() => {
-                              selectCheckpoint(checkpoint);
-                              setShowExplorePanel(false);
-                              setMapSearchQuery("");
-                            }}
-                            className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
-                          >
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl">
-                              {checkpoint.icon ?? "📍"}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-sm font-bold text-slate-800">{checkpoint.name}</span>
-                              <span className="mt-0.5 block truncate text-[11px] text-slate-500">
-                                {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
-                              </span>
-                            </span>
-                            <span className="text-slate-400 transition group-hover:translate-x-0.5">›</span>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
 
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
