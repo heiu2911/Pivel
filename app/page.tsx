@@ -94,6 +94,7 @@ type PublicProfile = {
   following_count: number;
   xp: number;
   level: number;
+  avatar_url?: string | null;
 };
 
 type FriendLocation = {
@@ -103,6 +104,7 @@ type FriendLocation = {
   display_name: string;
   level: number;
   xp: number;
+  avatar_url?: string | null;
   updated_at: string;
 };
 
@@ -1302,9 +1304,21 @@ export default function Home() {
         dataUrl
       );
 
+      const { error: avatarError } = await supabase
+        .from("travelquest_public_profiles")
+        .update({ avatar_url: dataUrl })
+        .eq("user_id", user.id);
+
+      if (avatarError) {
+        console.error("Lỗi đồng bộ avatar:", avatarError);
+        throw new Error(
+          "Không thể đồng bộ avatar lên server. Hãy chạy SQL migration avatar rồi thử lại."
+        );
+      }
+
       setAvatarImageUrl(dataUrl);
       setProfileMessage(
-        "✅ Đã cập nhật ảnh avatar. Ảnh được lưu trên thiết bị này."
+        "✅ Đã cập nhật avatar và đồng bộ lên server."
       );
     } catch (error) {
       setProfileMessage(
@@ -1888,7 +1902,7 @@ export default function Home() {
 
       const { data: profiles, error: profileError } = await supabase
         .from("travelquest_public_profiles")
-        .select("user_id, display_name, level, xp")
+        .select("user_id, display_name, level, xp, avatar_url")
         .in("user_id", friendIds);
 
       if (profileError) {
