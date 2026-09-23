@@ -1305,9 +1305,15 @@ export default function Home() {
       );
 
       const { error: avatarError } = await supabase
-        .from("travelquest_public_profiles")
-        .update({ avatar_url: dataUrl })
-        .eq("user_id", user.id);
+        .from("travelquest_profile_avatars")
+        .upsert(
+          {
+            user_id: user.id,
+            avatar_url: dataUrl,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
 
       if (avatarError) {
         console.error("Lỗi đồng bộ avatar:", avatarError);
@@ -1902,17 +1908,36 @@ export default function Home() {
 
       const { data: profiles, error: profileError } = await supabase
         .from("travelquest_public_profiles")
-        .select("user_id, display_name, level, xp, avatar_url")
+        .select("user_id, display_name, level, xp")
         .in("user_id", friendIds);
 
       if (profileError) {
         console.warn("Không tải được public profile bạn bè, vẫn hiển thị marker GPS:", profileError.message);
       }
 
+      const { data: avatarRows, error: avatarError } = await supabase
+        .from("travelquest_profile_avatars")
+        .select("user_id, avatar_url")
+        .in("user_id", friendIds);
+
+      if (avatarError) {
+        console.warn(
+          "Không tải được avatar bạn bè, vẫn hiển thị marker GPS:",
+          avatarError.message
+        );
+      }
+
       const profileMap = new globalThis.Map(
         (profiles ?? []).map((profile) => [
           profile.user_id,
           profile,
+        ])
+      );
+
+      const avatarMap = new globalThis.Map(
+        (avatarRows ?? []).map((row) => [
+          row.user_id,
+          row.avatar_url,
         ])
       );
 
@@ -1928,9 +1953,9 @@ export default function Home() {
             level: Number(profile?.level ?? 1),
             xp: Number(profile?.xp ?? 0),
             avatar_url:
-              typeof profile?.avatar_url === "string" &&
-              profile.avatar_url.startsWith("data:image/")
-                ? profile.avatar_url
+              typeof avatarMap.get(location.user_id) === "string" &&
+              avatarMap.get(location.user_id).startsWith("data:image/")
+                ? avatarMap.get(location.user_id)
                 : null,
             updated_at: location.updated_at,
           } satisfies FriendLocation;
