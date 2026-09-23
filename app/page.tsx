@@ -391,6 +391,12 @@ export default function Home() {
     setGpsEnabled(next);
     setSettingsMessage(next ? "📍 Đã bật GPS." : "📍 Đã tắt GPS.");
 
+    if (!next && gpsWatchId.current !== null) {
+      stopWatchingLocation(gpsWatchId.current);
+      gpsWatchId.current = null;
+      setLocationLoading(false);
+    }
+
     try {
       window.localStorage.setItem(
         "travelquest-gps-enabled",
@@ -3174,6 +3180,40 @@ export default function Home() {
       gpsWatchId.current =
         watchId;
     };
+
+  // ============================================
+  // AUTO START GPS WHEN APP OPENS
+  // ============================================
+
+  useEffect(() => {
+    if (!gpsEnabled) return;
+
+    let cancelled = false;
+
+    const startGpsOnAppOpen = async () => {
+      try {
+        // This triggers the browser permission prompt when needed.
+        await updateLocation();
+        if (!cancelled) {
+          startWatchingGPS();
+        }
+      } catch (error) {
+        console.error("Không thể tự khởi động GPS:", error);
+      }
+    };
+
+    void startGpsOnAppOpen();
+
+    return () => {
+      cancelled = true;
+      if (gpsWatchId.current !== null) {
+        stopWatchingLocation(gpsWatchId.current);
+        gpsWatchId.current = null;
+      }
+    };
+    // GPS should start once when the app opens, or when the user re-enables it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpsEnabled]);
 
   // ============================================
   // SELECT CHECKPOINT
