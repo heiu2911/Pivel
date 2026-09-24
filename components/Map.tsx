@@ -2426,30 +2426,6 @@ export default function Map({
   // Khi zoom xa chỉ hiển thị marker ảnh đại diện thành phố.
   // ========================================
 
-  useEffect(() => {
-    const mapInstance = map.current;
-    if (!mapInstance) return;
-
-    const sourceId = "checkpoint-zones";
-    const layerId = "checkpoint-zone-fill";
-
-    const removeZones = () => {
-      if (mapInstance.getLayer(layerId)) {
-        mapInstance.removeLayer(layerId);
-      }
-      if (mapInstance.getSource(sourceId)) {
-        mapInstance.removeSource(sourceId);
-      }
-      checkpointZonesAdded.current = false;
-    };
-
-    removeZones();
-
-    return () => {
-      removeZones();
-    };
-  }, [checkpoints, showCheckpoints]);
-
   // ========================================
   // GPS MARKER
   // ========================================
