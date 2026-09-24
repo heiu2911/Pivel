@@ -7247,6 +7247,9 @@ export default function Home() {
               Reset dữ liệu demo
             </button>
 
+            </section>
+          )}
+
             {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
           <section className="fixed inset-0 z-40 bg-black text-white">
