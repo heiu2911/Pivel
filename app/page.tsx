@@ -5938,7 +5938,7 @@ export default function Home() {
             {/* SELECTED CHECKPOINT */}
 
             {selectedCheckpoint && (
-              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none px-3 pb-[calc(88px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
+              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none px-3 pb-[calc(33vh+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
                 <div className="pointer-events-auto mx-auto w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a]/80 shadow-[0_20px_60px_rgba(0,0,0,.35)] backdrop-blur-2xl">
 
                   <div className="flex items-center gap-3 px-4 pt-3 pb-2">
