@@ -7548,6 +7548,8 @@ export default function Home() {
           </section>
         )}
 
+      </div>
+
       {/* ================= BOTTOM NAV ================= */}
 
       <nav className="fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)]">
