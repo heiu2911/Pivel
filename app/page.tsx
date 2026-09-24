@@ -8580,11 +8580,37 @@ export default function Home() {
       )}
 
       {chatOpen && (
-        <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md max-h-[90dvh] flex flex-col rounded-3xl bg-[#07182a] border border-white/10 p-5">
-            <div className="flex items-center justify-between"><div><p className="text-xs text-purple-300 font-bold">BẠN BÈ</p><h3 className="text-xl font-black">💬 {selectedChatFriend?.display_name ?? "Chat"}</h3></div><button onClick={() => setChatOpen(false)}>✕</button></div>
-            <div className="flex-1 min-h-64 max-h-80 overflow-y-auto space-y-2 mt-4">{chatMessages.filter((message) => selectedChatFriend && ((message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id))).length === 0 ? <p className="text-sm text-white/40 text-center py-10">Chưa có tin nhắn. Bắt đầu trò chuyện!</p> : chatMessages.filter((message) => selectedChatFriend && ((message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id))).map((message) => <div key={message.id} className={`rounded-xl border border-white/5 p-3 ${message.senderId === user?.id ? "ml-8 bg-blue-500/15" : "mr-8 bg-white/5"}`}><p className="text-[10px] text-white/40">{message.senderId === user?.id ? "Bạn" : message.sender}</p><p className="text-sm mt-1">{message.text}</p></div>)}</div>
-            <div className="flex gap-2 mt-3"><input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendChatMessage(); }} placeholder="Nhắn tin..." className="flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-3 text-sm outline-none" /><button onClick={sendChatMessage} className="rounded-xl bg-blue-500 px-4 font-bold">Gửi</button></div>
+        <div className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md">
+          <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[88dvh] max-w-md flex-col rounded-t-[2rem] border border-white/10 bg-[#07182a] shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+              <button type="button" onClick={() => setChatOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-lg">←</button>
+              <div className="flex-1"><p className="text-[10px] font-black tracking-[0.2em] text-purple-300">MESSAGES</p><h3 className="text-lg font-black">{selectedChatFriend?.display_name ?? "Bạn bè"}</h3></div>
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {!selectedChatFriend ? (
+                <div className="space-y-2">
+                  {friendProfiles.map((friend) => (
+                    <button key={friend.user_id} type="button" onClick={() => setSelectedChatFriend(friend)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left hover:bg-white/5">
+                      <div className="h-12 w-12 overflow-hidden rounded-full bg-white/10">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-xl">🧭</span>}</div>
+                      <div className="min-w-0"><p className="font-bold">{friend.display_name}</p><p className="text-xs text-white/40">Nhấn để nhắn tin</p></div>
+                    </button>
+                  ))}
+                  {!friendProfiles.length && <p className="py-10 text-center text-sm text-white/40">Chưa có bạn bè.</p>}
+                </div>
+              ) : (
+                <div className="flex h-full flex-col">
+                  <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
+                    <div className="h-10 w-10 overflow-hidden rounded-full bg-white/10">{selectedChatFriend.avatar_url ? <img src={selectedChatFriend.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center">🧭</span>}</div>
+                    <div><p className="font-bold">{selectedChatFriend.display_name}</p><p className="text-xs text-white/40">Bạn bè</p></div>
+                  </div>
+                  <div className="flex-1 space-y-2 overflow-y-auto">
+                    {chatMessages.filter((message) => (message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id)).map((message) => <div key={message.id} className={`max-w-[78%] rounded-2xl px-3 py-2 ${message.senderId === user?.id ? "ml-auto bg-blue-500" : "bg-white/10"}`}><p className="text-sm">{message.text}</p></div>)}
+                    {!chatMessages.some((message) => (message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id)) && <p className="py-10 text-center text-sm text-white/40">Chưa có tin nhắn. Bắt đầu trò chuyện!</p>}
+                  </div>
+                  <div className="mt-3 flex gap-2"><input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendChatMessage(); }} placeholder="Nhắn tin..." className="flex-1 rounded-full bg-black/20 border border-white/10 px-4 py-3 text-sm outline-none" /><button type="button" onClick={sendChatMessage} className="h-11 w-11 shrink-0 rounded-full bg-blue-500 font-bold">↑</button></div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
