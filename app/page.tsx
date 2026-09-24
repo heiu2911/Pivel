@@ -8041,13 +8041,26 @@ export default function Home() {
       ============================================ */}
 
       {searchOpen && (
-        <div className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20">
+        <div
+          className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) {
+              dismissSearchOverlay();
+            }
+          }}
+        >
 
           <button
             type="button"
             aria-label="Đóng tìm kiếm"
             onPointerDown={(event) => {
               event.preventDefault();
+              event.stopPropagation();
+              dismissSearchOverlay();
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
               dismissSearchOverlay();
             }}
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
