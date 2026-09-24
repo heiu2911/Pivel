@@ -7276,7 +7276,6 @@ export default function Home() {
               </button>
 
               <div className="mb-4 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
-              <div className="mb-4 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-lg">
                     🧭
