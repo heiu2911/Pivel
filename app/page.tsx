@@ -4604,6 +4604,7 @@ export default function Home() {
         // ============================================
 
         const {
+          data: createdPost,
           error,
         } = await supabase
           .from("posts")
@@ -4618,7 +4619,11 @@ export default function Home() {
             likes: 0,
             image_url:
               imageUrl,
-          });
+          })
+          .select(
+            "id, device_id, user_id, checkpoint_id, content, likes, created_at, image_url"
+          )
+          .single();
 
         if (error) {
           console.error(
@@ -4632,6 +4637,21 @@ export default function Home() {
 
           setPosting(false);
           return;
+        }
+
+        if (createdPost) {
+          const optimisticPost: Post = {
+            id: createdPost.id,
+            device_id: createdPost.device_id,
+            user_id: createdPost.user_id ?? null,
+            checkpoint_id: createdPost.checkpoint_id,
+            content: createdPost.content,
+            likes: createdPost.likes ?? 0,
+            created_at: createdPost.created_at,
+            image_url: createdPost.image_url ?? null,
+            checkpoint: null,
+          };
+          setPosts((current) => [optimisticPost, ...current]);
         }
 
         setPostContent("");
