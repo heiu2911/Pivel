@@ -141,6 +141,8 @@ type ChatMessage = {
   id: string;
   text: string;
   sender: string;
+  senderId?: string;
+  recipientId?: string;
   createdAt: string;
 };
 
@@ -938,6 +940,10 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [friendsOpen, setFriendsOpen] = useState(false);
+  const [friendProfiles, setFriendProfiles] = useState<PublicProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [selectedChatFriend, setSelectedChatFriend] = useState<PublicProfile | null>(null);
 
   useEffect(() => {
     if (!user?.id) {
@@ -1011,16 +1017,23 @@ export default function Home() {
   }, [user?.id, savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages]);
 
   useEffect(() => {
-    if (!chatOpen) return;
+    if (!chatOpen || !user?.id) return;
     const channel = supabase.channel("travelquest-traveller-chat", { config: { broadcast: { self: false } } });
     channel.on("broadcast", { event: "message" }, ({ payload }) => {
       if (!payload || typeof payload !== "object") return;
       const data = payload as Partial<ChatMessage>;
-      if (typeof data.id !== "string" || typeof data.text !== "string" || typeof data.sender !== "string") return;
+      if (
+        typeof data.id !== "string" ||
+        typeof data.text !== "string" ||
+        typeof data.sender !== "string" ||
+        typeof data.senderId !== "string" ||
+        typeof data.recipientId !== "string"
+      ) return;
+      if (data.recipientId !== user.id) return;
       setChatMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data as ChatMessage].slice(-100));
     }).subscribe();
     return () => { void supabase.removeChannel(channel); };
-  }, [chatOpen]);
+  }, [chatOpen, user?.id]);
 
   const [imagePreview, setImagePreview] =
     useState<string | null>(null);
@@ -5418,12 +5431,83 @@ export default function Home() {
     }
   };
 
+  const loadFriendProfiles = async () => {
+    if (!user?.id) {
+      setFriendProfiles([]);
+      return;
+    }
+
+    setFriendsLoading(true);
+    try {
+      const { data: following, error } = await supabase
+        .from("user_follows")
+        .select("following_id")
+        .eq("follower_id", user.id);
+
+      if (error) throw error;
+
+      const ids = (following ?? [])
+        .map((row) => row.following_id)
+        .filter((id): id is string => typeof id === "string");
+
+      if (!ids.length) {
+        setFriendProfiles([]);
+        return;
+      }
+
+      const { data: profiles, error: profileError } = await supabase
+        .from("travelquest_public_profiles")
+        .select("user_id, display_name, checkpoint_count, post_count, follower_count, following_count, xp, level")
+        .in("user_id", ids)
+        .order("xp", { ascending: false });
+
+      if (profileError) throw profileError;
+      setFriendProfiles((profiles ?? []) as PublicProfile[]);
+    } catch (error) {
+      console.error("Lỗi tải danh sách bạn bè:", error);
+      setFriendProfiles([]);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const openFriends = async () => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage("🔐 Hãy đăng nhập để xem bạn bè.");
+      return;
+    }
+    setFriendsOpen(true);
+    await loadFollowing();
+    await loadFriendProfiles();
+  };
+
+  const openChatWithFriend = (friend: PublicProfile) => {
+    setSelectedChatFriend(friend);
+    setChatInput("");
+    setChatOpen(true);
+  };
+
   const sendChatMessage = () => {
     const text = chatInput.trim();
-    if (!text) return;
-    const message: ChatMessage = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text, sender: profileName, createdAt: new Date().toISOString() };
+    if (!text || !user?.id || !selectedChatFriend) return;
+
+    const message: ChatMessage = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      text,
+      sender: profileName,
+      senderId: user.id,
+      recipientId: selectedChatFriend.user_id,
+      createdAt: new Date().toISOString(),
+    };
+
     setChatMessages((current) => [...current, message].slice(-100));
-    void supabase.channel("travelquest-traveller-chat").send({ type: "broadcast", event: "message", payload: message });
+    void supabase.channel("travelquest-traveller-chat").send({
+      type: "broadcast",
+      event: "message",
+      payload: message,
+    });
     setChatInput("");
   };
 
@@ -7253,7 +7337,52 @@ export default function Home() {
             </section>
           )}
 
-            {/* ================= UGC / CAMERA FIRST ================= */}
+            {/* ================= FRIENDS ================= */}
+        {activeTab === "friends" && (
+          <section className="fixed inset-0 z-40 overflow-y-auto bg-[#06111f] px-4 pb-28 pt-8 text-white">
+            <div className="mx-auto w-full max-w-lg">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black tracking-[0.2em] text-blue-300">TRAVELQUEST</p>
+                  <h1 className="mt-1 text-3xl font-black">👥 Bạn bè</h1>
+                  <p className="mt-1 text-xs text-white/45">{friendProfiles.length} Traveller đang theo dõi</p>
+                </div>
+                <button type="button" onClick={() => void loadFriendProfiles()} className="h-10 w-10 rounded-full bg-white/5 border border-white/10">↻</button>
+              </div>
+
+              <button type="button" onClick={openSearch} className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left">
+                <span>🔎</span>
+                <span className="text-sm text-white/40">Tìm Traveller mới...</span>
+              </button>
+
+              <div className="mt-5 space-y-3">
+                {friendsLoading ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-white/45">Đang tải bạn bè...</div>
+                ) : friendProfiles.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-center">
+                    <div className="text-4xl">🧭</div>
+                    <p className="mt-3 font-bold">Chưa có bạn bè</p>
+                    <p className="mt-1 text-xs text-white/40">Tìm Traveller và nhấn Theo dõi để bắt đầu.</p>
+                    <button type="button" onClick={openSearch} className="mt-4 rounded-xl bg-blue-500 px-4 py-2 text-xs font-bold">Tìm bạn</button>
+                  </div>
+                ) : (
+                  friendProfiles.map((friend) => (
+                    <div key={friend.user_id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-xl">🧭</div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-bold">{friend.display_name}</p>
+                        <p className="mt-1 text-[11px] text-white/40">Level {friend.level} · {friend.xp} XP · {friend.checkpoint_count} checkpoint</p>
+                      </div>
+                      <button type="button" onClick={() => openChatWithFriend(friend)} className="rounded-xl bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-200">💬 Chat</button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
           <section className="fixed inset-0 z-40 bg-black text-white">
             <div
@@ -7422,6 +7551,15 @@ export default function Home() {
             >
               <span className="text-xl">🏆</span>
               <span className="text-[11px] font-semibold">Huy hiệu</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void openFriends()}
+              className="flex min-w-[76px] flex-col items-center gap-1 rounded-2xl px-4 py-2 text-white/40 hover:text-white transition"
+            >
+              <span className="text-xl">👥</span>
+              <span className="text-[11px] font-semibold">Bạn bè</span>
             </button>
 
             <button
@@ -8393,8 +8531,8 @@ export default function Home() {
       {chatOpen && (
         <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md max-h-[90dvh] flex flex-col rounded-3xl bg-[#07182a] border border-white/10 p-5">
-            <div className="flex items-center justify-between"><div><p className="text-xs text-purple-300 font-bold">COMMUNITY</p><h3 className="text-xl font-black">💬 Traveller Chat</h3></div><button onClick={() => setChatOpen(false)}>✕</button></div>
-            <div className="flex-1 min-h-64 max-h-80 overflow-y-auto space-y-2 mt-4">{chatMessages.length === 0 ? <p className="text-sm text-white/40 text-center py-10">Chưa có tin nhắn. Bắt đầu trò chuyện!</p> : chatMessages.map((message) => <div key={message.id} className="rounded-xl bg-white/5 border border-white/5 p-3"><p className="text-[10px] text-white/40">{message.sender}</p><p className="text-sm mt-1">{message.text}</p></div>)}</div>
+            <div className="flex items-center justify-between"><div><p className="text-xs text-purple-300 font-bold">BẠN BÈ</p><h3 className="text-xl font-black">💬 {selectedChatFriend?.display_name ?? "Chat"}</h3></div><button onClick={() => setChatOpen(false)}>✕</button></div>
+            <div className="flex-1 min-h-64 max-h-80 overflow-y-auto space-y-2 mt-4">{chatMessages.filter((message) => selectedChatFriend && ((message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id))).length === 0 ? <p className="text-sm text-white/40 text-center py-10">Chưa có tin nhắn. Bắt đầu trò chuyện!</p> : chatMessages.filter((message) => selectedChatFriend && ((message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id))).map((message) => <div key={message.id} className={`rounded-xl border border-white/5 p-3 ${message.senderId === user?.id ? "ml-8 bg-blue-500/15" : "mr-8 bg-white/5"}`}><p className="text-[10px] text-white/40">{message.senderId === user?.id ? "Bạn" : message.sender}</p><p className="text-sm mt-1">{message.text}</p></div>)}</div>
             <div className="flex gap-2 mt-3"><input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendChatMessage(); }} placeholder="Nhắn tin..." className="flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-3 text-sm outline-none" /><button onClick={sendChatMessage} className="rounded-xl bg-blue-500 px-4 font-bold">Gửi</button></div>
           </div>
         </div>
