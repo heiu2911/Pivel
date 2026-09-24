@@ -3022,6 +3022,16 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    if (activeTab === "ugc" && user?.id && !cameraOpen && !cameraPreviewOpen) {
+      void openCamera();
+    }
+
+    if (activeTab !== "ugc" && cameraOpen) {
+      closeCamera();
+    }
+  }, [activeTab, user?.id, cameraOpen, cameraPreviewOpen]);
+
   const captureCameraPhoto = () => {
     const video = cameraVideoRef.current;
     if (!video || video.readyState < 2 || video.videoWidth === 0) {
@@ -7375,434 +7385,108 @@ export default function Home() {
           </section>
         )}
 
-        {/* ================= UGC / LOCKET STYLE ================= */}
+        {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
-          <section className="min-h-screen bg-[#06111f] px-4 pb-28 pt-24">
-            <div className="mx-auto max-w-xl">
-              <div className="mb-5 flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-300">
-                    Travel Moments
-                  </p>
-                  <h2 className="mt-1 text-2xl font-black">Khoảnh khắc</h2>
-                  <p className="mt-1 text-xs text-white/40">
-                    Một ảnh, một khoảnh khắc, một chuyến đi.
-                  </p>
-                </div>
-                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-white/45">
-                  {visiblePosts.length} moments
-                </span>
-              </div>
-
-              <div className="mb-5 overflow-hidden rounded-[28px] border border-white/10 bg-black shadow-2xl shadow-black/30">
-                <div className="relative aspect-[4/5] w-full overflow-hidden">
-                  {cameraOpen ? (
-                    <>
-                      <video
-                        ref={cameraVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
-                      />
-
-                      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
-                        <span className="rounded-full bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">
-                          Live camera
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => void switchCamera()}
-                          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-lg backdrop-blur"
-                          aria-label="Đổi camera"
-                        >
-                          🔄
-                        </button>
-                      </div>
-
-                      {cameraError && (
-                        <div className="absolute left-4 right-4 top-16 rounded-2xl bg-black/65 p-3 text-center text-xs text-white/80 backdrop-blur">
-                          {cameraError}
-                        </div>
-                      )}
-
-                      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5">
-                        <button
-                          type="button"
-                          onClick={() => imageInputRef.current?.click()}
-                          className="rounded-full bg-black/50 px-4 py-2.5 text-xs font-bold text-white/85 backdrop-blur"
-                        >
-                          🖼️ Thư viện
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={captureCameraPhoto}
-                          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-white/20 shadow-2xl active:scale-90"
-                          aria-label="Chụp ảnh"
-                        >
-                          <span className="h-14 w-14 rounded-full bg-white" />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={closeCamera}
-                          className="rounded-full bg-black/50 px-4 py-2.5 text-xs font-bold text-white/85 backdrop-blur"
-                        >
-                          Đóng
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => void openCamera()}
-                      className="group relative flex h-full w-full items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,_rgba(59,130,246,0.18),_transparent_55%)] text-left"
-                    >
-                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent_35%,rgba(0,0,0,0.55))]" />
-                      <div className="relative flex flex-col items-center px-8 text-center">
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl shadow-2xl transition group-hover:scale-105">
-                          📸
-                        </div>
-                        <p className="mt-5 text-xl font-black">Khoảnh khắc của cậu</p>
-                        <p className="mt-2 max-w-xs text-sm text-white/45">
-                          Chạm để bật camera. Sau đó lướt xuống để xem từng moment.
-                        </p>
-                        <span className="mt-5 rounded-full bg-blue-500 px-5 py-2.5 text-xs font-black shadow-lg shadow-blue-950/40">
-                          Mở camera
-                        </span>
-                      </div>
-                    </button>
-                  )}
+          <section className="fixed inset-0 z-40 bg-black text-white">
+            <div className="relative h-full w-full overflow-hidden">
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/65 via-black/20 to-transparent px-5 pb-16 pt-[calc(env(safe-area-inset-top)+1rem)]">
+                <div className="flex items-center justify-between">
+                  <div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/55">TravelQuest</p><p className="mt-1 text-lg font-black">Khoảnh khắc</p></div>
+                  <span className="rounded-full bg-black/35 px-3 py-1.5 text-[10px] font-bold text-white/65 backdrop-blur">{visiblePosts.length} moments</span>
                 </div>
               </div>
 
-              <div className="mb-5 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
-                <div className="flex items-center gap-3 rounded-2xl bg-black/20 p-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl">
-                    🖼️
+              {cameraOpen ? (
+                <div className="relative h-full w-full bg-black">
+                  <video ref={cameraVideoRef} autoPlay playsInline muted className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`} />
+                  <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-5 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-28">
+                    <div className="mx-auto flex max-w-sm items-center justify-between gap-6">
+                      <button type="button" onClick={() => imageInputRef.current?.click()} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-xl backdrop-blur active:scale-95" aria-label="Chọn ảnh từ thư viện">🖼️</button>
+                      <button type="button" onClick={captureCameraPhoto} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-[5px] border-white/90 bg-white/20 shadow-2xl active:scale-90" aria-label="Chụp ảnh"><span className="h-[4.5rem] w-[4.5rem] rounded-full bg-white" /></button>
+                      <button type="button" onClick={() => void switchCamera()} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-xl backdrop-blur active:scale-95" aria-label="Đổi camera">🔄</button>
+                    </div>
+                    <button type="button" onClick={closeCamera} className="mx-auto mt-5 block rounded-full bg-black/45 px-4 py-2 text-[11px] font-bold text-white/65 backdrop-blur">Đóng camera</button>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold">{profileName}</p>
-                    <p className="mt-0.5 text-[11px] text-white/35">
-                      Hoặc chọn ảnh có sẵn từ máy
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => imageInputRef.current?.click()}
-                    className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white/70"
-                  >
-                    Chọn ảnh
+                  {cameraError && <div className="absolute left-4 right-4 top-20 z-30 rounded-2xl bg-black/70 p-3 text-center text-xs text-white/80 backdrop-blur">{cameraError}</div>}
+                </div>
+              ) : (
+                <div className="relative h-full w-full bg-[#101010]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),_transparent_48%)]" />
+                  <button type="button" onClick={() => void openCamera()} className="relative flex h-full w-full flex-col items-center justify-center px-8 text-center active:bg-white/[0.03]">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl text-black shadow-2xl">📸</div>
+                    <p className="mt-6 text-2xl font-black">Chụp một khoảnh khắc</p>
+                    <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/40">Camera là màn hình chính. Chụp xong, xác nhận và chia sẻ ngay.</p>
+                    <span className="mt-6 rounded-full bg-white px-6 py-3 text-xs font-black text-black">Mở camera</span>
                   </button>
+                  {visiblePosts.length > 0 && <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-10 text-center"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Vuốt lên để xem moment</p></div>}
                 </div>
+              )}
 
-                <input
-                  ref={imageInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleSelectImage}
-                  className="hidden"
-                />
-              </div>
+              <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
 
               {cameraPreviewOpen && imagePreview && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm">
-                  <div className="relative flex h-full w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#06111f] shadow-2xl">
-                    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-4">
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-xl backdrop-blur"
-                        aria-label="Hủy ảnh"
-                      >
-                        ×
-                      </button>
-                      <span className="rounded-full bg-black/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">
-                        Preview
-                      </span>
-                      <span className="h-10 w-10" />
+                <div className="fixed inset-0 z-[120] bg-black">
+                  <div className="relative h-full w-full">
+                    <img src={imagePreview} alt="Ảnh moment vừa chụp" className="h-full w-full object-contain" />
+                    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent px-5 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]">
+                      <button type="button" onClick={handleRemoveImage} className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-xl backdrop-blur" aria-label="Hủy ảnh">×</button>
+                      <span className="rounded-full bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">Preview</span><span className="h-10 w-10" />
                     </div>
-
-                    <div className="min-h-0 flex-1 bg-black">
-                      <img
-                        src={imagePreview}
-                        alt="Ảnh moment vừa chụp"
-                        className="h-full w-full object-contain"
-                      />
-                    </div>
-
-                    <div className="shrink-0 border-t border-white/10 bg-[#06111f] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
-                      <textarea
-                        value={postContent}
-                        onChange={(event) => setPostContent(event.target.value)}
-                        maxLength={1000}
-                        placeholder="Thêm một dòng cho khoảnh khắc này..."
-                        className="min-h-14 w-full resize-none rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-blue-400/40"
-                      />
-
-                      <select
-                        value={selectedPostCheckpoint ?? ""}
-                        onChange={(event) =>
-                          setSelectedPostCheckpoint(
-                            event.target.value ? Number(event.target.value) : null
-                          )
-                        }
-                        className="mt-2 w-full rounded-2xl border border-white/10 bg-[#07182a] px-3 py-2.5 text-xs text-white outline-none"
-                      >
-                        <option value="">📍 Không gắn checkpoint</option>
-                        {checkpoints.map((checkpoint) => (
-                          <option key={checkpoint.id} value={checkpoint.id}>
-                            {checkpoint.icon ?? "📍"} {checkpoint.name}
-                          </option>
-                        ))}
-                      </select>
-
-                      {postMessage && (
-                        <p className="px-1 pt-2 text-xs text-blue-300">{postMessage}</p>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => void handleCreatePost()}
-                        disabled={posting}
-                        className="mt-3 flex w-full items-center justify-center rounded-2xl bg-blue-500 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-400 active:scale-[0.99] disabled:opacity-50"
-                      >
-                        {posting ? "Đang chia sẻ..." : "📸 Chia sẻ moment"}
-                      </button>
+                    <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-24">
+                      <textarea value={postContent} onChange={(event) => setPostContent(event.target.value)} maxLength={1000} placeholder="Thêm chú thích..." className="min-h-14 w-full resize-none rounded-2xl border border-white/10 bg-white/10 p-3 text-sm text-white outline-none placeholder:text-white/35 backdrop-blur" />
+                      <div className="mt-2 flex gap-2">
+                        <select value={selectedPostCheckpoint ?? ""} onChange={(event) => setSelectedPostCheckpoint(event.target.value ? Number(event.target.value) : null)} className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/50 px-3 py-3 text-xs text-white outline-none">
+                          <option value="">📍 Không gắn địa điểm</option>{checkpoints.map((checkpoint) => <option key={checkpoint.id} value={checkpoint.id}>{checkpoint.icon ?? "📍"} {checkpoint.name}</option>)}
+                        </select>
+                        <button type="button" onClick={() => void handleCreatePost()} disabled={posting} className="rounded-2xl bg-white px-5 py-3 text-xs font-black text-black disabled:opacity-50">{posting ? "..." : "Chia sẻ"}</button>
+                      </div>
+                      {postMessage && <p className="px-1 pt-2 text-xs text-blue-300">{postMessage}</p>}
                     </div>
                   </div>
                 </div>
               )}
 
-              <div className="mb-5 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1">
-                <button
-                  type="button"
-                  onClick={() => setFeedMode("all")}
-                  className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${feedMode === "all" ? "bg-white/10 text-white" : "text-white/35 hover:text-white"}`}
-                >
-                  🌍 Tất cả
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!user?.id) {
-                      setAuthOpen(true);
-                      setAuthMode("login");
-                      setAuthMessage("🔐 Hãy đăng nhập để xem bài từ người bạn theo dõi.");
-                      return;
-                    }
-                    setFeedMode("following");
-                  }}
-                  className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${feedMode === "following" ? "bg-white/10 text-white" : "text-white/35 hover:text-white"}`}
-                >
-                  👥 Đang theo dõi
-                  {user?.id && (
-                    <span className="ml-1 text-[9px] opacity-60">
-                      {followingUserIds.length}
-                    </span>
-                  )}
-                </button>
+              <div className="absolute inset-x-0 bottom-0 z-30 pointer-events-none">
+                <div className="mx-auto max-w-md pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
+                  <div className="pointer-events-auto mx-3 rounded-2xl border border-white/10 bg-black/45 p-1.5 backdrop-blur-xl">
+                    <div className="flex h-14 items-center justify-around">
+                      <button type="button" onClick={() => setActiveTab("map")} className="flex min-w-[72px] flex-col items-center gap-0.5 rounded-xl px-4 py-1.5 text-white/45"><span className="text-lg">🗺️</span><span className="text-[9px] font-bold">Map</span></button>
+                      <button type="button" onClick={() => setActiveTab("badges")} className="flex min-w-[72px] flex-col items-center gap-0.5 rounded-xl px-4 py-1.5 text-white/45"><span className="text-lg">🏆</span><span className="text-[9px] font-bold">Huy hiệu</span></button>
+                      <button type="button" onClick={() => { if (!cameraOpen) void openCamera(); }} className="flex min-w-[72px] flex-col items-center gap-0.5 rounded-xl bg-white/10 px-4 py-1.5 text-white"><span className="text-lg">📸</span><span className="text-[9px] font-black">Chụp</span></button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {postsLoading ? (
-                <div className="py-12 text-center text-sm text-white/40">
-                  Đang tải moments...
-                </div>
-              ) : visiblePosts.length === 0 ? (
-                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
-                  <div className="text-5xl">📸</div>
-                  <h3 className="mt-4 font-bold">
-                    {feedMode === "following"
-                      ? "Chưa có moment từ người bạn theo dõi"
-                      : "Chưa có moment nào"}
-                  </h3>
-                  <p className="mt-2 text-sm text-white/40">
-                    Chia sẻ một khoảnh khắc nhỏ trong chuyến đi của cậu.
-                  </p>
-                </div>
-              ) : (
-                <div className="mx-auto h-[calc(100dvh-280px)] max-w-xl snap-y snap-mandatory space-y-5 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <article
-                    className="snap-start snap-always overflow-hidden rounded-[28px] border border-white/10 bg-black shadow-2xl shadow-black/30"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => void openCamera()}
-                      className="group relative block aspect-[4/5] w-full overflow-hidden text-left"
-                    >
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(59,130,246,0.24),_transparent_52%)]" />
-                      <div className="absolute inset-0 bg-gradient-to-b from-blue-950/30 via-transparent to-black/80" />
-                      <div className="relative flex h-full flex-col items-center justify-center px-8 text-center">
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl shadow-2xl transition group-hover:scale-105 group-active:scale-95">
-                          📸
-                        </div>
-                        <p className="mt-6 text-xl font-black">Khoảnh khắc của cậu</p>
-                        <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/45">
-                          Chạm để mở camera và chia sẻ ngay một moment.
-                        </p>
-                        <span className="mt-5 rounded-full border border-white/10 bg-white/10 px-5 py-2 text-xs font-bold text-white/75 backdrop-blur">
-                          Chụp ngay
-                        </span>
-                      </div>
-                    </button>
-                  </article>
-
-                  {visiblePosts.map((post) => (
-                    <article
-                      key={post.id}
-                      className="snap-start snap-always overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20"
-                    >
-                      <div className="flex items-center justify-between px-4 py-4">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-lg">
-                            🧭
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-bold">
-                              {post.user_id === user?.id ? profileName : "Traveller"}
-                            </p>
-                            <p className="text-[11px] text-white/35">
-                              {formatPostTime(post.created_at)}
-                            </p>
+              {!cameraOpen && !cameraPreviewOpen && visiblePosts.length > 0 && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 h-[calc(100dvh-8rem)] overflow-y-auto snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="min-h-full pt-[calc(100dvh-8.5rem)]">
+                    {visiblePosts.map((post) => (
+                      <article key={post.id} className="relative mb-2 h-[calc(100dvh-8.5rem)] snap-start overflow-hidden bg-black">
+                        {post.image_url ? <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover" loading="lazy" /> : <div className="flex h-full w-full items-center justify-center bg-[#171717] text-7xl">📸</div>}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-5 pt-24">
+                          <div className="flex items-end justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
+                              <p className="mt-1 text-[11px] text-white/45">{formatPostTime(post.created_at)}</p>
+                              {post.content && <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-white/85">{post.content}</p>}
+                              {post.checkpoint && <button type="button" onClick={() => { selectCheckpoint(post.checkpoint!); setActiveTab("map"); }} className="pointer-events-auto mt-3 rounded-full bg-black/45 px-3 py-2 text-[10px] font-bold text-white/75 backdrop-blur">{post.checkpoint.icon ?? "📍"} {post.checkpoint.name}</button>}
+                            </div>
+                            <div className="pointer-events-auto flex shrink-0 flex-col items-center gap-3">
+                              <button type="button" onClick={() => handleLike(post)} disabled={likeLoading[post.id]} className="flex h-11 w-11 flex-col items-center justify-center rounded-full bg-black/40 text-xs backdrop-blur"><span className={likedPostIds.includes(post.id) ? "text-red-300" : "text-white"}>{likedPostIds.includes(post.id) ? "♥" : "♡"}</span><span className="text-[9px] text-white/65">{post.likes}</span></button>
+                              <button type="button" onClick={() => { const input = document.getElementById(`comment-${post.id}`); input?.scrollIntoView({ behavior: "smooth", block: "center" }); }} className="flex h-11 w-11 flex-col items-center justify-center rounded-full bg-black/40 text-xs backdrop-blur"><span>💬</span><span className="text-[9px] text-white/65">{comments.filter((comment) => comment.post_id === post.id).length}</span></button>
+                              <button type="button" onClick={() => savePost(post.id)} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-xs backdrop-blur">{savedPostIds.includes(post.id) ? "🔖" : "☆"}</button>
+                            </div>
                           </div>
                         </div>
-                        {post.user_id === user?.id && (
-                          <div className="flex items-center gap-2">
-                            <button type="button" onClick={() => startEditPost(post)} className="text-[11px] text-white/35 hover:text-white">Sửa</button>
-                            <button type="button" onClick={() => void deletePost(post.id)} className="text-[11px] text-white/35 hover:text-red-300">Xóa</button>
-                          </div>
-                        )}
-                      </div>
-
-                      {post.image_url ? (
-                        <div className="aspect-[4/5] overflow-hidden bg-black/20">
-                          <img
-                            src={post.image_url}
-                            alt="Khoảnh khắc TravelQuest"
-                            className="h-full w-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex aspect-[4/5] items-center justify-center bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 text-7xl">
-                          📸
-                        </div>
-                      )}
-
-                      <div className="px-4 pb-5 pt-3">
-                        <div className="flex items-center gap-5">
-                          <button
-                            type="button"
-                            onClick={() => handleLike(post)}
-                            disabled={likeLoading[post.id]}
-                            className={`text-sm transition ${likedPostIds.includes(post.id) ? "text-red-300" : "text-white/60 hover:text-white"} disabled:opacity-40`}
-                          >
-                            {likedPostIds.includes(post.id) ? "♥" : "♡"} {post.likes}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const input = document.getElementById(`comment-${post.id}`);
-                              input?.scrollIntoView({ behavior: "smooth", block: "center" });
-                            }}
-                            className="text-sm text-white/60 hover:text-white"
-                          >
-                            ◯ {comments.filter((comment) => comment.post_id === post.id).length}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => savePost(post.id)}
-                            className={`ml-auto text-sm transition ${savedPostIds.includes(post.id) ? "text-yellow-300" : "text-white/40 hover:text-white"}`}
-                          >
-                            {savedPostIds.includes(post.id) ? "🔖" : "☆"}
-                          </button>
-                        </div>
-
-                        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-white/80">
-                          {post.content}
-                        </p>
-
-                        {post.checkpoint && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              selectCheckpoint(post.checkpoint!);
-                              setActiveTab("map");
-                            }}
-                            className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-blue-400/10 bg-blue-500/[0.06] p-3 text-left transition hover:bg-blue-500/10"
-                          >
-                            <span className="text-xl">{post.checkpoint.icon ?? "📍"}</span>
-                            <span className="min-w-0">
-                              <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-blue-300/80">Checkpoint</span>
-                              <span className="mt-0.5 block truncate text-xs font-semibold">{post.checkpoint.name}</span>
-                            </span>
-                            <span className="ml-auto text-white/25">›</span>
-                          </button>
-                        )}
-
-                        <div className="mt-4 border-t border-white/5 pt-4">
-                          <div className="mb-2 text-[11px] font-bold text-white/45">
-                            💬 Bình luận ({comments.filter((comment) => comment.post_id === post.id).length})
-                          </div>
-                          <div className="max-h-40 space-y-2 overflow-y-auto">
-                            {comments.filter((comment) => comment.post_id === post.id).map((comment) => (
-                              <div key={comment.id} className="rounded-xl bg-black/10 px-3 py-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="truncate text-[11px] font-bold">
-                                    {comment.user_id === user?.id ? profileName : "Traveller"}
-                                  </p>
-                                  <p className="shrink-0 text-[9px] text-white/25">
-                                    {formatPostTime(comment.created_at)}
-                                  </p>
-                                </div>
-                                <p className="mt-1 break-words text-xs text-white/65">{comment.content}</p>
-                              </div>
-                            ))}
-                          </div>
-                          <div className="mt-3 flex gap-2">
-                            <input
-                              id={`comment-${post.id}`}
-                              type="text"
-                              value={commentInputs[post.id] ?? ""}
-                              maxLength={300}
-                              onChange={(event) =>
-                                setCommentInputs((current) => ({
-                                  ...current,
-                                  [post.id]: event.target.value,
-                                }))
-                              }
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                  event.preventDefault();
-                                  handleCreateComment(post.id);
-                                }
-                              }}
-                              placeholder={user ? "Viết bình luận..." : "Đăng nhập để bình luận"}
-                              className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-blue-400/40"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleCreateComment(post.id)}
-                              disabled={commentLoading[post.id] || !(commentInputs[post.id] ?? "").trim()}
-                              className="rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-bold disabled:opacity-40"
-                            >
-                              {commentLoading[post.id] ? "..." : "Gửi"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </section>
-        )}
-
-      </div>
-
-      {/* ================= BOTTOM NAV ================= */}
+        )}      {/* ================= BOTTOM NAV ================= */}
 
       <nav className="fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)]">
         <div className="rounded-2xl border border-white/10 bg-[#07182a]/55 p-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-xl">
