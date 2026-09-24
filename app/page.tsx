@@ -7695,6 +7695,7 @@ export default function Home() {
                     )}
                     <button
                       type="button"
+                      onPointerUp={(event) => event.stopPropagation()}
                       onClick={(event) => {
                         event.stopPropagation();
                         setUgcMorePostId(post.id);
@@ -7719,11 +7720,11 @@ export default function Home() {
                           {post.content && <p className="mt-3 text-sm leading-5 text-white/85">{post.content}</p>}
                         </div>
                         <div className="flex shrink-0 flex-col items-center gap-3 pb-1">
-                          <button type="button" onClick={() => void handleLike(post)} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                          <button type="button" onPointerUp={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void handleLike(post); }} className="flex flex-col items-center gap-1 active:scale-90 transition">
                             <span className="text-3xl drop-shadow-lg">{likedPostIds.includes(post.id) ? "❤️" : "🤍"}</span>
                             <span className="text-[11px] font-bold">{post.likes}</span>
                           </button>
-                          <button type="button" onClick={() => setCommentOpenPostId(post.id)} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                          <button type="button" onPointerUp={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); setCommentOpenPostId(post.id); }} className="flex flex-col items-center gap-1 active:scale-90 transition">
                             <span className="text-3xl drop-shadow-lg">💬</span>
                             <span className="text-[11px] font-bold">{comments.filter((comment) => comment.post_id === post.id).length}</span>
                           </button>
