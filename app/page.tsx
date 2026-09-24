@@ -3220,6 +3220,14 @@ export default function Home() {
     }
   };
 
+  const handleRetakePhoto = async () => {
+    handleRemoveImage();
+    setPostMessage("");
+    if (activeTab === "ugc" && !ugcSelectedUserId) {
+      await openCamera();
+    }
+  };
+
   // ============================================
   // SHOW BADGE WHEN NEW CHECK-IN IS ADDED
   // ============================================
@@ -7706,14 +7714,18 @@ export default function Home() {
                   <textarea
                     value={postContent}
                     onChange={(event) => setPostContent(event.target.value)}
-                    placeholder="Thêm chú thích..."
-                    className="w-full rounded-2xl border border-white/10 bg-white/10 p-3 text-sm outline-none"
+                    placeholder="Thêm chú thích... (tuỳ chọn)"
+                    maxLength={1000}
+                    className="w-full resize-none rounded-2xl border border-white/10 bg-white/10 p-3 text-sm outline-none placeholder:text-white/40"
+                    rows={2}
                   />
                   <div className="mt-2 flex gap-2">
+                    <button type="button" onClick={() => void handleRetakePhoto()} disabled={posting} className="h-11 w-11 shrink-0 rounded-2xl border border-white/15 bg-white/10 text-lg transition active:scale-95" aria-label="Chụp lại">↻</button>
                     <select
                       value={selectedPostCheckpoint ?? ""}
                       onChange={(event) => setSelectedPostCheckpoint(event.target.value ? Number(event.target.value) : null)}
                       className="min-w-0 flex-1 rounded-2xl bg-black/60 px-3 py-3 text-xs outline-none"
+                      aria-label="Chọn địa điểm"
                     >
                       <option value="">📍 Không gắn địa điểm</option>
                       {checkpoints.map((checkpoint) => (
@@ -7722,9 +7734,13 @@ export default function Home() {
                         </option>
                       ))}
                     </select>
-                    <button type="button" onClick={() => void handleCreatePost()} disabled={posting} className="rounded-2xl bg-white px-5 py-3 text-xs font-black text-black">
-                      {posting ? "..." : "Chia sẻ"}
+                    <button type="button" onClick={() => void handleCreatePost()} disabled={posting} className="min-w-[92px] rounded-2xl bg-white px-5 py-3 text-xs font-black text-black transition active:scale-95 disabled:opacity-50">
+                      {posting ? "Đang đăng…" : "Chia sẻ"}
                     </button>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="text-[10px] text-white/35">Ảnh sẽ được chia sẻ vào Moment.</p>
+                    <span className="text-[10px] text-white/30">{postContent.length}/1000</span>
                   </div>
                   {postMessage && <p className="mt-2 text-xs text-blue-300">{postMessage}</p>}
                 </div>
