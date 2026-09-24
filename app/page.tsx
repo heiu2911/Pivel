@@ -7579,31 +7579,52 @@ export default function Home() {
                 </article>
               ))}
             {commentOpenPostId !== null && (
-              <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm" onClick={() => setCommentOpenPostId(null)}>
-                <div className="absolute inset-x-0 bottom-0 mx-auto h-[66dvh] max-h-[66dvh] max-w-md rounded-t-[2rem] border border-white/10 bg-[#07182a] p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-                  <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="font-black">💬 Bình luận</p>
-                    <button type="button" onClick={() => setCommentOpenPostId(null)} className="h-8 w-8 rounded-full bg-white/5">✕</button>
+              <div className="fixed inset-0 z-[110] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
+                <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#07182a] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                  <div className="flex shrink-0 items-center justify-center py-2">
+                    <div className="h-1 w-10 rounded-full bg-white/20" />
                   </div>
-                  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
+                  <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+                    <p className="text-sm font-black">Bình luận</p>
+                    <button type="button" onClick={() => setCommentOpenPostId(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/60">✕</button>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
                     {comments.filter((comment) => comment.post_id === commentOpenPostId).map((comment) => (
-                      <div key={comment.id} className="rounded-2xl bg-white/5 px-3 py-2">
-                        <p className="text-[10px] text-white/40">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
-                        <p className="mt-1 text-sm">{comment.content}</p>
+                      <div key={comment.id} className="flex gap-3 border-b border-white/5 py-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-sm">🧭</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-bold text-white/45">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
+                          <p className="mt-1 text-sm leading-5 text-white/90">{comment.content}</p>
+                          <div className="mt-1.5 flex items-center gap-3 text-[10px] text-white/35">
+                            <span>{formatPostTime(comment.created_at)}</span>
+                            <button type="button" className="font-semibold hover:text-white/70">Trả lời</button>
+                          </div>
+                        </div>
+                        <button type="button" className="self-start pt-1 text-xs text-white/30">♡</button>
                       </div>
                     ))}
-                    {!comments.some((comment) => comment.post_id === commentOpenPostId) && <p className="py-8 text-center text-sm text-white/40">Chưa có bình luận.</p>}
+                    {!comments.some((comment) => comment.post_id === commentOpenPostId) && (
+                      <div className="flex h-full min-h-40 items-center justify-center text-center text-sm text-white/40">
+                        Chưa có bình luận nào
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-3 flex gap-2">
-                    <input value={commentInputs[commentOpenPostId] ?? ""} onChange={(event) => setCommentInputs((current) => ({ ...current, [commentOpenPostId]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void submitComment(commentOpenPostId); }} placeholder="Viết bình luận..." className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none" />
-                    <button type="button" onClick={() => void submitComment(commentOpenPostId)} className="h-11 w-11 shrink-0 rounded-full bg-white text-black font-black">↑</button>
+                  <div className="shrink-0 border-t border-white/10 bg-[#07182a] px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-sm">🧭</div>
+                      <input
+                        value={commentInputs[commentOpenPostId] ?? ""}
+                        onChange={(event) => setCommentInputs((current) => ({ ...current, [commentOpenPostId]: event.target.value }))}
+                        onKeyDown={(event) => { if (event.key === "Enter") void submitComment(commentOpenPostId); }}
+                        placeholder="Thêm bình luận..."
+                        className="min-w-0 flex-1 rounded-full bg-white/10 px-4 py-2.5 text-sm outline-none placeholder:text-white/35"
+                      />
+                      <button type="button" onClick={() => void submitComment(commentOpenPostId)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black font-black">↑</button>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
-
-            </div>
 
             <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
 
