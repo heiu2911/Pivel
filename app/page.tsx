@@ -7410,18 +7410,18 @@ export default function Home() {
                   </div>
                   <button type="button" onClick={() => setFriendsOpen(false)} className="h-9 w-9 rounded-full bg-white/5 text-white/70">✕</button>
                 </div>
-                <div className="mt-2 max-h-[70dvh] space-y-1 overflow-y-auto pr-1">
-                  <button type="button" onClick={() => selectUgcTraveller(null)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xl">
+                <div className="mt-3 flex gap-4 overflow-x-auto px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <button type="button" onClick={() => selectUgcTraveller(null)} className="flex min-w-[68px] shrink-0 flex-col items-center gap-2 rounded-2xl p-2 text-center transition hover:bg-white/10 active:scale-[0.99]">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-white/10 text-xl">
                       {"🧭"}
                     </div>
-                    <div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{profileName}</p><p className="text-[11px] text-white/40">Bạn · Moment của bạn</p></div>
+                    <div className="w-full min-w-0"><p className="truncate text-[11px] font-bold">{profileName}</p></div>
                   </button>
                   {friendProfiles.map((friend) => (
                     <button key={friend.user_id} type="button" onClick={() => selectUgcTraveller(friend.user_id)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-500/15 text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
-                      <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{friend.display_name}</p><p className="text-[11px] text-white/40">Level {friend.level} · {friend.post_count} moment</p></div>
-                      {ugcSelectedUserId === friend.user_id && <span className="text-xs text-blue-300">Đang xem</span>}
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-blue-500/15 text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
+                      <div className="w-full min-w-0"><p className="truncate text-[11px] font-bold">{friend.display_name}</p></div>
+                      
                     </button>
                   ))}
                   {!friendsLoading && friendProfiles.length === 0 && <p className="px-3 py-5 text-center text-xs text-white/40">Chưa có bạn bè. Hãy theo dõi Traveller để xem moment của họ.</p>}
