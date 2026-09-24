@@ -7246,550 +7246,271 @@ export default function Home() {
           </section>
         )}
 
-        {/* ================= UGC ================= */}
-
+        {/* ================= UGC / LOCKET STYLE ================= */}
         {activeTab === "ugc" && (
-          <section className="pt-28 px-5 max-w-5xl mx-auto">
-
-            <div className="mb-8">
-
-              <p className="text-blue-300 text-sm font-semibold">
-                TRAVEL COMMUNITY
-              </p>
-
-              <h2 className="text-3xl font-black mt-1">
-                UGC
-              </h2>
-
-              <p className="text-white/50 mt-2">
-                Chia sẻ những khoảnh khắc trong hành trình.
-              </p>
-
-            </div>
-
-            {/* ================= CREATE POST ================= */}
-
-            <div className="mb-6 bg-white/5 border border-white/10 rounded-3xl p-5">
-
-              <div className="flex items-center gap-3 mb-4">
-
-                <div className="w-11 h-11 rounded-full bg-blue-500/15 flex items-center justify-center text-xl">
-                  🧭
-                </div>
-
+          <section className="min-h-screen bg-[#06111f] px-4 pb-28 pt-24">
+            <div className="mx-auto max-w-xl">
+              <div className="mb-5 flex items-end justify-between gap-4">
                 <div>
-
-                  <p className="font-bold">
-                    Chia sẻ hành trình
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-300">
+                    Travel Moments
                   </p>
-
-                  <p className="text-xs text-white/40">
-                    Bài viết sẽ được lưu vào TravelQuest
+                  <h2 className="mt-1 text-2xl font-black">Khoảnh khắc</h2>
+                  <p className="mt-1 text-xs text-white/40">
+                    Một ảnh, một khoảnh khắc, một chuyến đi.
                   </p>
-
                 </div>
-
-              </div>
-
-              <textarea
-                value={postContent}
-                onChange={(event) =>
-                  setPostContent(
-                    event.target.value
-                  )
-                }
-                maxLength={1000}
-                placeholder="Bạn vừa khám phá điều gì? ✨"
-                className="w-full min-h-32 resize-none rounded-2xl bg-black/20 border border-white/10 p-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-blue-400/50 transition"
-              />
-
-              <div className="flex justify-between items-center mt-2">
-
-                <span className="text-[11px] text-white/30">
-                  {postContent.length}/1000
+                <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-white/45">
+                  {visiblePosts.length} moments
                 </span>
-
-                <span className="text-[11px] text-white/30">
-                  Chia sẻ trải nghiệm của bạn
-                </span>
-
               </div>
 
-              {/* CHECKPOINT SELECT */}
-
-              <div className="mt-4">
-
-                <p className="text-xs text-white/50 mb-2">
-                  Gắn checkpoint
-                </p>
-
-                <select
-                  value={
-                    selectedPostCheckpoint ??
-                    ""
-                  }
-                  onChange={(event) => {
-                    const value =
-                      event.target.value;
-
-                    setSelectedPostCheckpoint(
-                      value
-                        ? Number(value)
-                        : null
-                    );
-                  }}
-                  className="w-full rounded-xl bg-[#07182a] border border-white/10 px-4 py-3 text-sm text-white outline-none"
-                >
-
-                  <option value="">
-                    📍 Không gắn checkpoint
-                  </option>
-
-                  {checkpoints.map(
-                    (checkpoint) => (
-                      <option
-                        key={
-                          checkpoint.id
-                        }
-                        value={
-                          checkpoint.id
-                        }
-                      >
-                        {checkpoint.icon ??
-                          "📍"}{" "}
-                        {
-                          checkpoint.name
-                        }
-                      </option>
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-              {/* ================= IMAGE UPLOAD ================= */}
-
-              <div className="mt-4">
-
-                <p className="text-xs text-white/50 mb-2">
-                  Thêm ảnh
-                </p>
-
-                {!imagePreview ? (
+              {/* Composer giữ nguyên toàn bộ logic upload/post hiện tại; UI thu gọn theo Locket */}
+              <div className="mb-4 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-lg">
+                    🧭
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold">{profileName}</p>
+                    <p className="text-[10px] text-white/35">Chia sẻ một moment</p>
+                  </div>
                   <button
                     type="button"
-                    onClick={() =>
-                      imageInputRef.current?.click()
-                    }
-                    className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 hover:bg-white/5 py-8 transition"
+                    onClick={handleCreatePost}
+                    disabled={posting || (!postContent.trim() && !imagePreview)}
+                    className="rounded-full bg-blue-500 px-4 py-2 text-xs font-bold transition hover:bg-blue-400 disabled:opacity-40"
                   >
-
-                    <div className="text-4xl">
-                      📸
-                    </div>
-
-                    <p className="text-sm font-semibold mt-2">
-                      Chọn ảnh chuyến đi
-                    </p>
-
-                    <p className="text-[11px] text-white/30 mt-1">
-                      JPG, PNG, WEBP hoặc GIF • tối đa 5MB
-                    </p>
-
+                    {posting ? "..." : "Đăng"}
                   </button>
-                ) : (
-                  <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+                </div>
 
+                <textarea
+                  value={postContent}
+                  onChange={(event) => setPostContent(event.target.value)}
+                  maxLength={1000}
+                  placeholder="Khoảnh khắc này có gì đặc biệt?"
+                  className="mt-3 min-h-20 w-full resize-none rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-blue-400/40"
+                />
+
+                {imagePreview ? (
+                  <div className="relative mt-3 overflow-hidden rounded-2xl">
                     <img
                       src={imagePreview}
-                      alt="Preview ảnh bài viết"
-                      className="w-full max-h-80 object-cover"
+                      alt="Ảnh moment"
+                      className="max-h-72 w-full object-cover"
                     />
-
                     <button
                       type="button"
-                      onClick={
-                        handleRemoveImage
-                      }
-                      className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition"
-                      title="Xóa ảnh"
+                      onClick={handleRemoveImage}
+                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/70"
                     >
-                      ✕
+                      ×
                     </button>
-
                   </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-black/15 py-4 text-xs text-white/45 transition hover:bg-white/5 hover:text-white"
+                  >
+                    📸 Thêm ảnh
+                  </button>
                 )}
 
                 <input
-                  ref={
-                    imageInputRef
-                  }
+                  ref={imageInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={
-                    handleSelectImage
-                  }
+                  onChange={handleSelectImage}
                   className="hidden"
                 />
 
-              </div>
-
-              {postMessage && (
-                <p className="mt-3 text-sm text-blue-300">
-                  {postMessage}
-                </p>
-              )}
-
-              <button
-                onClick={
-                  handleCreatePost
-                }
-                disabled={posting}
-                className="w-full mt-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 font-bold transition"
-              >
-                {posting
-                  ? "📡 Đang đăng..."
-                  : "Đăng bài ✨"}
-              </button>
-
-            </div>
-
-            {/* ================= FEED FILTER ================= */}
-
-            <div className="mb-5 flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-1">
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFeedMode("all")
-                }
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
-                  feedMode === "all"
-                    ? "bg-blue-500 text-white"
-                    : "text-white/45 hover:text-white"
-                }`}
-              >
-                🌍 Tất cả
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (!user?.id) {
-                    setAuthOpen(true);
-                    setAuthMode("login");
-                    setAuthMessage(
-                      "🔐 Hãy đăng nhập để xem bài từ người bạn theo dõi."
-                    );
-                    return;
+                <select
+                  value={selectedPostCheckpoint ?? ""}
+                  onChange={(event) =>
+                    setSelectedPostCheckpoint(
+                      event.target.value ? Number(event.target.value) : null
+                    )
                   }
+                  className="mt-3 w-full rounded-2xl border border-white/10 bg-[#07182a] px-3 py-2.5 text-xs text-white outline-none"
+                >
+                  <option value="">📍 Không gắn checkpoint</option>
+                  {checkpoints.map((checkpoint) => (
+                    <option key={checkpoint.id} value={checkpoint.id}>
+                      {checkpoint.icon ?? "📍"} {checkpoint.name}
+                    </option>
+                  ))}
+                </select>
 
-                  setFeedMode("following");
-                }}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
-                  feedMode === "following"
-                    ? "bg-blue-500 text-white"
-                    : "text-white/45 hover:text-white"
-                }`}
-              >
-                👥 Đang theo dõi
-                {user?.id && (
-                  <span className="ml-1 text-[9px] opacity-60">
-                    {followingUserIds.length}
-                  </span>
+                {postMessage && (
+                  <p className="px-1 pt-2 text-xs text-blue-300">{postMessage}</p>
                 )}
-              </button>
-
-            </div>
-
-            {/* ================= REAL POSTS ================= */}
-
-            {postsLoading ? (
-              <div className="py-10 text-center text-white/50">
-                Đang tải bài viết...
               </div>
-            ) : visiblePosts.length ===
-              0 ? (
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center">
 
-                <div className="text-5xl">
-                  📸
+              <div className="mb-5 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1">
+                <button
+                  type="button"
+                  onClick={() => setFeedMode("all")}
+                  className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${feedMode === "all" ? "bg-white/10 text-white" : "text-white/35 hover:text-white"}`}
+                >
+                  🌍 Tất cả
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!user?.id) {
+                      setAuthOpen(true);
+                      setAuthMode("login");
+                      setAuthMessage("🔐 Hãy đăng nhập để xem bài từ người bạn theo dõi.");
+                      return;
+                    }
+                    setFeedMode("following");
+                  }}
+                  className={`flex-1 rounded-xl py-2 text-xs font-bold transition ${feedMode === "following" ? "bg-white/10 text-white" : "text-white/35 hover:text-white"}`}
+                >
+                  👥 Đang theo dõi
+                  {user?.id && (
+                    <span className="ml-1 text-[9px] opacity-60">
+                      {followingUserIds.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {postsLoading ? (
+                <div className="py-12 text-center text-sm text-white/40">
+                  Đang tải moments...
                 </div>
-
-                <h3 className="font-bold mt-4">
-                  {feedMode === "following"
-                    ? "Chưa có bài từ người bạn theo dõi"
-                    : "Chưa có bài viết nào"}
-                </h3>
-
-                <p className="text-sm text-white/40 mt-2">
-                  {feedMode === "following"
-                    ? "Hãy Follow thêm Traveller để xây dựng feed của riêng bạn."
-                    : "Hãy trở thành người đầu tiên chia sẻ hành trình!"}
-                </p>
-
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-4">
-
-                {visiblePosts.map(
-                  (post) => (
+              ) : visiblePosts.length === 0 ? (
+                <div className="rounded-[28px] border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
+                  <div className="text-5xl">📸</div>
+                  <h3 className="mt-4 font-bold">
+                    {feedMode === "following"
+                      ? "Chưa có moment từ người bạn theo dõi"
+                      : "Chưa có moment nào"}
+                  </h3>
+                  <p className="mt-2 text-sm text-white/40">
+                    Chia sẻ một khoảnh khắc nhỏ trong chuyến đi của cậu.
+                  </p>
+                </div>
+              ) : (
+                <div className="mx-auto flex max-w-xl flex-col gap-5">
+                  {visiblePosts.map((post) => (
                     <article
-                      key={
-                        post.id
-                      }
-                      className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
+                      key={post.id}
+                      className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20"
                     >
-
-                      {/* ================= REAL IMAGE ================= */}
+                      <div className="flex items-center justify-between px-4 py-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-lg">
+                            🧭
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold">
+                              {post.user_id === user?.id ? profileName : "Traveller"}
+                            </p>
+                            <p className="text-[11px] text-white/35">
+                              {formatPostTime(post.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                        {post.user_id === user?.id && (
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => startEditPost(post)} className="text-[11px] text-white/35 hover:text-white">Sửa</button>
+                            <button type="button" onClick={() => void deletePost(post.id)} className="text-[11px] text-white/35 hover:text-red-300">Xóa</button>
+                          </div>
+                        )}
+                      </div>
 
                       {post.image_url ? (
-                        <div className="aspect-[4/3] bg-black/20 overflow-hidden">
-
+                        <div className="aspect-[4/5] overflow-hidden bg-black/20">
                           <img
-                            src={
-                              post.image_url
-                            }
-                            alt="Ảnh bài viết TravelQuest"
-                            className="w-full h-full object-cover"
+                            src={post.image_url}
+                            alt="Khoảnh khắc TravelQuest"
+                            className="h-full w-full object-cover"
                             loading="lazy"
                           />
-
                         </div>
                       ) : (
-                        <div className="aspect-[4/3] bg-gradient-to-br from-blue-900/60 via-slate-800 to-indigo-950 flex items-center justify-center text-6xl">
+                        <div className="flex aspect-[4/5] items-center justify-center bg-gradient-to-br from-blue-950 via-slate-900 to-indigo-950 text-7xl">
                           📸
                         </div>
                       )}
 
-                      <div className="p-5">
-
-                        <div className="flex items-center justify-between">
-
-                          <div className="flex items-center gap-2">
-
-                            <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center text-sm">
-                              🧭
-                            </div>
-
-                            <div>
-
-                              <p className="font-bold text-sm">
-                                {post.user_id ===
-                                user?.id
-                                  ? profileName
-                                  : "Traveller"}
-                              </p>
-
-                              <p className="text-[10px] text-white/30">
-                                {formatPostTime(
-                                  post.created_at
-                                )}
-                              </p>
-
-                            </div>
-
-                          </div>
-
-                          <button
-                            onClick={() =>
-                              handleLike(
-                                post
-                              )
-                            }
-                            disabled={
-                              likeLoading[
-                                post.id
-                              ]
-                            }
-                            className={`text-xs transition ${
-                              likedPostIds.includes(
-                                post.id
-                              )
-                                ? "text-red-300"
-                                : "text-white/50 hover:text-white"
-                            } disabled:opacity-50`}
-                          >
-                            {likedPostIds.includes(
-                              post.id
-                            )
-                              ? "❤️"
-                              : "♡"}{" "}
-                            {
-                              post.likes
-                            }
-                          </button>
-
-                          {post.user_id === user?.id && (
-                            <>
-                              <button type="button" onClick={() => startEditPost(post)} className="text-[10px] text-white/30 hover:text-white transition">Sửa</button>
-                              <button type="button" onClick={() => void deletePost(post.id)} className="text-[10px] text-white/30 hover:text-red-300 transition">Xóa</button>
-                            </>
-                          )}
-
-                          <button type="button" onClick={() => savePost(post.id)} className={`text-[10px] transition ${savedPostIds.includes(post.id) ? "text-yellow-300" : "text-white/30 hover:text-white"}`}>
-                            {savedPostIds.includes(post.id) ? "🔖 Đã lưu" : "☆ Lưu"}
-                          </button>
-
+                      <div className="px-4 pb-5 pt-3">
+                        <div className="flex items-center gap-5">
                           <button
                             type="button"
-                            onClick={() =>
-                              openReport(
-                                "post",
-                                post.id,
-                                "bài viết này"
-                              )
-                            }
-                            className="text-[11px] text-white/25 hover:text-red-300 transition"
-                            aria-label="Báo cáo bài viết"
-                            title="Báo cáo bài viết"
+                            onClick={() => handleLike(post)}
+                            disabled={likeLoading[post.id]}
+                            className={`text-sm transition ${likedPostIds.includes(post.id) ? "text-red-300" : "text-white/60 hover:text-white"} disabled:opacity-40`}
                           >
-                            ⋯
+                            {likedPostIds.includes(post.id) ? "♥" : "♡"} {post.likes}
                           </button>
-
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const input = document.getElementById(`comment-${post.id}`);
+                              input?.scrollIntoView({ behavior: "smooth", block: "center" });
+                            }}
+                            className="text-sm text-white/60 hover:text-white"
+                          >
+                            ◯ {comments.filter((comment) => comment.post_id === post.id).length}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => savePost(post.id)}
+                            className={`ml-auto text-sm transition ${savedPostIds.includes(post.id) ? "text-yellow-300" : "text-white/40 hover:text-white"}`}
+                          >
+                            {savedPostIds.includes(post.id) ? "🔖" : "☆"}
+                          </button>
                         </div>
 
-                        {/* CHECKPOINT */}
+                        <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-white/80">
+                          {post.content}
+                        </p>
 
                         {post.checkpoint && (
                           <button
+                            type="button"
                             onClick={() => {
-                              if (
-                                post.checkpoint
-                              ) {
-                                selectCheckpoint(
-                                  post.checkpoint
-                                );
-
-                                setActiveTab(
-                                  "map"
-                                );
-                              }
+                              selectCheckpoint(post.checkpoint!);
+                              setActiveTab("map");
                             }}
-                            className="w-full mt-4 text-left bg-blue-500/5 border border-blue-400/10 rounded-xl p-3 hover:bg-blue-500/10 transition"
+                            className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-blue-400/10 bg-blue-500/[0.06] p-3 text-left transition hover:bg-blue-500/10"
                           >
-
-                            <p className="text-[10px] text-blue-300 font-semibold">
-                              CHECKPOINT
-                            </p>
-
-                            <p className="text-xs font-semibold mt-1">
-                              {post.checkpoint.icon ??
-                                "📍"}{" "}
-                              {
-                                post
-                                  .checkpoint
-                                  .name
-                              }
-                            </p>
-
+                            <span className="text-xl">{post.checkpoint.icon ?? "📍"}</span>
+                            <span className="min-w-0">
+                              <span className="block text-[9px] font-bold uppercase tracking-[0.16em] text-blue-300/80">Checkpoint</span>
+                              <span className="mt-0.5 block truncate text-xs font-semibold">{post.checkpoint.name}</span>
+                            </span>
+                            <span className="ml-auto text-white/25">›</span>
                           </button>
                         )}
 
-                        {/* CONTENT */}
-
-                        <p className="text-sm text-white/75 mt-4 leading-relaxed whitespace-pre-wrap">
-                          {
-                            post.content
-                          }
-                        </p>
-
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-
-                          <span className="text-xs text-white/30">
-                            TravelQuest Community
-                          </span>
-
-                          <button
-                            onClick={() =>
-                              handleLike(
-                                post
-                              )
-                            }
-                            disabled={
-                              likeLoading[
-                                post.id
-                              ]
-                            }
-                            className={`text-xs transition ${
-                              likedPostIds.includes(
-                                post.id
-                              )
-                                ? "text-red-300"
-                                : "text-white/40 hover:text-white"
-                            } disabled:opacity-50`}
-                          >
-                            {likedPostIds.includes(
-                              post.id
-                            )
-                              ? "❤️ Đã thích"
-                              : "♡ Thích"}
-                          </button>
-
-                        </div>
-
-                        {/* COMMENTS */}
-
-                        <div className="mt-4">
-
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-xs font-bold text-white/55">
-                              💬 Bình luận ({comments.filter((comment) => comment.post_id === post.id).length})
-                            </p>
+                        <div className="mt-4 border-t border-white/5 pt-4">
+                          <div className="mb-2 text-[11px] font-bold text-white/45">
+                            💬 Bình luận ({comments.filter((comment) => comment.post_id === post.id).length})
                           </div>
-
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-
-                            {comments
-                              .filter((comment) => comment.post_id === post.id)
-                              .map((comment) => (
-                                <div
-                                  key={comment.id}
-                                  className="rounded-xl bg-black/10 border border-white/5 px-3 py-2"
-                                >
-
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p className="text-[11px] font-bold truncate">
-                                      {comment.user_id === user?.id
-                                        ? profileName
-                                        : "Traveller"}
-                                    </p>
-
-                                    <p className="text-[9px] text-white/25 shrink-0">
-                                      {formatPostTime(comment.created_at)}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-end justify-between gap-2">
-                                    <p className="text-xs text-white/65 mt-1 whitespace-pre-wrap break-words min-w-0 flex-1">
-                                      {comment.content}
-                                    </p>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        openReport(
-                                          "comment",
-                                          comment.id,
-                                          "bình luận này"
-                                        )
-                                      }
-                                      className="text-[10px] text-white/20 hover:text-red-300 transition shrink-0"
-                                      title="Báo cáo bình luận"
-                                    >
-                                      Báo cáo
-                                    </button>
-                                  </div>
-
+                          <div className="max-h-40 space-y-2 overflow-y-auto">
+                            {comments.filter((comment) => comment.post_id === post.id).map((comment) => (
+                              <div key={comment.id} className="rounded-xl bg-black/10 px-3 py-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="truncate text-[11px] font-bold">
+                                    {comment.user_id === user?.id ? profileName : "Traveller"}
+                                  </p>
+                                  <p className="shrink-0 text-[9px] text-white/25">
+                                    {formatPostTime(comment.created_at)}
+                                  </p>
                                 </div>
-                              ))}
-
+                                <p className="mt-1 break-words text-xs text-white/65">{comment.content}</p>
+                              </div>
+                            ))}
                           </div>
-
-                          <div className="flex gap-2 mt-3">
-
+                          <div className="mt-3 flex gap-2">
                             <input
+                              id={`comment-${post.id}`}
                               type="text"
                               value={commentInputs[post.id] ?? ""}
                               maxLength={300}
@@ -7805,46 +7526,27 @@ export default function Home() {
                                   handleCreateComment(post.id);
                                 }
                               }}
-                              placeholder={
-                                user
-                                  ? "Viết bình luận..."
-                                  : "Đăng nhập để bình luận"
-                              }
-                              className="min-w-0 flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none focus:border-blue-400/40 transition"
+                              placeholder={user ? "Viết bình luận..." : "Đăng nhập để bình luận"}
+                              className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs text-white outline-none placeholder:text-white/25 focus:border-blue-400/40"
                             />
-
                             <button
-                              onClick={() =>
-                                handleCreateComment(post.id)
-                              }
-                              disabled={
-                                commentLoading[post.id] ||
-                                !(commentInputs[post.id] ?? "").trim()
-                              }
-                              className="shrink-0 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition disabled:opacity-40"
+                              type="button"
+                              onClick={() => handleCreateComment(post.id)}
+                              disabled={commentLoading[post.id] || !(commentInputs[post.id] ?? "").trim()}
+                              className="rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-bold disabled:opacity-40"
                             >
-                              {commentLoading[post.id]
-                                ? "..."
-                                : "Gửi"}
+                              {commentLoading[post.id] ? "..." : "Gửi"}
                             </button>
-
                           </div>
-
                         </div>
-
                       </div>
-
                     </article>
-                  )
-                )}
-
-              </div>
-            )}
-
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
         )}
-
-      </div>
 
       {/* ================= BOTTOM NAV ================= */}
 
