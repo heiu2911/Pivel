@@ -8076,14 +8076,19 @@ export default function Home() {
               event.stopPropagation();
               dismissSearchOverlay();
             }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              dismissSearchOverlay();
+            }}
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
 
           <div
             data-traveller-search-panel
             onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
             className="pointer-events-auto relative w-full max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl"
-            onPointerDown={(event) => event.stopPropagation()}
           >
 
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
