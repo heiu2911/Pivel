@@ -53,6 +53,22 @@ type CityGroup = CityDefinition & {
 const CHECKIN_RADIUS = 150;
 const CITY_ZOOM_LIMIT = 10.5;
 
+const CITY_IMAGE_QUERIES: Record<string, string> = {
+  "ha-noi": "Hanoi Vietnam",
+  "ha-long": "Ha Long Vietnam",
+  "ninh-binh": "Ninh Binh Vietnam",
+  "hue": "Hue Vietnam",
+  "da-nang": "Da Nang Vietnam",
+  "phong-nha": "Phong Nha Vietnam",
+  "cao-bang": "Cao Bang Vietnam",
+  "sapa": "Sapa Vietnam",
+  "nha-trang": "Nha Trang Vietnam",
+  "ho-chi-minh": "Ho Chi Minh City Vietnam",
+  "tay-ninh": "Tay Ninh Vietnam",
+  "can-tho": "Can Tho Vietnam",
+  "da-lat": "Da Lat Vietnam",
+};
+
 type CheckpointDetails = {
   category: string;
   address?: string;
@@ -2032,7 +2048,31 @@ export default function Map({
       icon.style.fontSize = "28px";
       icon.style.boxShadow = "0 6px 22px rgba(0,0,0,0.5)";
       icon.style.transition = "transform 0.15s ease";
-      icon.textContent = "🌳";
+      icon.style.overflow = "hidden";
+      const cityImage = document.createElement("img");
+      cityImage.alt = city.name;
+      cityImage.style.width = "100%";
+      cityImage.style.height = "100%";
+      cityImage.style.objectFit = "cover";
+      cityImage.style.display = "none";
+      const cityFallback = document.createElement("span");
+      cityFallback.textContent = "🏙️";
+      icon.appendChild(cityImage);
+      icon.appendChild(cityFallback);
+      void (async () => {
+        try {
+          const query = encodeURIComponent(CITY_IMAGE_QUERIES[city.key] ?? (city.name + " Vietnam"));
+          const response = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" + query + "&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=300&format=json&origin=*");
+          if (!response.ok) return;
+          const data = await response.json() as { query?: { pages?: Record<string, { imageinfo?: Array<{ thumburl?: string; url?: string }> }> } };
+          const page = data.query?.pages ? Object.values(data.query.pages)[0] : undefined;
+          const imageUrl = page?.imageinfo?.[0]?.thumburl ?? page?.imageinfo?.[0]?.url;
+          if (imageUrl) {
+            cityImage.src = imageUrl;
+            cityImage.onload = () => { cityImage.style.display = "block"; cityFallback.style.display = "none"; };
+          }
+        } catch {}
+      })();
 
       markerElement.appendChild(icon);
 
@@ -2380,8 +2420,7 @@ export default function Map({
     };
   }, [friendLocations, onFriendMarkerClick]);
 
-  // ========================================
-  // VÙNG CHECK-IN
+  // =// VÙNG CHECK-IN
   // ========================================
 
   useEffect(() => {
@@ -2410,7 +2449,7 @@ export default function Map({
     };
 
     const updateZones = () => {
-      if (!showCheckpoints) {
+      if (!showCheckpoints || mapInstance.getZoom() <= CITY_ZOOM_LIMIT) {
         removeZones();
         return;
       }
@@ -2507,23 +2546,25 @@ export default function Map({
         true;
     };
 
-    if (
-      mapInstance.isStyleLoaded()
-    ) {
+    const handleZoom = () => updateZones();
+
+    if (mapInstance.isStyleLoaded()) {
       updateZones();
     } else {
-      mapInstance.once(
-        "load",
-        updateZones
-      );
+      mapInstance.once("load", updateZones);
     }
+
+    mapInstance.on("zoomend", handleZoom);
 
     return () => {
       mapInstance.off("load", updateZones);
+      mapInstance.off("zoomend", handleZoom);
+      removeZones();
     };
   }, [checkpoints, showCheckpoints]);
 
   // ========================================
+  =======================================
   // GPS MARKER
   // ========================================
 
