@@ -7579,7 +7579,7 @@ export default function Home() {
                 </article>
               ))}
             {commentOpenPostId !== null && (
-              <div className="fixed inset-0 z-[110] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
+              <div className="fixed inset-0 z-[200] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
                 <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#07182a] shadow-2xl" onClick={(event) => event.stopPropagation()}>
                   <div className="flex shrink-0 items-center justify-center py-2">
                     <div className="h-1 w-10 rounded-full bg-white/20" />
@@ -7672,7 +7672,7 @@ export default function Home() {
 
        {/* ================= BOTTOM NAV ================= */}
 
-      <nav className="fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)]">
+      <nav className={`fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null ? "pointer-events-none opacity-0" : "opacity-100"}`}>
         <div className="rounded-2xl border border-white/10 bg-[#07182a]/55 p-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-xl">
           <div className="flex h-[60px] items-center justify-around px-1">
             <button
