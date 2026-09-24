@@ -5599,6 +5599,7 @@ export default function Home() {
                           selectCheckpoint(checkpoint);
                           setShowExplorePanel(false);
                           setMapSearchQuery("");
+                          setMapFilter("none");
                         }}
                         className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
                       >
