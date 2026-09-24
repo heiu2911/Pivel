@@ -7282,18 +7282,46 @@ export default function Home() {
                       muted
                       className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-5 pb-28 pt-24">
+                    <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/65 to-transparent px-5 pb-16 pt-7">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-black tracking-[0.24em] text-white/55">TRAVELQUEST</p>
+                          <p className="mt-1 text-sm font-bold text-white">Moment của bạn</p>
+                        </div>
+                        <span className="rounded-full bg-black/30 px-3 py-1.5 text-[10px] font-semibold text-white/65 backdrop-blur">LIVE CAMERA</span>
+                      </div>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-5 pb-28 pt-28">
                       <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
-                        <button type="button" onClick={() => imageInputRef.current?.click()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🖼️</button>
-                        <button type="button" onClick={captureCameraPhoto} className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2">
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl backdrop-blur transition active:scale-90"
+                          aria-label="Chọn ảnh từ máy"
+                        >
+                          🖼️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={captureCameraPhoto}
+                          className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2 shadow-2xl transition active:scale-90"
+                          aria-label="Chụp ảnh"
+                        >
                           <span className="block h-full w-full rounded-full bg-white" />
                         </button>
-                        <button type="button" onClick={() => void switchCamera()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🔄</button>
+                        <button
+                          type="button"
+                          onClick={() => void switchCamera()}
+                          className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl backdrop-blur transition active:scale-90"
+                          aria-label="Đổi camera"
+                        >
+                          🔄
+                        </button>
                       </div>
-                      <p className="mt-4 text-center text-[11px] font-semibold text-white/45">Vuốt xuống để xem moment</p>
+                      <p className="mt-4 text-center text-[11px] font-semibold text-white/55">Vuốt lên để xem moment tiếp theo</p>
                     </div>
                     {cameraError && (
-                      <div className="absolute left-4 right-4 top-20 rounded-2xl bg-black/70 p-3 text-center text-xs backdrop-blur">
+                      <div className="absolute left-4 right-4 top-24 rounded-2xl border border-white/10 bg-black/70 p-3 text-center text-xs backdrop-blur">
                         {cameraError}
                       </div>
                     )}
@@ -7316,10 +7344,15 @@ export default function Home() {
                   ) : (
                     <div className="flex h-full items-center justify-center text-7xl">📸</div>
                   )}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-5 pb-28 pt-24">
-                    <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
-                    <p className="mt-1 text-[11px] text-white/50">{formatPostTime(post.created_at)}</p>
-                    {post.content && <p className="mt-2 text-sm text-white/85">{post.content}</p>}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent p-5 pb-28 pt-28">
+                    <div className="flex items-end justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
+                        <p className="mt-1 text-[11px] text-white/50">{formatPostTime(post.created_at)}</p>
+                        {post.content && <p className="mt-2 text-sm leading-5 text-white/85">{post.content}</p>}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-black/35 px-3 py-1.5 text-[10px] font-bold text-white/60 backdrop-blur">MOMENT</span>
+                    </div>
                   </div>
                 </article>
               ))}
