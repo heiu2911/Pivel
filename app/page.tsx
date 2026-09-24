@@ -7666,13 +7666,13 @@ export default function Home() {
 
             {cameraPreviewOpen && imagePreview && (
               <div className="fixed inset-0 z-[120] bg-black">
-                <img src={imagePreview} alt="Ảnh moment vừa chụp" className="h-full w-full object-contain" />
+                <img src={imagePreview} alt="Ảnh moment vừa chụp" className="h-full w-full object-cover" />
                 <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-5">
                   <button type="button" onClick={handleRemoveImage} className="h-10 w-10 rounded-full bg-black/50 text-xl">×</button>
                   <span className="rounded-full bg-black/50 px-3 py-2 text-[10px] font-bold">PREVIEW</span>
                   <span className="h-10 w-10" />
                 </div>
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-24">
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-28">
                   <textarea
                     value={postContent}
                     onChange={(event) => setPostContent(event.target.value)}
