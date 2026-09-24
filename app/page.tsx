@@ -963,6 +963,8 @@ export default function Home() {
   const [friendProfiles, setFriendProfiles] = useState<PublicProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [selectedChatFriend, setSelectedChatFriend] = useState<PublicProfile | null>(null);
+  const [ugcMorePostId, setUgcMorePostId] = useState<number | null>(null);
+  const [hiddenUgcPostIds, setHiddenUgcPostIds] = useState<number[]>([]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -5505,7 +5507,8 @@ export default function Home() {
   };
 
   const deletePost = async (postId: number) => {
-    if (!user?.id || !window.confirm("Xóa bài viết này?")) return;
+    if (!user?.id || !window.confirm("Xóa moment này?")) return;
+    setUgcMorePostId(null);
     const { error } = await supabase.from("posts").delete().eq("id", postId).eq("user_id", user.id);
     if (error) {
       setPostMessage("❌ Không thể xóa bài viết.");
@@ -5513,7 +5516,36 @@ export default function Home() {
     }
     setPosts((current) => current.filter((post) => post.id !== postId));
     setSavedPostIds((current) => current.filter((id) => id !== postId));
-    setPostMessage("🗑️ Đã xóa bài viết.");
+    setPostMessage("🗑️ Đã xóa moment.");
+  };
+
+  const shareUgcPost = async (post: Post) => {
+    setUgcMorePostId(null);
+    const shareUrl = typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}#moment-${post.id}`
+      : "";
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "TravelQuest Moment",
+          text: post.content || "📸 Khoảnh khắc TravelQuest",
+          url: shareUrl,
+        });
+      } else if (navigator.clipboard && shareUrl) {
+        await navigator.clipboard.writeText(shareUrl);
+        setPostMessage("🔗 Đã sao chép liên kết moment.");
+      }
+    } catch {
+      // Người dùng có thể đóng sheet chia sẻ; không cần báo lỗi.
+    }
+  };
+
+  const hideUgcPost = (postId: number) => {
+    setHiddenUgcPostIds((current) =>
+      current.includes(postId) ? current : [...current, postId]
+    );
+    setUgcMorePostId(null);
+    setPostMessage("👋 Đã ẩn moment khỏi feed của cậu.");
   };
 
   const askTravelAssistant = () => {
@@ -7653,6 +7685,7 @@ export default function Home() {
                 const friend = friendProfiles.find((item) => item.user_id === post.user_id);
                 const authorName = post.user_id === user?.id ? profileName : friend?.display_name ?? "Traveller";
                 const authorAvatar = post.user_id === user?.id ? avatarImageUrl : friend?.avatar_url ?? null;
+                const isOwnPost = post.user_id === user?.id;
                 return (
                   <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black touch-manipulation" onPointerUp={() => handleUgcTap(post)}>
                     {post.image_url ? (
@@ -7660,6 +7693,17 @@ export default function Home() {
                     ) : (
                       <div className="flex h-full items-center justify-center text-7xl">📸</div>
                     )}
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setUgcMorePostId(post.id);
+                      }}
+                      className="absolute right-4 top-16 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-2xl font-black tracking-[0.15em] backdrop-blur-md border border-white/10 shadow-lg active:scale-95 transition"
+                      aria-label="Thêm tùy chọn cho moment"
+                    >
+                      ···
+                    </button>
                     <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-32 pt-28">
                       <div className="flex items-end justify-between gap-4">
                         <div className="min-w-0 flex-1">
@@ -7689,6 +7733,72 @@ export default function Home() {
                   </article>
                 );
               })}
+            {ugcMorePostId !== null && (() => {
+              const morePost = posts.find((item) => item.id === ugcMorePostId);
+              if (!morePost) return null;
+              const ownPost = morePost.user_id === user?.id;
+              return (
+                <div className="fixed inset-0 z-[220] bg-black/55 backdrop-blur-[2px]" onClick={() => setUgcMorePostId(null)}>
+                  <div
+                    className="absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-[2rem] border border-white/10 bg-[#07182a] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-2xl"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+                    <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
+                      <div className="h-11 w-11 overflow-hidden rounded-full bg-white/10">
+                        {morePost.image_url ? <img src={morePost.image_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-xl">📸</span>}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-black">Moment</p>
+                        <p className="truncate text-[11px] text-white/40">{morePost.content}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      <button type="button" onClick={() => savePost(morePost.id) || setUgcMorePostId(null)} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">{savedPostIds.includes(morePost.id) ? "🔖" : "🔖"}</span>
+                        <span>Lưu</span>
+                      </button>
+                      <button type="button" onClick={() => void shareUgcPost(morePost)} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">↗️</span>
+                        <span>Chia sẻ</span>
+                      </button>
+                      <button type="button" onClick={() => hideUgcPost(morePost.id)} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">👋</span>
+                        <span>Không thích</span>
+                      </button>
+                      <button type="button" onClick={() => { void navigator.clipboard?.writeText(typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}#moment-${morePost.id}` : ""); setUgcMorePostId(null); setPostMessage("🔗 Đã sao chép liên kết."); }} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">🔗</span>
+                        <span>Liên kết</span>
+                      </button>
+                    </div>
+
+                    <div className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+                      {ownPost && (
+                        <>
+                          <button type="button" onClick={() => { setUgcMorePostId(null); startEditPost(morePost); }} className="flex w-full items-center gap-3 border-b border-white/10 px-4 py-4 text-left text-sm font-semibold active:bg-white/5">
+                            <span className="text-xl">✏️</span><span>Sửa moment</span>
+                          </button>
+                          <button type="button" onClick={() => void deletePost(morePost.id)} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-semibold text-red-300 active:bg-red-500/10">
+                            <span className="text-xl">🗑️</span><span>Xóa moment</span>
+                          </button>
+                        </>
+                      )}
+                      {!ownPost && (
+                        <button type="button" onClick={() => { setUgcMorePostId(null); openReport("post", morePost.id, "moment"); }} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-semibold text-red-300 active:bg-red-500/10">
+                          <span className="text-xl">🚩</span><span>Báo cáo</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <button type="button" onClick={() => setUgcMorePostId(null)} className="mt-2 w-full rounded-2xl bg-white/10 py-3 text-sm font-bold active:scale-[0.99] transition">
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
             {commentOpenPostId !== null && (
               <div className="fixed inset-0 z-[200] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
                 <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#07182a] shadow-2xl" onClick={(event) => event.stopPropagation()}>
