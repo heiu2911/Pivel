@@ -7693,7 +7693,7 @@ export default function Home() {
                     ) : (
                       <div className="flex h-full items-center justify-center text-7xl">📸</div>
                     )}
-                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-40 pt-28">
+                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-28">
                       <div className="flex items-end justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
@@ -7716,10 +7716,8 @@ export default function Home() {
                             <span className="text-3xl drop-shadow-lg">💬</span>
                             <span className="text-[11px] font-bold">{comments.filter((comment) => comment.post_id === post.id).length}</span>
                           </button>
-                          <button type="button" onPointerUp={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); setUgcMorePostId(post.id); }} className="flex flex-col items-center gap-1 active:scale-90 transition" aria-label="Thêm tùy chọn cho moment">
-                            <span className="text-3xl font-black leading-none tracking-[0.12em] drop-shadow-lg">···</span>
-                            <span className="text-[11px] font-bold">Thêm</span>
-                          </button>
+                          
+                                  <button type="button" onPointerUp={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); setUgcMorePostId(post.id); }} className="flex flex-col items-center gap-1 active:scale-90 transition" aria-label="Thêm tùy chọn cho moment"><span className="text-3xl font-black leading-none tracking-[0.12em] drop-shadow-lg">···</span><span className="text-[11px] font-bold">Thêm</span></button>
                         </div>
                       </div>
                     </div>
