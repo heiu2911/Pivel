@@ -7396,30 +7396,9 @@ export default function Home() {
         {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
           <section className="fixed inset-0 z-40 bg-black text-white">
-            <div className="absolute left-1/2 top-4 z-30 flex -translate-x-1/2 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setFriendsOpen(true);
-                  void loadFriendProfiles();
-                }}
-                className="rounded-full border border-white/15 bg-black/35 px-4 py-2 text-xs font-bold text-white/90 shadow-lg backdrop-blur-md transition active:scale-95"
-                aria-label="Mở danh sách bạn bè"
-              >
-                👥 Bạn bè
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setChatOpen(true);
-                  if (!selectedChatFriend && friendProfiles[0]) setSelectedChatFriend(friendProfiles[0]);
-                  if (!friendProfiles.length) void loadFriendProfiles();
-                }}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/35 text-base shadow-lg backdrop-blur-md transition active:scale-95"
-                aria-label="Mở chat"
-              >
-                💬
-              </button>
+            <div className="absolute right-4 top-4 z-30 flex items-center gap-2">
+              <button type="button" onClick={() => { setFriendsOpen(true); void loadFriendProfiles(); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/35 shadow-lg backdrop-blur-md transition active:scale-95" aria-label="Mở bạn bè">👥</button>
+              <button type="button" onClick={() => { setChatOpen(true); if (!selectedChatFriend && friendProfiles[0]) setSelectedChatFriend(friendProfiles[0]); if (!friendProfiles.length) void loadFriendProfiles(); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/35 text-lg shadow-lg backdrop-blur-md transition active:scale-95" aria-label="Mở chat">💬</button>
             </div>
 
             {friendsOpen && (
