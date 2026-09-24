@@ -904,6 +904,7 @@ export default function Home() {
     useState<Record<number, boolean>>({});
 
   const [commentOpenPostId, setCommentOpenPostId] = useState<number | null>(null);
+  const [ugcFeedIndex, setUgcFeedIndex] = useState(0);
 
   const [, setCommentsLoading] =
     useState(false);
@@ -7517,12 +7518,25 @@ export default function Home() {
                 </div>
               </div>
             )}
+            {visiblePosts.length > 0 && (
+              <div className="pointer-events-none absolute left-4 right-4 top-4 z-40 flex items-center gap-1">
+                {Array.from({ length: visiblePosts.length + 1 }).map((_, index) => (
+                  <span
+                    key={index}
+                    className={`h-1 flex-1 rounded-full ${ugcFeedIndex === index ? "bg-white" : "bg-white/25"} transition-all`}
+                  />
+                ))}
+              </div>
+            )}
+
             <div
               className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-y-contain touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               onScroll={(event) => {
                 const container = event.currentTarget;
                 const cameraThreshold = Math.max(1, window.innerHeight * 0.35);
                 const isCameraPage = container.scrollTop < cameraThreshold;
+                const nextIndex = Math.max(0, Math.min(visiblePosts.length, Math.round(container.scrollTop / Math.max(1, window.innerHeight))));
+                setUgcFeedIndex(nextIndex);
 
                 if (isCameraPage) {
                   if (user?.id && !cameraOpen && !cameraPreviewOpen) {
@@ -7624,34 +7638,46 @@ export default function Home() {
                 </div>
               )}
 
-              {visiblePosts.map((post) => (
-                <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black">
-                  {post.image_url ? (
-                    <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-7xl">📸</div>
-                  )}
-                  <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-32 pt-28">
-                    <div className="flex items-end justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
-                        <p className="mt-1 text-[11px] text-white/50">{formatPostTime(post.created_at)}</p>
-                        {post.content && <p className="mt-2 text-sm leading-5 text-white/85">{post.content}</p>}
-                      </div>
-                      <div className="flex shrink-0 flex-col items-center gap-3 pb-1">
-                        <button type="button" onClick={() => void handleLike(post)} className="flex flex-col items-center gap-1 active:scale-90 transition">
-                          <span className="text-3xl drop-shadow-lg">{likedPostIds.includes(post.id) ? "❤️" : "🤍"}</span>
-                          <span className="text-[11px] font-bold">{post.likes}</span>
-                        </button>
-                        <button type="button" onClick={() => setCommentOpenPostId(post.id)} className="flex flex-col items-center gap-1 active:scale-90 transition">
-                          <span className="text-3xl drop-shadow-lg">💬</span>
-                          <span className="text-[11px] font-bold">{comments.filter((comment) => comment.post_id === post.id).length}</span>
-                        </button>
+              {visiblePosts.map((post) => {
+                const friend = friendProfiles.find((item) => item.user_id === post.user_id);
+                const authorName = post.user_id === user?.id ? profileName : friend?.display_name ?? "Traveller";
+                const authorAvatar = post.user_id === user?.id ? avatarImageUrl : friend?.avatar_url ?? null;
+                return (
+                  <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black touch-manipulation" onDoubleClick={() => void handleLike(post)}>
+                    {post.image_url ? (
+                      <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover select-none" draggable={false} />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-7xl">📸</div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-32 pt-28">
+                      <div className="flex items-end justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/10 text-base shadow-lg">
+                              {authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" draggable={false} /> : "🧭"}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-black">{authorName}</p>
+                              <p className="text-[10px] text-white/45">{formatPostTime(post.created_at)}</p>
+                            </div>
+                          </div>
+                          {post.content && <p className="mt-3 text-sm leading-5 text-white/85">{post.content}</p>}
+                        </div>
+                        <div className="flex shrink-0 flex-col items-center gap-3 pb-1">
+                          <button type="button" onClick={() => void handleLike(post)} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                            <span className="text-3xl drop-shadow-lg">{likedPostIds.includes(post.id) ? "❤️" : "🤍"}</span>
+                            <span className="text-[11px] font-bold">{post.likes}</span>
+                          </button>
+                          <button type="button" onClick={() => setCommentOpenPostId(post.id)} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                            <span className="text-3xl drop-shadow-lg">💬</span>
+                            <span className="text-[11px] font-bold">{comments.filter((comment) => comment.post_id === post.id).length}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             {commentOpenPostId !== null && (
               <div className="fixed inset-0 z-[200] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
                 <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#07182a] shadow-2xl" onClick={(event) => event.stopPropagation()}>
