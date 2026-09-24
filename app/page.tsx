@@ -5984,7 +5984,7 @@ export default function Home() {
             {/* SELECTED CHECKPOINT */}
 
             {selectedCheckpoint && !showCheckpointCard && (
-              <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center px-3 sm:px-4">
+              <div className="absolute inset-0 z-40 pointer-events-none flex items-end justify-end px-3 pb-[calc(92px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
                 <div
                   className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-[#07182a]/85 px-2 py-2 shadow-[0_12px_35px_rgba(0,0,0,.3)] backdrop-blur-xl touch-pan-y select-none"
                   onPointerDown={(event) => {
