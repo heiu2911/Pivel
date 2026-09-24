@@ -2420,150 +2420,36 @@ export default function Map({
     };
   }, [friendLocations, onFriendMarkerClick]);
 
-  // =// VÙNG CHECK-IN
+  // ========================================
+  // CHECK-IN ZONES
+  // Ẩn hoàn toàn vùng tròn màu xanh trên map.
+  // Khi zoom xa chỉ hiển thị marker ảnh đại diện thành phố.
   // ========================================
 
   useEffect(() => {
     const mapInstance = map.current;
+    if (!mapInstance) return;
 
-    if (!mapInstance) {
-      return;
-    }
-
-    const sourceId =
-      "checkpoint-zones";
-
-    const layerId =
-      "checkpoint-zone-fill";
+    const sourceId = "checkpoint-zones";
+    const layerId = "checkpoint-zone-fill";
 
     const removeZones = () => {
       if (mapInstance.getLayer(layerId)) {
         mapInstance.removeLayer(layerId);
       }
-
       if (mapInstance.getSource(sourceId)) {
         mapInstance.removeSource(sourceId);
       }
-
       checkpointZonesAdded.current = false;
     };
 
-    const updateZones = () => {
-      if (!showCheckpoints || mapInstance.getZoom() <= CITY_ZOOM_LIMIT) {
-        removeZones();
-        return;
-      }
-
-      const sourceData = {
-        type:
-          "FeatureCollection" as const,
-
-        features:
-          checkpoints
-            .filter(
-              (checkpoint) =>
-                isValidCoordinate(
-                  checkpoint.latitude,
-                  checkpoint.longitude
-                )
-            )
-            .map(
-              (checkpoint) => ({
-                type:
-                  "Feature" as const,
-
-                properties: {
-                  name:
-                    checkpoint.name,
-                },
-
-                geometry: {
-                  type:
-                    "Point" as const,
-
-                  coordinates: [
-                    checkpoint.longitude,
-                    checkpoint.latitude,
-                  ],
-                },
-              })
-            ),
-      };
-
-      const existingSource =
-        mapInstance.getSource(
-          sourceId
-        ) as mapboxgl.GeoJSONSource | undefined;
-
-      if (existingSource) {
-        existingSource.setData(
-          sourceData
-        );
-      } else {
-        mapInstance.addSource(
-          sourceId,
-          {
-            type: "geojson",
-            data: sourceData,
-          }
-        );
-      }
-
-      if (
-        !mapInstance.getLayer(
-          layerId
-        )
-      ) {
-        mapInstance.addLayer({
-          id: layerId,
-
-          type: "circle",
-
-          source: sourceId,
-
-          paint: {
-            "circle-radius": 35,
-
-            "circle-color":
-              "#2563eb",
-
-            "circle-opacity":
-              0.12,
-
-            "circle-stroke-color":
-              "#60a5fa",
-
-            "circle-stroke-width":
-              2,
-
-            "circle-stroke-opacity":
-              0.5,
-          },
-        });
-      }
-
-      checkpointZonesAdded.current =
-        true;
-    };
-
-    const handleZoom = () => updateZones();
-
-    if (mapInstance.isStyleLoaded()) {
-      updateZones();
-    } else {
-      mapInstance.once("load", updateZones);
-    }
-
-    mapInstance.on("zoomend", handleZoom);
+    removeZones();
 
     return () => {
-      mapInstance.off("load", updateZones);
-      mapInstance.off("zoomend", handleZoom);
       removeZones();
     };
   }, [checkpoints, showCheckpoints]);
 
-  // ========================================
   // ========================================
   // GPS MARKER
   // ========================================
