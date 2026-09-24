@@ -7607,11 +7607,36 @@ export default function Home() {
                   </p>
                 </div>
               ) : (
-                <div className="mx-auto flex max-w-xl snap-y snap-mandatory flex-col gap-5">
+                <div className="mx-auto h-[calc(100dvh-280px)] max-w-xl snap-y snap-mandatory space-y-5 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <article
+                    className="snap-start snap-always overflow-hidden rounded-[28px] border border-white/10 bg-black shadow-2xl shadow-black/30"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => void openCamera()}
+                      className="group relative block aspect-[4/5] w-full overflow-hidden text-left"
+                    >
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(59,130,246,0.24),_transparent_52%)]" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-blue-950/30 via-transparent to-black/80" />
+                      <div className="relative flex h-full flex-col items-center justify-center px-8 text-center">
+                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl shadow-2xl transition group-hover:scale-105 group-active:scale-95">
+                          📸
+                        </div>
+                        <p className="mt-6 text-xl font-black">Khoảnh khắc của cậu</p>
+                        <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/45">
+                          Chạm để mở camera và chia sẻ ngay một moment.
+                        </p>
+                        <span className="mt-5 rounded-full border border-white/10 bg-white/10 px-5 py-2 text-xs font-bold text-white/75 backdrop-blur">
+                          Chụp ngay
+                        </span>
+                      </div>
+                    </button>
+                  </article>
+
                   {visiblePosts.map((post) => (
                     <article
                       key={post.id}
-                      className="snap-start overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20"
+                      className="snap-start snap-always overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20"
                     >
                       <div className="flex items-center justify-between px-4 py-4">
                         <div className="flex min-w-0 items-center gap-3">
