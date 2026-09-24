@@ -7455,7 +7455,7 @@ export default function Home() {
               <button type="button" onClick={() => { setFriendsOpen(true); void loadFriendProfiles(); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/35 shadow-lg backdrop-blur-md transition active:scale-95" aria-label="Mở bạn bè">👥</button>
             </div>
             <div className="absolute right-4 top-4 z-30">
-              <button type="button" onClick={() => { setChatOpen(true); if (!selectedChatFriend && friendProfiles[0]) setSelectedChatFriend(friendProfiles[0]); if (!friendProfiles.length) void loadFriendProfiles(); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/35 text-lg shadow-lg backdrop-blur-md transition active:scale-95" aria-label="Mở chat">💬</button>
+              <button type="button" onClick={() => { setChatOpen(true); setSelectedChatFriend(null); setChatInput(""); if (!friendProfiles.length) void loadFriendProfiles(); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/35 text-lg shadow-lg backdrop-blur-md transition active:scale-95" aria-label="Mở chat">💬</button>
             </div>
 
             {friendsOpen && (
