@@ -1055,6 +1055,7 @@ export default function Home() {
   const [cameraError, setCameraError] = useState("");
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
+  const cameraPermissionBlockedRef = useRef(false);
 
   // ============================================
   // BADGE UNLOCK ANIMATION
@@ -2998,6 +2999,11 @@ export default function Home() {
       return;
     }
 
+    if (cameraPermissionBlockedRef.current) {
+      setCameraError("Camera đang bị chặn. Hãy bật quyền camera cho trình duyệt rồi nhấn Thử lại.");
+      return;
+    }
+
     stopCamera();
     setCameraError("");
 
@@ -3016,8 +3022,26 @@ export default function Home() {
       });
     } catch (error) {
       console.error("Lỗi mở camera:", error);
-      setCameraError("Không mở được camera. Hãy cấp quyền camera cho trình duyệt rồi thử lại.");
+      setCameraOpen(false);
+      stopCamera();
+      const cameraErrorName = error instanceof DOMException ? error.name : "";
+      if (cameraErrorName === "NotAllowedError" || cameraErrorName === "PermissionDeniedError") {
+        cameraPermissionBlockedRef.current = true;
+        setCameraError("Camera đang bị chặn. Hãy cấp quyền camera cho trình duyệt rồi nhấn Thử lại.");
+      } else if (cameraErrorName === "NotFoundError") {
+        setCameraError("Không tìm thấy camera trên thiết bị này. Cậu vẫn có thể chọn ảnh từ máy.");
+      } else if (cameraErrorName === "NotReadableError") {
+        setCameraError("Camera đang được ứng dụng khác sử dụng. Hãy đóng ứng dụng đó rồi thử lại.");
+      } else {
+        setCameraError("Không mở được camera. Hãy kiểm tra quyền camera rồi thử lại.");
+      }
     }
+  };
+
+  const retryCamera = async () => {
+    cameraPermissionBlockedRef.current = false;
+    ugcCameraStartedRef.current = true;
+    await openCamera();
   };
 
   const switchCamera = async () => {
@@ -7566,10 +7590,16 @@ export default function Home() {
                   </div>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-[#101010] px-6 text-center">
-                    <div>
-                      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-4xl">📸</div>
-                      <p className="mt-5 text-lg font-black">Camera</p>
-                      <p className="mt-2 text-xs text-white/40">Kéo/vuốt lên để quay lại camera.</p>
+                    <div className="w-full max-w-sm">
+                      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-4xl">{cameraError ? "📷" : "📸"}</div>
+                      <p className="mt-5 text-lg font-black">{cameraError ? "Không mở được camera" : "Camera"}</p>
+                      <p className="mt-2 text-xs leading-5 text-white/45">{cameraError || "Kéo/vuốt lên để quay lại camera."}</p>
+                      {cameraError && (
+                        <div className="mt-5 flex justify-center gap-2">
+                          <button type="button" onClick={() => void retryCamera()} className="rounded-full bg-white px-5 py-3 text-xs font-black text-black transition active:scale-95">Thử lại camera</button>
+                          <button type="button" onClick={() => imageInputRef.current?.click()} className="rounded-full border border-white/15 bg-white/10 px-5 py-3 text-xs font-bold text-white transition active:scale-95">Chọn ảnh</button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
