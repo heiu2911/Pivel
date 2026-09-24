@@ -7256,45 +7256,74 @@ export default function Home() {
             {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
           <section className="fixed inset-0 z-40 bg-black text-white">
-            {cameraOpen ? (
-              <div className="relative h-full w-full">
-                <video
-                  ref={cameraVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-5 pb-28 pt-24">
-                  <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
-                    <button type="button" onClick={() => imageInputRef.current?.click()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🖼️</button>
-                    <button type="button" onClick={captureCameraPhoto} className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2">
-                      <span className="block h-full w-full rounded-full bg-white" />
-                    </button>
-                    <button type="button" onClick={() => void switchCamera()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🔄</button>
+            <div
+              className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-y-contain touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              onScroll={(event) => {
+                const container = event.currentTarget;
+                const cameraThreshold = Math.max(1, window.innerHeight * 0.35);
+                const isCameraPage = container.scrollTop < cameraThreshold;
+
+                if (isCameraPage) {
+                  if (user?.id && !cameraOpen && !cameraPreviewOpen) {
+                    void openCamera();
+                  }
+                } else if (cameraOpen) {
+                  closeCamera();
+                }
+              }}
+            >
+              <article className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black">
+                {cameraOpen ? (
+                  <div className="relative h-full w-full">
+                    <video
+                      ref={cameraVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+                    />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-5 pb-28 pt-24">
+                      <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
+                        <button type="button" onClick={() => imageInputRef.current?.click()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🖼️</button>
+                        <button type="button" onClick={captureCameraPhoto} className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2">
+                          <span className="block h-full w-full rounded-full bg-white" />
+                        </button>
+                        <button type="button" onClick={() => void switchCamera()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🔄</button>
+                      </div>
+                      <p className="mt-4 text-center text-[11px] font-semibold text-white/45">Vuốt xuống để xem moment</p>
+                    </div>
+                    {cameraError && (
+                      <div className="absolute left-4 right-4 top-20 rounded-2xl bg-black/70 p-3 text-center text-xs backdrop-blur">
+                        {cameraError}
+                      </div>
+                    )}
                   </div>
-                  <button type="button" onClick={closeCamera} className="mx-auto mt-4 block rounded-full bg-black/50 px-4 py-2 text-xs font-bold text-white/70">
-                    Đóng camera
-                  </button>
-                </div>
-                {cameraError && (
-                  <div className="absolute left-4 right-4 top-20 rounded-2xl bg-black/70 p-3 text-center text-xs backdrop-blur">
-                    {cameraError}
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-[#101010] px-6 text-center">
+                    <div>
+                      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-4xl">📸</div>
+                      <p className="mt-5 text-lg font-black">Camera</p>
+                      <p className="mt-2 text-xs text-white/40">Kéo/vuốt lên để quay lại camera.</p>
+                    </div>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center bg-[#101010] px-6 text-center">
-                <button type="button" onClick={() => void openCamera()} className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl text-black">
-                  📸
-                </button>
-                <p className="mt-6 text-2xl font-black">Chụp một khoảnh khắc</p>
-                <p className="mt-2 max-w-xs text-sm text-white/45">Camera là màn hình chính của TravelQuest.</p>
-                <button type="button" onClick={() => void openCamera()} className="mt-6 rounded-full bg-white px-6 py-3 text-xs font-black text-black">
-                  Mở camera
-                </button>
-              </div>
-            )}
+              </article>
+
+              {visiblePosts.map((post) => (
+                <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black">
+                  {post.image_url ? (
+                    <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-7xl">📸</div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-5 pb-28 pt-24">
+                    <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
+                    <p className="mt-1 text-[11px] text-white/50">{formatPostTime(post.created_at)}</p>
+                    {post.content && <p className="mt-2 text-sm text-white/85">{post.content}</p>}
+                  </div>
+                </article>
+              ))}
+            </div>
 
             <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
 
@@ -7334,31 +7363,12 @@ export default function Home() {
                 </div>
               </div>
             )}
-
-            {!cameraOpen && !cameraPreviewOpen && visiblePosts.length > 0 && (
-              <div className="absolute inset-x-0 bottom-20 top-0 overflow-y-auto snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {visiblePosts.map((post) => (
-                  <article key={post.id} className="relative h-[calc(100dvh-5rem)] snap-start bg-black">
-                    {post.image_url ? (
-                      <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-7xl">📸</div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-5 pt-24">
-                      <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
-                      <p className="mt-1 text-[11px] text-white/50">{formatPostTime(post.created_at)}</p>
-                      {post.content && <p className="mt-2 text-sm text-white/85">{post.content}</p>}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
           </section>
         )}
 
              </div>
 
-       {/* ================= BOTTOM NAV ================= */}
+       {/* ================= BOTTOM NAV ================= */
 
       <nav className="fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)]">
         <div className="rounded-2xl border border-white/10 bg-[#07182a]/55 p-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-xl">
