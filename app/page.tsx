@@ -899,6 +899,8 @@ export default function Home() {
   const [commentLoading, setCommentLoading] =
     useState<Record<number, boolean>>({});
 
+  const [commentOpenPostId, setCommentOpenPostId] = useState<number | null>(null);
+
   const [, setCommentsLoading] =
     useState(false);
 
@@ -4908,6 +4910,35 @@ export default function Home() {
     }
   };
 
+  const submitComment = async (postId: number) => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage("🔐 Hãy đăng nhập để bình luận.");
+      return;
+    }
+
+    const content = (commentInputs[postId] ?? "").trim();
+    if (!content || commentLoading[postId]) return;
+
+    setCommentLoading((current) => ({ ...current, [postId]: true }));
+    try {
+      const { data, error } = await supabase
+        .from("post_comments")
+        .insert({ post_id: postId, user_id: user.id, content })
+        .select("id, post_id, user_id, content, created_at")
+        .single();
+
+      if (error) throw error;
+      setComments((current) => [...current, data as PostComment]);
+      setCommentInputs((current) => ({ ...current, [postId]: "" }));
+    } catch (error) {
+      console.error("Lỗi gửi bình luận:", error);
+    } finally {
+      setCommentLoading((current) => ({ ...current, [postId]: false }));
+    }
+  };
+
   // ============================================
   // RESET
   // ============================================
@@ -7526,18 +7557,52 @@ export default function Home() {
                   ) : (
                     <div className="flex h-full items-center justify-center text-7xl">📸</div>
                   )}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/35 to-transparent p-5 pb-28 pt-28">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-28 pt-28">
                     <div className="flex items-end justify-between gap-4">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
                         <p className="mt-1 text-[11px] text-white/50">{formatPostTime(post.created_at)}</p>
                         {post.content && <p className="mt-2 text-sm leading-5 text-white/85">{post.content}</p>}
                       </div>
-                      <span className="shrink-0 rounded-full bg-black/35 px-3 py-1.5 text-[10px] font-bold text-white/60 backdrop-blur">MOMENT</span>
+                      <div className="flex shrink-0 flex-col items-center gap-3 pb-1">
+                        <button type="button" onClick={() => void handleLike(post)} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                          <span className="text-3xl drop-shadow-lg">{likedPostIds.includes(post.id) ? "❤️" : "🤍"}</span>
+                          <span className="text-[11px] font-bold">{post.likes}</span>
+                        </button>
+                        <button type="button" onClick={() => setCommentOpenPostId(post.id)} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                          <span className="text-3xl drop-shadow-lg">💬</span>
+                          <span className="text-[11px] font-bold">{comments.filter((comment) => comment.post_id === post.id).length}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </article>
               ))}
+            {commentOpenPostId !== null && (
+              <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm" onClick={() => setCommentOpenPostId(null)}>
+                <div className="absolute inset-x-0 bottom-0 mx-auto max-h-[70dvh] max-w-md rounded-t-[2rem] border border-white/10 bg-[#07182a] p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                  <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="font-black">💬 Bình luận</p>
+                    <button type="button" onClick={() => setCommentOpenPostId(null)} className="h-8 w-8 rounded-full bg-white/5">✕</button>
+                  </div>
+                  <div className="max-h-[45dvh] space-y-2 overflow-y-auto">
+                    {comments.filter((comment) => comment.post_id === commentOpenPostId).map((comment) => (
+                      <div key={comment.id} className="rounded-2xl bg-white/5 px-3 py-2">
+                        <p className="text-[10px] text-white/40">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
+                        <p className="mt-1 text-sm">{comment.content}</p>
+                      </div>
+                    ))}
+                    {!comments.some((comment) => comment.post_id === commentOpenPostId) && <p className="py-8 text-center text-sm text-white/40">Chưa có bình luận.</p>}
+                  </div>
+                  <div className="mt-3 flex gap-2">
+                    <input value={commentInputs[commentOpenPostId] ?? ""} onChange={(event) => setCommentInputs((current) => ({ ...current, [commentOpenPostId]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void submitComment(commentOpenPostId); }} placeholder="Viết bình luận..." className="min-w-0 flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none" />
+                    <button type="button" onClick={() => void submitComment(commentOpenPostId)} className="h-11 w-11 shrink-0 rounded-full bg-white text-black font-black">↑</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             </div>
 
             <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
