@@ -8738,18 +8738,37 @@ export default function Home() {
         <div className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md">
           <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[88dvh] max-w-md flex-col rounded-t-[2rem] border border-white/10 bg-[#07182a] shadow-2xl">
             <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
-              <button type="button" onClick={() => setChatOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-lg">←</button>
+              <button type="button" onClick={() => selectedChatFriend ? setSelectedChatFriend(null) : setChatOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-lg" aria-label={selectedChatFriend ? "Quay lại danh sách bạn bè" : "Đóng tin nhắn"}>
+                {selectedChatFriend ? "←" : "✕"}
+              </button>
               <div className="flex-1"><p className="text-[10px] font-black tracking-[0.2em] text-purple-300">MESSAGES</p><h3 className="text-lg font-black">{selectedChatFriend?.display_name ?? "Bạn bè"}</h3></div>
+              {!selectedChatFriend && <span className="text-[11px] text-white/35">{friendProfiles.length} người</span>}
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4">
               {!selectedChatFriend ? (
-                <div className="space-y-2">
-                  {friendProfiles.map((friend) => (
-                    <button key={friend.user_id} type="button" onClick={() => setSelectedChatFriend(friend)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left hover:bg-white/5">
-                      <div className="h-12 w-12 overflow-hidden rounded-full bg-white/10">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-xl">🧭</span>}</div>
-                      <div className="min-w-0"><p className="font-bold">{friend.display_name}</p><p className="text-xs text-white/40">Nhấn để nhắn tin</p></div>
-                    </button>
-                  ))}
+                <div className="space-y-1">
+                  <p className="px-2 pb-2 text-[11px] font-semibold text-white/35">Chọn người cậu muốn nhắn</p>
+                  {friendProfiles.map((friend) => {
+                    const friendMessages = chatMessages.filter(
+                      (message) =>
+                        (message.senderId === user?.id && message.recipientId === friend.user_id) ||
+                        (message.senderId === friend.user_id && message.recipientId === user?.id)
+                    );
+                    const latestMessage = friendMessages[friendMessages.length - 1];
+                    return (
+                      <button key={friend.user_id} type="button" onClick={() => { setSelectedChatFriend(friend); setChatInput(""); }} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/5 active:scale-[0.99]">
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white/10">
+                          {friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-xl">🧭</span>}
+                          {latestMessage && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#07182a] bg-emerald-400" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2"><p className="truncate font-bold">{friend.display_name}</p>{latestMessage && <span className="ml-auto shrink-0 text-[10px] text-white/30">{formatPostTime(latestMessage.createdAt)}</span>}</div>
+                          <p className="mt-0.5 truncate text-xs text-white/40">{latestMessage ? `${latestMessage.senderId === user?.id ? "Bạn: " : ""}${latestMessage.text}` : "Nhấn để nhắn tin"}</p>
+                        </div>
+                        <span className="text-white/20">›</span>
+                      </button>
+                    );
+                  })}
                   {!friendProfiles.length && <p className="py-10 text-center text-sm text-white/40">Chưa có bạn bè.</p>}
                 </div>
               ) : (
