@@ -5942,6 +5942,12 @@ export default function Home() {
       <header
         className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-2 pt-2 sm:px-3"
         onPointerDownCapture={(event) => {
+          if (searchOpen) {
+            const target = event.target as HTMLElement | null;
+            if (!target?.closest("[data-traveller-search-panel]")) {
+              dismissSearchOverlay();
+            }
+          }
           if (!mapSearchActive) return;
           const target = event.target as HTMLElement | null;
           if (!target?.closest("[data-map-search-box]")) {
@@ -8086,7 +8092,7 @@ export default function Home() {
               event.stopPropagation();
               dismissSearchOverlay();
             }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="pointer-events-auto absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
 
           <div
