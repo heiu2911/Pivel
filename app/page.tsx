@@ -1029,6 +1029,7 @@ export default function Home() {
     useRef<HTMLInputElement | null>(null);
 
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraPreviewOpen, setCameraPreviewOpen] = useState(false);
   const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("environment");
   const [cameraError, setCameraError] = useState("");
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -3062,6 +3063,7 @@ export default function Home() {
       setImagePreview(URL.createObjectURL(file));
       setPostMessage("");
       closeCamera();
+      setCameraPreviewOpen(true);
     }, "image/jpeg", 0.9);
   };
 
@@ -3136,6 +3138,8 @@ export default function Home() {
     setSelectedImage(file);
     setImagePreview(preview);
     setPostMessage("");
+    if (cameraOpen) closeCamera();
+    setCameraPreviewOpen(true);
   };
 
   // ============================================
@@ -3151,6 +3155,7 @@ export default function Home() {
 
     setSelectedImage(null);
     setImagePreview(null);
+    setCameraPreviewOpen(false);
 
     if (imageInputRef.current) {
       imageInputRef.current.value =
@@ -4607,6 +4612,7 @@ export default function Home() {
         setPostMessage(
           "🎉 Đăng bài thành công!"
         );
+        setCameraPreviewOpen(false);
 
         await loadPosts();
       } catch (error) {
@@ -7456,57 +7462,25 @@ export default function Home() {
                 </div>
               )}
 
-              <div className="mb-4 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-lg">
-                    🧭
+              <div className="mb-5 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
+                <button
+                  type="button"
+                  onClick={() => void openCamera()}
+                  className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-3 text-left transition hover:bg-white/5 active:scale-[0.99]"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500 text-xl shadow-lg shadow-blue-950/40">
+                    📸
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-bold">{profileName}</p>
-                    <p className="text-[10px] text-white/35">Chia sẻ một moment</p>
+                    <p className="text-sm font-bold">{profileName}</p>
+                    <p className="mt-0.5 text-[11px] text-white/35">
+                      Chụp một khoảnh khắc ngay bây giờ
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCreatePost}
-                    disabled={posting || (!postContent.trim() && !imagePreview)}
-                    className="rounded-full bg-blue-500 px-4 py-2 text-xs font-bold transition hover:bg-blue-400 disabled:opacity-40"
-                  >
-                    {posting ? "..." : "Đăng"}
-                  </button>
-                </div>
-
-                <textarea
-                  value={postContent}
-                  onChange={(event) => setPostContent(event.target.value)}
-                  maxLength={1000}
-                  placeholder="Khoảnh khắc này có gì đặc biệt?"
-                  className="mt-3 min-h-20 w-full resize-none rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-blue-400/40"
-                />
-
-                {imagePreview ? (
-                  <div className="relative mt-3 overflow-hidden rounded-2xl">
-                    <img
-                      src={imagePreview}
-                      alt="Ảnh moment"
-                      className="max-h-72 w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/70"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => void openCamera()}
-                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-black/15 py-4 text-xs text-white/45 transition hover:bg-white/5 hover:text-white"
-                  >
-                    📸 Thêm ảnh
-                  </button>
-                )}
+                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white/60">
+                    Camera
+                  </span>
+                </button>
 
                 <input
                   ref={imageInputRef}
@@ -7515,28 +7489,76 @@ export default function Home() {
                   onChange={handleSelectImage}
                   className="hidden"
                 />
-
-                <select
-                  value={selectedPostCheckpoint ?? ""}
-                  onChange={(event) =>
-                    setSelectedPostCheckpoint(
-                      event.target.value ? Number(event.target.value) : null
-                    )
-                  }
-                  className="mt-3 w-full rounded-2xl border border-white/10 bg-[#07182a] px-3 py-2.5 text-xs text-white outline-none"
-                >
-                  <option value="">📍 Không gắn checkpoint</option>
-                  {checkpoints.map((checkpoint) => (
-                    <option key={checkpoint.id} value={checkpoint.id}>
-                      {checkpoint.icon ?? "📍"} {checkpoint.name}
-                    </option>
-                  ))}
-                </select>
-
-                {postMessage && (
-                  <p className="px-1 pt-2 text-xs text-blue-300">{postMessage}</p>
-                )}
               </div>
+
+              {cameraPreviewOpen && imagePreview && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/85 p-3 backdrop-blur-sm">
+                  <div className="relative flex h-full w-full max-w-xl flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#06111f] shadow-2xl">
+                    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-4">
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-black/55 text-xl backdrop-blur"
+                        aria-label="Hủy ảnh"
+                      >
+                        ×
+                      </button>
+                      <span className="rounded-full bg-black/55 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">
+                        Preview
+                      </span>
+                      <span className="h-10 w-10" />
+                    </div>
+
+                    <div className="min-h-0 flex-1 bg-black">
+                      <img
+                        src={imagePreview}
+                        alt="Ảnh moment vừa chụp"
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+
+                    <div className="shrink-0 border-t border-white/10 bg-[#06111f] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+                      <textarea
+                        value={postContent}
+                        onChange={(event) => setPostContent(event.target.value)}
+                        maxLength={1000}
+                        placeholder="Thêm một dòng cho khoảnh khắc này..."
+                        className="min-h-14 w-full resize-none rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-blue-400/40"
+                      />
+
+                      <select
+                        value={selectedPostCheckpoint ?? ""}
+                        onChange={(event) =>
+                          setSelectedPostCheckpoint(
+                            event.target.value ? Number(event.target.value) : null
+                          )
+                        }
+                        className="mt-2 w-full rounded-2xl border border-white/10 bg-[#07182a] px-3 py-2.5 text-xs text-white outline-none"
+                      >
+                        <option value="">📍 Không gắn checkpoint</option>
+                        {checkpoints.map((checkpoint) => (
+                          <option key={checkpoint.id} value={checkpoint.id}>
+                            {checkpoint.icon ?? "📍"} {checkpoint.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      {postMessage && (
+                        <p className="px-1 pt-2 text-xs text-blue-300">{postMessage}</p>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => void handleCreatePost()}
+                        disabled={posting}
+                        className="mt-3 flex w-full items-center justify-center rounded-2xl bg-blue-500 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-950/30 transition hover:bg-blue-400 active:scale-[0.99] disabled:opacity-50"
+                      >
+                        {posting ? "Đang chia sẻ..." : "📸 Chia sẻ moment"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-5 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1">
                 <button
