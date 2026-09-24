@@ -8043,8 +8043,9 @@ export default function Home() {
       {searchOpen && (
         <div
           className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20"
-          onPointerDown={(event) => {
-            if (event.target === event.currentTarget) {
+          onPointerDownCapture={(event) => {
+            const target = event.target as HTMLElement | null;
+            if (!target?.closest("[data-traveller-search-panel]")) {
               dismissSearchOverlay();
             }
           }}
@@ -8058,15 +8059,11 @@ export default function Home() {
               event.stopPropagation();
               dismissSearchOverlay();
             }}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              dismissSearchOverlay();
-            }}
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
 
           <div
+            data-traveller-search-panel
             className="relative w-full max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl"
             onPointerDown={(event) => event.stopPropagation()}
           >
