@@ -536,6 +536,7 @@ export default function Home() {
     useState(false);
 
   const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapSearchActive, setMapSearchActive] = useState(false);
   const [mapFilter, setMapFilter] = useState<"none" | "all" | "nearby" | "unvisited" | "saved">("none");
 
   const [headerMenuOpen, setHeaderMenuOpen] =
@@ -5549,13 +5550,17 @@ export default function Home() {
       {activeTab === "map" && (
       <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-2 pt-2 sm:px-3">
         <div className="pointer-events-auto mx-auto max-w-[1600px]">
-          <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#07182a]/55 px-2 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:px-3">
+          <div className={`flex items-center gap-2 rounded-2xl border border-white/10 bg-[#07182a]/55 px-2 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
             <div className="relative min-w-0 flex-1">
               <div className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white px-2.5 text-slate-900 shadow-sm">
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-base">⌕</span>
                 <input
                   value={mapSearchQuery}
                   onChange={(event) => setMapSearchQuery(event.target.value)}
+                  onFocus={() => setMapSearchActive(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") setMapSearchActive(false);
+                  }}
                   placeholder="Tìm địa điểm, checkpoint..."
                   className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
                   aria-label="Tìm địa điểm trên bản đồ"
@@ -5620,7 +5625,7 @@ export default function Home() {
               )}
             </div>
 
-            <div className="hidden lg:flex shrink-0 items-center gap-1.5">
+            <div className={`shrink-0 items-center gap-1.5 ${mapSearchActive ? "hidden" : "hidden lg:flex"}`}>
               {[
                 ["all", "✨ Tất cả"],
                 ["nearby", "📍 Gần tôi"],
@@ -5638,7 +5643,7 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className={`shrink-0 items-center gap-1.5 ${mapSearchActive ? "hidden" : "flex"}`}>
               {authReady && user && (
                 <button
                   type="button"
@@ -5781,8 +5786,8 @@ export default function Home() {
 
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
-              <div className="fixed left-1/2 top-1/2 z-[80] w-[min(420px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                <div className="pointer-events-auto max-h-[min(72vh,680px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/96 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,.45)] [scrollbar-width:thin]">
+              <div className="fixed left-1/2 top-1/2 z-[80] w-[min(380px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="pointer-events-auto max-h-[min(60vh,540px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/96 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,.45)] [scrollbar-width:thin]">
 
                 {/* SUMMARY */}
                 <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
@@ -5816,8 +5821,8 @@ export default function Home() {
                 </div>
 
                 {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
-                <div className="p-3">
-                  <div className="flex items-center justify-between gap-2 px-1 pb-2">
+                <div className="p-2.5">
+                  <div className="flex items-center justify-between gap-2 px-1 pb-1.5">
                     <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
                     <div className="flex items-center gap-2">
                       {checkpoints.length > 3 && (
@@ -5841,7 +5846,7 @@ export default function Home() {
                       Chưa có checkpoint.
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {(showAllMapCheckpoints ? checkpoints : checkpoints.slice(0, 3)).map((checkpoint) => {
                         const checked = isCheckedIn(checkpoint.id);
                         const selected = selectedCheckpoint?.id === checkpoint.id;
@@ -5850,7 +5855,7 @@ export default function Home() {
                             key={checkpoint.id}
                             type="button"
                             onClick={() => selectCheckpoint(checkpoint)}
-                            className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition ${
+                            className={`flex w-full items-center gap-3 rounded-xl border px-2.5 py-2 text-left transition ${
                               selected
                                 ? "border-blue-400/50 bg-blue-500/15"
                                 : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"
