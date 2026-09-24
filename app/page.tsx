@@ -373,6 +373,9 @@ export default function Home() {
 
   const handleCheckpointCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest("button, a, input, textarea, select")) return;
+
     checkpointCardDragRef.current = {
       active: true,
       startX: event.clientX,
@@ -386,14 +389,30 @@ export default function Home() {
   const handleCheckpointCardPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     const drag = checkpointCardDragRef.current;
     if (!drag.active) return;
+
+    const maxX = Math.max(0, window.innerWidth / 2 - 24);
+    const maxY = Math.max(0, window.innerHeight / 2 - 80);
+
     setCheckpointCardOffset({
-      x: drag.originX + event.clientX - drag.startX,
-      y: drag.originY + event.clientY - drag.startY,
+      x: Math.max(-maxX, Math.min(maxX, drag.originX + event.clientX - drag.startX)),
+      y: Math.max(-maxY, Math.min(maxY, drag.originY + event.clientY - drag.startY)),
     });
   };
 
   const handleCheckpointCardPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = checkpointCardDragRef.current;
     checkpointCardDragRef.current.active = false;
+
+    const currentX = checkpointCardOffset.x;
+    const currentY = checkpointCardOffset.y;
+    const snapX = Math.abs(currentX) < 90 ? 0 : currentX > 0 ? Math.min(180, window.innerWidth * 0.22) : Math.max(-180, -window.innerWidth * 0.22);
+    const snapY = Math.abs(currentY) < 90 ? 0 : currentY > 0 ? Math.min(260, window.innerHeight * 0.28) : Math.max(-260, -window.innerHeight * 0.28);
+
+    setCheckpointCardOffset({
+      x: snapX,
+      y: snapY,
+    });
+
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {
