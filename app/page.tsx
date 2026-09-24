@@ -7580,13 +7580,13 @@ export default function Home() {
               ))}
             {commentOpenPostId !== null && (
               <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm" onClick={() => setCommentOpenPostId(null)}>
-                <div className="absolute inset-x-0 bottom-0 mx-auto max-h-[70dvh] max-w-md rounded-t-[2rem] border border-white/10 bg-[#07182a] p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                <div className="absolute inset-x-0 bottom-0 mx-auto h-[66dvh] max-h-[66dvh] max-w-md rounded-t-[2rem] border border-white/10 bg-[#07182a] p-4 shadow-2xl" onClick={(event) => event.stopPropagation()}>
                   <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
                   <div className="mb-3 flex items-center justify-between">
                     <p className="font-black">💬 Bình luận</p>
                     <button type="button" onClick={() => setCommentOpenPostId(null)} className="h-8 w-8 rounded-full bg-white/5">✕</button>
                   </div>
-                  <div className="max-h-[45dvh] space-y-2 overflow-y-auto">
+                  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto">
                     {comments.filter((comment) => comment.post_id === commentOpenPostId).map((comment) => (
                       <div key={comment.id} className="rounded-2xl bg-white/5 px-3 py-2">
                         <p className="text-[10px] text-white/40">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
