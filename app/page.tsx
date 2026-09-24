@@ -7265,7 +7265,17 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Composer giữ nguyên toàn bộ logic upload/post hiện tại; UI thu gọn theo Locket */}
+              {/* Floating camera + compact composer */}
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-blue-500 text-2xl shadow-2xl shadow-blue-950/50 transition hover:scale-105 hover:bg-blue-400 active:scale-95"
+                aria-label="Chia sẻ moment"
+              >
+                📸
+              </button>
+
+              <div className="mb-4 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
               <div className="mb-4 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-lg">
@@ -7395,11 +7405,11 @@ export default function Home() {
                   </p>
                 </div>
               ) : (
-                <div className="mx-auto flex max-w-xl flex-col gap-5">
+                <div className="mx-auto flex max-w-xl snap-y snap-mandatory flex-col gap-5">
                   {visiblePosts.map((post) => (
                     <article
                       key={post.id}
-                      className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20"
+                      className="snap-start overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-2xl shadow-black/20"
                     >
                       <div className="flex items-center justify-between px-4 py-4">
                         <div className="flex min-w-0 items-center gap-3">
