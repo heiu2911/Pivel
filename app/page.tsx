@@ -5479,6 +5479,7 @@ export default function Home() {
       return;
     }
     setFriendsOpen(true);
+    setActiveTab("friends");
     await loadFollowing();
     await loadFriendProfiles();
   };
