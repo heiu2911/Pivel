@@ -7481,6 +7481,7 @@ export default function Home() {
                 }
               }}
             >
+              {!ugcSelectedUserId && (
               <article className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black">
                 {ugcSelectedUserId ? (
                   <div className="relative h-full w-full bg-black">
@@ -7553,6 +7554,17 @@ export default function Home() {
                   </div>
                 )}
               </article>
+
+              )}
+
+              {ugcSelectedUserId && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-30 bg-gradient-to-b from-black/75 to-transparent px-5 pb-20 pt-6">
+                  <div className="pointer-events-auto flex items-center gap-3">
+                    <button type="button" onClick={() => selectUgcTraveller(null)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-xl font-bold backdrop-blur" aria-label="Quay lại camera">←</button>
+                    <p className="text-lg font-black">{friendProfiles.find((friend) => friend.user_id === ugcSelectedUserId)?.display_name ?? "Traveller"}</p>
+                  </div>
+                </div>
+              )}
 
               {visiblePosts.map((post) => (
                 <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black">
