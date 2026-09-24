@@ -5938,133 +5938,105 @@ export default function Home() {
             {/* SELECTED CHECKPOINT */}
 
             {selectedCheckpoint && (
-              <div className="absolute bottom-24 left-3 right-3 z-30 pointer-events-none">
+              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none px-3 pb-[calc(88px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
+                <div className="pointer-events-auto mx-auto w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a]/80 shadow-[0_20px_60px_rgba(0,0,0,.35)] backdrop-blur-2xl">
 
-                <div className="pointer-events-auto max-w-xl mx-auto bg-[#07182a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
-
-                  <div className="flex items-start gap-4">
-
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-3xl shrink-0">
-                      {selectedCheckpoint.icon ??
-                        "📍"}
+                  <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+                    <div className="h-11 w-11 shrink-0 rounded-2xl bg-blue-500/15 border border-blue-400/15 flex items-center justify-center text-2xl">
+                      {selectedCheckpoint.icon ?? "📍"}
                     </div>
 
-                    <div className="flex-1">
-
-                      <div className="flex items-start justify-between gap-3">
-
-                        <div>
-
-                          <h2 className="font-bold text-lg">
-                            {
-                              selectedCheckpoint.name
-                            }
-                          </h2>
-
-                          <p className="text-sm text-white/55 mt-1">
-                            {
-                              selectedCheckpoint.description
-                            }
-                          </p>
-
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            setSelectedCheckpoint(
-                              null
-                            );
-
-                            selectedCheckpointRef.current =
-                              null;
-
-                            setDistance(
-                              null
-                            );
-
-                            setMessage("");
-                          }}
-                          className="text-white/40 hover:text-white"
-                        >
-                          ✕
-                        </button>
-
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h2 className="truncate text-base font-black">{selectedCheckpoint.name}</h2>
+                        {isCheckedIn(selectedCheckpoint.id) && (
+                          <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[9px] font-bold text-emerald-300">
+                            ✓ ĐÃ ĐI
+                          </span>
+                        )}
                       </div>
-
-                      {distance !== null && (
-                        <div
-                          className={`mt-4 px-3 py-2 rounded-xl text-sm ${
-                            canCheckIn
-                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20"
-                              : "bg-orange-500/10 text-orange-300 border border-orange-400/20"
-                          }`}
-                        >
-                          {canCheckIn
-                            ? `✅ Bạn đang ở cách checkpoint ${distance}m`
-                            : `📍 Bạn đang cách checkpoint ${distance}m`}
-                        </div>
-                      )}
-
-                      <button
-                        onClick={openCheckpointDetail}
-                        className="w-full mt-4 py-3 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/20 text-blue-200 font-semibold transition"
-                      >
-                        📖 Xem chi tiết checkpoint
-                      </button>
-
-                      <button
-                        onClick={
-                          updateLocation
-                        }
-                        disabled={
-                          locationLoading
-                        }
-                        className="w-full mt-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 font-semibold transition"
-                      >
-                        {locationLoading
-                          ? "📡 Đang lấy vị trí..."
-                          : "📍 Kiểm tra vị trí của tôi"}
-                      </button>
-
-                      <button
-                        onClick={
-                          handleCheckIn
-                        }
-                        disabled={
-                          checkingIn ||
-                          isCheckedIn(
-                            selectedCheckpoint.id
-                          )
-                        }
-                        className={`w-full mt-2 py-3 rounded-xl font-bold transition ${
-                          isCheckedIn(
-                            selectedCheckpoint.id
-                          )
-                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/20"
-                            : "bg-blue-500 hover:bg-blue-400 text-white"
-                        }`}
-                      >
-                        {checkingIn
-                          ? "📡 Đang xác nhận GPS..."
-                          : isCheckedIn(
-                              selectedCheckpoint.id
-                            )
-                          ? "✓ Đã check-in"
-                          : "📍 Check-in tại đây"}
-                      </button>
-
-                      {message && (
-                        <p className="text-center text-xs text-white/60 mt-3 leading-relaxed">
-                          {message}
-                        </p>
-                      )}
-
+                      <p className="mt-0.5 truncate text-[11px] text-white/40">
+                        {distance !== null
+                          ? canCheckIn
+                            ? `Bạn đang ở đây · ${distance}m`
+                            : `${distance}m từ vị trí hiện tại`
+                          : "Kiểm tra GPS để biết khoảng cách"}
+                      </p>
                     </div>
 
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCheckpoint(null);
+                        selectedCheckpointRef.current = null;
+                        setDistance(null);
+                        setMessage("");
+                      }}
+                      className="h-8 w-8 shrink-0 rounded-full bg-white/5 text-sm text-white/45 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Đóng checkpoint"
+                    >
+                      ✕
+                    </button>
                   </div>
 
-                </div>
+                  {message && (
+                    <div className="mx-4 mb-2 rounded-xl bg-white/5 px-3 py-2 text-[10px] leading-relaxed text-white/55">
+                      {message}
+                    </div>
+                  )}
 
+                  <div className="grid grid-cols-[1fr_auto] gap-2 px-4 pb-4">
+                    <button
+                      type="button"
+                      onClick={handleCheckIn}
+                      disabled={checkingIn || isCheckedIn(selectedCheckpoint.id)}
+                      className={`min-h-12 rounded-2xl px-4 text-sm font-black transition ${
+                        isCheckedIn(selectedCheckpoint.id)
+                          ? "border border-emerald-400/20 bg-emerald-500/15 text-emerald-300"
+                          : canCheckIn
+                          ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-400"
+                          : "bg-white/10 text-white/80 hover:bg-white/15"
+                      }`}
+                    >
+                      {checkingIn
+                        ? "📡 Đang xác nhận..."
+                        : isCheckedIn(selectedCheckpoint.id)
+                        ? "✓ Đã check-in"
+                        : canCheckIn
+                        ? "📍 Check-in ngay"
+                        : "📍 Kiểm tra để check-in"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={updateLocation}
+                      disabled={locationLoading}
+                      className="h-12 w-12 rounded-2xl border border-white/10 bg-white/5 text-lg text-white/70 transition hover:bg-white/10 disabled:opacity-50"
+                      title="Kiểm tra GPS"
+                      aria-label="Kiểm tra GPS"
+                    >
+                      {locationLoading ? "📡" : "◎"}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-1 border-t border-white/5 px-4 py-2">
+                    <button
+                      type="button"
+                      onClick={openCheckpointDetail}
+                      className="rounded-lg px-3 py-1.5 text-[10px] font-semibold text-white/40 transition hover:bg-white/5 hover:text-white/70"
+                    >
+                      📖 Chi tiết
+                    </button>
+                    <span className="text-white/10">•</span>
+                    <button
+                      type="button"
+                      onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
+                      className="rounded-lg px-3 py-1.5 text-[10px] font-semibold text-white/40 transition hover:bg-white/5 hover:text-white/70"
+                    >
+                      {savedCheckpoints.some((item) => item.id === selectedCheckpoint.id) ? "🔖 Đã lưu" : "🔖 Lưu điểm"}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
