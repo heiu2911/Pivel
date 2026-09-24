@@ -7186,93 +7186,25 @@ export default function Home() {
             </div>
 
             {/* ================= ACHIEVEMENTS ================= */}
-
             <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
-
               <div className="flex items-center justify-between mb-4">
-
                 <div>
-                  <p className="text-xs text-blue-300 font-semibold">
-                    ACHIEVEMENTS
-                  </p>
-
-                  <h3 className="text-xl font-black mt-1">
-                    Thành tựu hành trình
-                  </h3>
+                  <p className="text-xs text-blue-300 font-semibold">ACHIEVEMENTS</p>
+                  <h3 className="text-xl font-black mt-1">Thành tựu hành trình</h3>
                 </div>
-
-                <div className="text-right">
-                  <p className="text-lg font-black">
-                    {unlockedAchievementCount}/{achievements.length}
-                  </p>
-
-                  <p className="text-[10px] text-white/35">
-                    đã mở khóa
-                  </p>
-                </div>
-
+                <p className="text-lg font-black">{unlockedAchievementCount}/{achievements.length}</p>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                {achievements.map(
-                  (achievement) => (
-                    <div
-                      key={
-                        achievement.id
-                      }
-                      className={`flex items-center gap-3 rounded-2xl border p-4 transition ${
-                        achievement.unlocked
-                          ? "bg-blue-500/10 border-blue-400/20"
-                          : "bg-black/10 border-white/5 opacity-45"
-                      }`}
-                    >
-
-                      <div
-                        className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-2xl ${
-                          achievement.unlocked
-                            ? "bg-blue-500/15"
-                            : "bg-black/20 grayscale"
-                        }`}
-                      >
-                        {achievement.unlocked
-                          ? achievement.icon
-                          : "🔒"}
-                      </div>
-
-                      <div className="min-w-0">
-
-                        <p className="font-bold text-sm">
-                          {achievement.name}
-                        </p>
-
-                        <p className="text-xs text-white/40 mt-1 leading-relaxed">
-                          {achievement.description}
-                        </p>
-
-                        <p
-                          className={`text-[10px] mt-2 font-semibold ${
-                            achievement.unlocked
-                              ? "text-blue-300"
-                              : "text-white/25"
-                          }`}
-                        >
-                          {achievement.unlocked
-                            ? "✓ Đã mở khóa"
-                            : "Chưa mở khóa"}
-                        </p>
-
-                      </div>
-
-                    </div>
-                  )
-                )}
-
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {achievements.slice(0, 8).map((achievement) => (
+                  <div key={achievement.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                    <p className="text-2xl">{achievement.unlocked ? achievement.icon : "🔒"}</p>
+                    <p className="mt-2 text-sm font-bold">{achievement.name}</p>
+                    <p className="mt-1 text-[10px] text-white/40">{achievement.unlocked ? "Đã mở khóa" : "Chưa mở khóa"}</p>
+                  </div>
+                ))}
               </div>
-
             </div>
 
-            {/* ================= REGIONAL BADGES ================= */}
             <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -7283,16 +7215,15 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {regionalBadges.map((badge) => (
-                  <div key={badge.id} className={`rounded-2xl border p-4 ${badge.unlocked ? "bg-purple-500/10 border-purple-400/20" : "bg-black/10 border-white/5 opacity-45"}`}>
+                  <div key={badge.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{badge.unlocked ? badge.icon : "🔒"}</p>
-                    <p className="text-sm font-bold mt-2">{badge.name}</p>
-                    <p className="text-[10px] text-white/40 mt-1">{badge.description}</p>
+                    <p className="mt-2 text-sm font-bold">{badge.name}</p>
+                    <p className="mt-1 text-[10px] text-white/40">{badge.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* ================= ADVANCED ACHIEVEMENTS ================= */}
             <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -7303,89 +7234,20 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {advancedAchievements.map((item) => (
-                  <div key={item.id} className={`rounded-2xl border p-4 ${item.unlocked ? "bg-orange-500/10 border-orange-400/20" : "bg-black/10 border-white/5 opacity-45"}`}>
+                  <div key={item.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{item.unlocked ? item.icon : "🔒"}</p>
-                    <p className="text-sm font-bold mt-2">{item.name}</p>
-                    <p className="text-[10px] text-white/40 mt-1">{item.description}</p>
+                    <p className="mt-2 text-sm font-bold">{item.name}</p>
+                    <p className="mt-1 text-[10px] text-white/40">{item.description}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 rounded-xl bg-blue-500/10 border border-blue-400/15 p-3">
-                <p className="text-xs text-blue-200">💡 Bạn còn thiếu: {missingAchievements.length ? missingAchievements.slice(0, 3).map((item) => item.name).join(", ") : "không còn huy hiệu cơ bản nào."}</p>
-              </div>
             </div>
 
-            {loading ? (
-              <div className="text-center py-10 text-white/50">
-                Đang tải huy hiệu...
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-                {checkpoints.map(
-                  (checkpoint) => {
-                    const unlocked =
-                      isCheckedIn(
-                        checkpoint.id
-                      );
-
-                    return (
-                      <div
-                        key={
-                          checkpoint.id
-                        }
-                        className={`rounded-3xl border p-5 text-center transition ${
-                          unlocked
-                            ? "bg-white/10 border-white/15"
-                            : "bg-white/[0.03] border-white/5 opacity-50"
-                        }`}
-                      >
-
-                        <div
-                          className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl ${
-                            unlocked
-                              ? "bg-white/10"
-                              : "bg-black/20 grayscale"
-                          }`}
-                        >
-                          {unlocked
-                            ? checkpoint.icon ??
-                              "🏆"
-                            : "🔒"}
-                        </div>
-
-                        <h3 className="font-bold text-sm mt-4">
-                          {checkpoint.badge ??
-                            checkpoint.name}
-                        </h3>
-
-                        <p className="text-xs text-white/40 mt-1">
-                          {unlocked
-                            ? "Đã mở khóa"
-                            : "Chưa mở khóa"}
-                        </p>
-
-                      </div>
-                    );
-                  }
-                )}
-
-              </div>
-            )}
-
-            <button
-              onClick={
-                resetProgress
-              }
-              className="mt-8 text-xs text-red-300/60 hover:text-red-300 transition"
-            >
+            <button type="button" onClick={resetProgress} className="mt-2 text-xs text-red-300/60 hover:text-red-300 transition">
               Reset dữ liệu demo
             </button>
 
-          </section>
-        )}
-
-        {/* ================= UGC / CAMERA FIRST ================= */}
+            {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
           <section className="fixed inset-0 z-40 bg-black text-white">
             {cameraOpen ? (
