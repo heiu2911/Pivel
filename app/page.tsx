@@ -7557,7 +7557,7 @@ export default function Home() {
                   ) : (
                     <div className="flex h-full items-center justify-center text-7xl">📸</div>
                   )}
-                  <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-40 pt-28">
+                  <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-32 pt-28">
                     <div className="flex items-end justify-between gap-4">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
