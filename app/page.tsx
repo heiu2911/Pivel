@@ -941,6 +941,7 @@ export default function Home() {
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [ugcSelectedUserId, setUgcSelectedUserId] = useState<string | null>(null);
   const [friendProfiles, setFriendProfiles] = useState<PublicProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [selectedChatFriend, setSelectedChatFriend] = useState<PublicProfile | null>(null);
@@ -3037,7 +3038,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (activeTab === "ugc" && user?.id && !ugcCameraStartedRef.current && !cameraOpen && !cameraPreviewOpen) {
+    if (activeTab === "ugc" && !ugcSelectedUserId && user?.id && !ugcCameraStartedRef.current && !cameraOpen && !cameraPreviewOpen) {
       ugcCameraStartedRef.current = true;
       void openCamera();
     }
@@ -3046,7 +3047,7 @@ export default function Home() {
       ugcCameraStartedRef.current = false;
       if (cameraOpen) closeCamera();
     }
-  }, [activeTab, user?.id, cameraOpen, cameraPreviewOpen]);
+  }, [activeTab, user?.id, cameraOpen, cameraPreviewOpen, ugcSelectedUserId]);
 
   const captureCameraPhoto = () => {
     const video = cameraVideoRef.current;
@@ -5045,6 +5046,9 @@ export default function Home() {
 
   const visiblePosts =
     posts.filter((post) => {
+      if (activeTab === "ugc" && ugcSelectedUserId) {
+        return post.user_id === ugcSelectedUserId;
+      }
       const followingMatch =
         feedMode === "all" ||
         (post.user_id !== null && followingUserIds.includes(post.user_id));
@@ -5482,6 +5486,12 @@ export default function Home() {
     setActiveTab("friends");
     await loadFollowing();
     await loadFriendProfiles();
+  };
+
+  const selectUgcTraveller = (travellerId: string | null) => {
+    setUgcSelectedUserId(travellerId);
+    setFriendsOpen(false);
+    setActiveTab("ugc");
   };
 
   const openChatWithFriend = (friend: PublicProfile) => {
@@ -7388,12 +7398,44 @@ export default function Home() {
           <section className="fixed inset-0 z-40 bg-black text-white">
             <button
               type="button"
-              onClick={() => void openFriends()}
+              onClick={() => {
+                setFriendsOpen(true);
+                void loadFriendProfiles();
+              }}
               className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-xs font-bold text-white/90 shadow-lg backdrop-blur-md transition active:scale-95"
-              aria-label="Mở bạn bè"
+              aria-label="Mở danh sách bạn bè"
             >
-              👥 Bạn bè
+              👥 {ugcSelectedUserId ? "Đang xem Traveller" : "Bạn bè"}
             </button>
+
+            {friendsOpen && (
+              <div className="absolute inset-x-3 top-16 z-50 mx-auto max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a]/95 p-3 shadow-2xl backdrop-blur-xl">
+                <div className="flex items-center justify-between px-2 py-1">
+                  <div>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-blue-300">TRAVELQUEST</p>
+                    <p className="text-base font-black">Bạn bè</p>
+                  </div>
+                  <button type="button" onClick={() => setFriendsOpen(false)} className="h-9 w-9 rounded-full bg-white/5 text-white/70">✕</button>
+                </div>
+                <div className="mt-2 max-h-[70dvh] space-y-1 overflow-y-auto pr-1">
+                  <button type="button" onClick={() => selectUgcTraveller(null)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xl">
+                      {profileAvatarUrl ? <img src={profileAvatarUrl} alt="" className="h-full w-full object-cover" /> : "🧭"}
+                    </div>
+                    <div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{profileName}</p><p className="text-[11px] text-white/40">Bạn · Moment của bạn</p></div>
+                    {!ugcSelectedUserId && <span className="text-xs text-blue-300">Đang xem</span>}
+                  </button>
+                  {friendProfiles.map((friend) => (
+                    <button key={friend.user_id} type="button" onClick={() => selectUgcTraveller(friend.user_id)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-blue-500/15 text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
+                      <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{friend.display_name}</p><p className="text-[11px] text-white/40">Level {friend.level} · {friend.post_count} moment</p></div>
+                      {ugcSelectedUserId === friend.user_id && <span className="text-xs text-blue-300">Đang xem</span>}
+                    </button>
+                  ))}
+                  {!friendsLoading && friendProfiles.length === 0 && <p className="px-3 py-5 text-center text-xs text-white/40">Chưa có bạn bè. Hãy theo dõi Traveller để xem moment của họ.</p>}
+                </div>
+              </div>
+            )}
             <div
               className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-y-contain touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               onScroll={(event) => {
@@ -7411,7 +7453,16 @@ export default function Home() {
               }}
             >
               <article className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black">
-                {cameraOpen ? (
+                {ugcSelectedUserId ? (
+                  <div className="relative h-full w-full bg-black">
+                    <div className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-5 pb-20 pt-6">
+                      <button type="button" onClick={() => selectUgcTraveller(null)} className="rounded-full border border-white/15 bg-black/35 px-3 py-2 text-xs font-bold backdrop-blur">← Camera của bạn</button>
+                      <p className="mt-3 text-lg font-black">{friendProfiles.find((friend) => friend.user_id === ugcSelectedUserId)?.display_name ?? "Traveller"}</p>
+                      <p className="text-[11px] text-white/50">Moment</p>
+                    </div>
+                    {visiblePosts[0]?.image_url ? <img src={visiblePosts[0].image_url} alt="Moment TravelQuest" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-8 text-center"><div><div className="text-5xl">📸</div><p className="mt-4 text-lg font-black">Chưa có moment</p><p className="mt-2 text-xs text-white/40">Traveller này chưa đăng moment nào.</p></div></div>}
+                  </div>
+                ) : cameraOpen ? (
                   <div className="relative h-full w-full">
                     <video
                       ref={cameraVideoRef}
