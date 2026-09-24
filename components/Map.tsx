@@ -111,6 +111,7 @@ const CHECKPOINT_IMAGE_QUERIES: Record<string, string> = {
   "Núi Bà Đen": "Ba Den Mountain Vietnam",
   "Chợ nổi Cái Răng": "Cai Rang Floating Market Vietnam",
   "Thác Datanla": "Datanla Waterfall Da Lat Vietnam",
+  "Miếu ông Trường (con)": "Miếu ông Trường con Hải Phòng Vietnam",
 };
 
 const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
@@ -272,6 +273,11 @@ const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
     phone: "+84 981 166 088",
     website: "dalat.vn",
     price: "Khoảng 30.000đ; dịch vụ vui chơi có giá riêng",
+  },
+  "Miếu ông Trường (con)": {
+    category: "Miếu / Điểm tín ngưỡng địa phương",
+    address: "Miếu ông Trường (con), Hải Phòng",
+    hours: "Mở cửa theo thời gian sinh hoạt tại địa phương",
   },
 };
 
