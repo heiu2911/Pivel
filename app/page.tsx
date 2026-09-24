@@ -356,10 +356,50 @@ export default function Home() {
   );
 
   const [showCheckpointCard, setShowCheckpointCard] = useState(true);
+  const [checkpointCardOffset, setCheckpointCardOffset] = useState({ x: 0, y: 0 });
+  const checkpointCardDragRef = useRef<{ active: boolean; startX: number; startY: number; originX: number; originY: number }>({
+    active: false,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+  });
+  const checkpointRevealSwipeRef = useRef<{ startX: number; startY: number } | null>(null);
 
   useEffect(() => {
     setShowCheckpointCard(selectedCheckpoint !== null);
+    setCheckpointCardOffset({ x: 0, y: 0 });
   }, [selectedCheckpoint]);
+
+  const handleCheckpointCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    checkpointCardDragRef.current = {
+      active: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: checkpointCardOffset.x,
+      originY: checkpointCardOffset.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleCheckpointCardPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = checkpointCardDragRef.current;
+    if (!drag.active) return;
+    setCheckpointCardOffset({
+      x: drag.originX + event.clientX - drag.startX,
+      y: drag.originY + event.clientY - drag.startY,
+    });
+  };
+
+  const handleCheckpointCardPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    checkpointCardDragRef.current.active = false;
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // Ignore pointer capture cleanup errors.
+    }
+  };
 
   // ============================================
   // ACCOUNT SETTINGS
@@ -5945,19 +5985,48 @@ export default function Home() {
 
             {selectedCheckpoint && !showCheckpointCard && (
               <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center px-3 sm:px-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCheckpointCard(true)}
-                  className="pointer-events-auto rounded-full border border-white/10 bg-[#07182a]/85 px-4 py-2.5 text-xs font-bold text-white shadow-[0_12px_35px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                <div
+                  className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-[#07182a]/85 px-2 py-2 shadow-[0_12px_35px_rgba(0,0,0,.3)] backdrop-blur-xl touch-pan-y select-none"
+                  onPointerDown={(event) => {
+                    checkpointRevealSwipeRef.current = {
+                      startX: event.clientX,
+                      startY: event.clientY,
+                    };
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  }}
+                  onPointerUp={(event) => {
+                    const start = checkpointRevealSwipeRef.current;
+                    checkpointRevealSwipeRef.current = null;
+                    if (!start) return;
+                    const dx = event.clientX - start.startX;
+                    const dy = event.clientY - start.startY;
+                    if (dx > 55 && Math.abs(dx) > Math.abs(dy)) {
+                      setShowCheckpointCard(true);
+                    }
+                    try {
+                      event.currentTarget.releasePointerCapture(event.pointerId);
+                    } catch {
+                      // Ignore pointer capture cleanup errors.
+                    }
+                  }}
+                  aria-label="Vuốt sang phải để hiện checkpoint"
                 >
-                  📍 Hiện checkpoint
-                </button>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/65 text-lg">→</span>
+                  <span className="pr-2 text-[10px] font-bold text-white/50">Vuốt sang</span>
+                </div>
               </div>
             )}
 
             {selectedCheckpoint && showCheckpointCard && (
               <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center px-3 sm:px-4">
-                <div className="pointer-events-auto mx-auto w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a]/80 shadow-[0_20px_60px_rgba(0,0,0,.35)] backdrop-blur-2xl">
+                <div
+                  className="pointer-events-auto mx-auto w-full max-w-lg cursor-grab overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a]/80 shadow-[0_20px_60px_rgba(0,0,0,.35)] backdrop-blur-2xl touch-none select-none active:cursor-grabbing"
+                  style={{ transform: `translate3d(${checkpointCardOffset.x}px, ${checkpointCardOffset.y}px, 0)` }}
+                  onPointerDown={handleCheckpointCardPointerDown}
+                  onPointerMove={handleCheckpointCardPointerMove}
+                  onPointerUp={handleCheckpointCardPointerUp}
+                  onPointerCancel={handleCheckpointCardPointerUp}
+                >
 
                   <div className="flex items-center gap-3 px-4 pt-3 pb-2">
                     <div className="h-11 w-11 shrink-0 rounded-2xl bg-blue-500/15 border border-blue-400/15 flex items-center justify-center text-2xl">
@@ -5988,7 +6057,7 @@ export default function Home() {
                       className="h-8 rounded-full bg-white/5 px-3 text-[10px] font-bold text-white/55 transition hover:bg-white/10 hover:text-white"
                       aria-label="Ẩn checkpoint"
                     >
-                      Ẩn
+                      —
                     </button>
 
                     <button
