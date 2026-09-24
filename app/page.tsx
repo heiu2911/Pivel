@@ -7386,6 +7386,14 @@ export default function Home() {
         {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
           <section className="fixed inset-0 z-40 bg-black text-white">
+            <button
+              type="button"
+              onClick={() => void openFriends()}
+              className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-xs font-bold text-white/90 shadow-lg backdrop-blur-md transition active:scale-95"
+              aria-label="Mở bạn bè"
+            >
+              👥 Bạn bè
+            </button>
             <div
               className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-y-contain touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               onScroll={(event) => {
