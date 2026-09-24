@@ -620,6 +620,10 @@ export default function Home() {
   const lastPublishedLocationAt = useRef(0);
 
   useEffect(() => {
+    if (activeTab === "ugc") setFriendsOpen(false);
+  }, [activeTab]);
+
+  useEffect(() => {
     if (!user?.id) {
       setSavedPlaceIds([]);
       return;
