@@ -7420,7 +7420,7 @@ export default function Home() {
                 <div className="mt-2 max-h-[70dvh] space-y-1 overflow-y-auto pr-1">
                   <button type="button" onClick={() => selectUgcTraveller(null)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xl">
-                      {profileAvatarUrl ? <img src={profileAvatarUrl} alt="" className="h-full w-full object-cover" /> : "🧭"}
+                      {"🧭"}
                     </div>
                     <div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{profileName}</p><p className="text-[11px] text-white/40">Bạn · Moment của bạn</p></div>
                     {!ugcSelectedUserId && <span className="text-xs text-blue-300">Đang xem</span>}
