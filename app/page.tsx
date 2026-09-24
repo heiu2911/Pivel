@@ -1828,6 +1828,17 @@ export default function Home() {
     setSearchLoading(false);
   };
 
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handleGlobalPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-traveller-search-panel]")) return;
+      dismissSearchOverlay();
+    };
+    document.addEventListener("pointerdown", handleGlobalPointerDown);
+    return () => document.removeEventListener("pointerdown", handleGlobalPointerDown);
+  }, [searchOpen]);
+
   // ============================================
   // NOTIFICATIONS - LOAD
   // ============================================
@@ -8050,15 +8061,7 @@ export default function Home() {
       ============================================ */}
 
       {searchOpen && (
-        <div
-          className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20"
-          onPointerDownCapture={(event) => {
-            const target = event.target as HTMLElement | null;
-            if (!target?.closest("[data-traveller-search-panel]")) {
-              dismissSearchOverlay();
-            }
-          }}
-        >
+        <div className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20 pointer-events-none">
 
           <button
             type="button"
@@ -8073,7 +8076,8 @@ export default function Home() {
 
           <div
             data-traveller-search-panel
-            className="relative w-full max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl"
+            onPointerDown={(event) => event.stopPropagation()}
+            className="pointer-events-auto relative w-full max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl"
             onPointerDown={(event) => event.stopPropagation()}
           >
 
