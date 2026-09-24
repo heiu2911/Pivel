@@ -355,6 +355,12 @@ export default function Home() {
     null
   );
 
+  const [showCheckpointCard, setShowCheckpointCard] = useState(true);
+
+  useEffect(() => {
+    setShowCheckpointCard(selectedCheckpoint !== null);
+  }, [selectedCheckpoint]);
+
   // ============================================
   // ACCOUNT SETTINGS
   // ============================================
@@ -5937,8 +5943,20 @@ export default function Home() {
 
             {/* SELECTED CHECKPOINT */}
 
-            {selectedCheckpoint && (
-              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none px-3 pb-[calc(33vh+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
+            {selectedCheckpoint && !showCheckpointCard && (
+              <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center px-3 sm:px-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCheckpointCard(true)}
+                  className="pointer-events-auto rounded-full border border-white/10 bg-[#07182a]/85 px-4 py-2.5 text-xs font-bold text-white shadow-[0_12px_35px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                >
+                  📍 Hiện checkpoint
+                </button>
+              </div>
+            )}
+
+            {selectedCheckpoint && showCheckpointCard && (
+              <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center px-3 sm:px-4">
                 <div className="pointer-events-auto mx-auto w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a]/80 shadow-[0_20px_60px_rgba(0,0,0,.35)] backdrop-blur-2xl">
 
                   <div className="flex items-center gap-3 px-4 pt-3 pb-2">
@@ -5963,6 +5981,15 @@ export default function Home() {
                           : "Kiểm tra GPS để biết khoảng cách"}
                       </p>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowCheckpointCard(false)}
+                      className="h-8 rounded-full bg-white/5 px-3 text-[10px] font-bold text-white/55 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Ẩn checkpoint"
+                    >
+                      Ẩn
+                    </button>
 
                     <button
                       type="button"
