@@ -7405,7 +7405,7 @@ export default function Home() {
               className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-xs font-bold text-white/90 shadow-lg backdrop-blur-md transition active:scale-95"
               aria-label="Mở danh sách bạn bè"
             >
-              👥 {ugcSelectedUserId ? "Đang xem Traveller" : "Bạn bè"}
+              👥 Bạn bè
             </button>
 
             {friendsOpen && (
@@ -7423,7 +7423,6 @@ export default function Home() {
                       {"🧭"}
                     </div>
                     <div className="min-w-0 flex-1"><p className="truncate text-sm font-black">{profileName}</p><p className="text-[11px] text-white/40">Bạn · Moment của bạn</p></div>
-                    {!ugcSelectedUserId && <span className="text-xs text-blue-300">Đang xem</span>}
                   </button>
                   {friendProfiles.map((friend) => (
                     <button key={friend.user_id} type="button" onClick={() => selectUgcTraveller(friend.user_id)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
@@ -7456,9 +7455,8 @@ export default function Home() {
                 {ugcSelectedUserId ? (
                   <div className="relative h-full w-full bg-black">
                     <div className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-5 pb-20 pt-6">
-                      <button type="button" onClick={() => selectUgcTraveller(null)} className="rounded-full border border-white/15 bg-black/35 px-3 py-2 text-xs font-bold backdrop-blur">← Camera của bạn</button>
+                      <button type="button" onClick={() => selectUgcTraveller(null)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-xl font-bold backdrop-blur" aria-label="Quay lại camera">←</button>
                       <p className="mt-3 text-lg font-black">{friendProfiles.find((friend) => friend.user_id === ugcSelectedUserId)?.display_name ?? "Traveller"}</p>
-                      <p className="text-[11px] text-white/50">Moment</p>
                     </div>
                     {visiblePosts[0]?.image_url ? <img src={visiblePosts[0].image_url} alt="Moment TravelQuest" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-8 text-center"><div><div className="text-5xl">📸</div><p className="mt-4 text-lg font-black">Chưa có moment</p><p className="mt-2 text-xs text-white/40">Traveller này chưa đăng moment nào.</p></div></div>}
                   </div>
