@@ -6156,7 +6156,12 @@ export default function Home() {
         {/* ================= MAP ================= */}
 
         {activeTab === "map" && (
-          <section className="relative h-[100dvh] min-h-0 overflow-hidden">
+          <section
+            className="relative h-[100dvh] min-h-0 overflow-hidden"
+            onPointerDownCapture={() => {
+              if (mapSearchActive) setMapSearchActive(false);
+            }}
+          >
 
             <div className="absolute inset-0">
               <Map
