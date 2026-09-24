@@ -1830,13 +1830,18 @@ export default function Home() {
 
   useEffect(() => {
     if (!searchOpen) return;
+
+    // Capture at window level so map/canvas handlers cannot swallow the tap.
+    // Closing only collapses the search UI; the query/results stay intact.
     const handleGlobalPointerDown = (event: PointerEvent) => {
       const target = event.target as HTMLElement | null;
       if (target?.closest("[data-traveller-search-panel]")) return;
       dismissSearchOverlay();
     };
-    document.addEventListener("pointerdown", handleGlobalPointerDown);
-    return () => document.removeEventListener("pointerdown", handleGlobalPointerDown);
+
+    window.addEventListener("pointerdown", handleGlobalPointerDown, true);
+    return () =>
+      window.removeEventListener("pointerdown", handleGlobalPointerDown, true);
   }, [searchOpen]);
 
   // ============================================
