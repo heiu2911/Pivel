@@ -6053,6 +6053,7 @@ export default function Home() {
 
                     <button
                       type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
                       onClick={() => setShowCheckpointCard(false)}
                       className="h-8 rounded-full bg-white/5 px-3 text-[10px] font-bold text-white/55 transition hover:bg-white/10 hover:text-white"
                       aria-label="Ẩn checkpoint"
@@ -6062,6 +6063,7 @@ export default function Home() {
 
                     <button
                       type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
                       onClick={() => {
                         setSelectedCheckpoint(null);
                         selectedCheckpointRef.current = null;
