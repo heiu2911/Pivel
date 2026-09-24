@@ -7394,93 +7394,108 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Floating camera + compact composer */}
-              <button
-                type="button"
-                onClick={() => void openCamera()}
-                className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-blue-500 text-2xl shadow-2xl shadow-blue-950/50 transition hover:scale-105 hover:bg-blue-400 active:scale-95"
-                aria-label="Chia sẻ moment"
-              >
-                📸
-              </button>
+              <div className="mb-5 overflow-hidden rounded-[28px] border border-white/10 bg-black shadow-2xl shadow-black/30">
+                <div className="relative aspect-[4/5] w-full overflow-hidden">
+                  {cameraOpen ? (
+                    <>
+                      <video
+                        ref={cameraVideoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+                      />
 
-              {cameraOpen && (
-                <div className="fixed inset-0 z-[100] bg-black">
-                  <video
-                    ref={cameraVideoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
-                  />
+                      <div className="absolute inset-x-0 top-0 flex items-center justify-between p-4">
+                        <span className="rounded-full bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">
+                          Live camera
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void switchCamera()}
+                          className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-lg backdrop-blur"
+                          aria-label="Đổi camera"
+                        >
+                          🔄
+                        </button>
+                      </div>
 
-                  <div className="absolute inset-x-0 top-0 flex items-center justify-between p-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+                      {cameraError && (
+                        <div className="absolute left-4 right-4 top-16 rounded-2xl bg-black/65 p-3 text-center text-xs text-white/80 backdrop-blur">
+                          {cameraError}
+                        </div>
+                      )}
+
+                      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5">
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="rounded-full bg-black/50 px-4 py-2.5 text-xs font-bold text-white/85 backdrop-blur"
+                        >
+                          🖼️ Thư viện
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={captureCameraPhoto}
+                          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 border-white bg-white/20 shadow-2xl active:scale-90"
+                          aria-label="Chụp ảnh"
+                        >
+                          <span className="h-14 w-14 rounded-full bg-white" />
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={closeCamera}
+                          className="rounded-full bg-black/50 px-4 py-2.5 text-xs font-bold text-white/85 backdrop-blur"
+                        >
+                          Đóng
+                        </button>
+                      </div>
+                    </>
+                  ) : (
                     <button
                       type="button"
-                      onClick={closeCamera}
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-xl backdrop-blur"
-                      aria-label="Đóng camera"
+                      onClick={() => void openCamera()}
+                      className="group relative flex h-full w-full items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,_rgba(59,130,246,0.18),_transparent_55%)] text-left"
                     >
-                      ×
+                      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),transparent_35%,rgba(0,0,0,0.55))]" />
+                      <div className="relative flex flex-col items-center px-8 text-center">
+                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl shadow-2xl transition group-hover:scale-105">
+                          📸
+                        </div>
+                        <p className="mt-5 text-xl font-black">Khoảnh khắc của cậu</p>
+                        <p className="mt-2 max-w-xs text-sm text-white/45">
+                          Chạm để bật camera. Sau đó lướt xuống để xem từng moment.
+                        </p>
+                        <span className="mt-5 rounded-full bg-blue-500 px-5 py-2.5 text-xs font-black shadow-lg shadow-blue-950/40">
+                          Mở camera
+                        </span>
+                      </div>
                     </button>
-                    <span className="rounded-full bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">
-                      Travel Moment
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => void switchCamera()}
-                      className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-lg backdrop-blur"
-                      aria-label="Đổi camera"
-                    >
-                      🔄
-                    </button>
-                  </div>
-
-                  {cameraError && (
-                    <div className="absolute left-5 right-5 top-24 rounded-2xl bg-black/65 p-4 text-center text-xs text-white/80 backdrop-blur">
-                      {cameraError}
-                    </div>
                   )}
-
-                  <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-5 p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
-                    <button
-                      type="button"
-                      onClick={captureCameraPhoto}
-                      className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/20 shadow-2xl active:scale-90"
-                      aria-label="Chụp ảnh"
-                    >
-                      <span className="h-14 w-14 rounded-full bg-white" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => imageInputRef.current?.click()}
-                      className="rounded-full bg-black/45 px-4 py-2 text-xs text-white/80 backdrop-blur"
-                    >
-                      🖼️ Chọn ảnh từ máy
-                    </button>
-                  </div>
                 </div>
-              )}
+              </div>
 
               <div className="mb-5 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
-                <button
-                  type="button"
-                  onClick={() => void openCamera()}
-                  className="flex w-full items-center gap-3 rounded-2xl bg-black/20 p-3 text-left transition hover:bg-white/5 active:scale-[0.99]"
-                >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500 text-xl shadow-lg shadow-blue-950/40">
-                    📸
+                <div className="flex items-center gap-3 rounded-2xl bg-black/20 p-3">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/10 text-xl">
+                    🖼️
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold">{profileName}</p>
                     <p className="mt-0.5 text-[11px] text-white/35">
-                      Chụp một khoảnh khắc ngay bây giờ
+                      Hoặc chọn ảnh có sẵn từ máy
                     </p>
                   </div>
-                  <span className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white/60">
-                    Camera
-                  </span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold text-white/70"
+                  >
+                    Chọn ảnh
+                  </button>
+                </div>
 
                 <input
                   ref={imageInputRef}
