@@ -5481,6 +5481,7 @@ export default function Home() {
       )}
 
       {/* MAP TOOLBAR */}
+      {activeTab === "map" && (
       <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-2 pt-2 sm:px-3">
         <div className="pointer-events-auto mx-auto max-w-[1600px]">
           <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-[#07182a]/55 px-2 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:px-3">
@@ -5678,6 +5679,7 @@ export default function Home() {
           </div>
         </div>
       </header>
+      )}
      <div className={activeTab === "map" ? "pb-0" : "pb-24"}>
 
         {/* ================= MAP ================= */}
