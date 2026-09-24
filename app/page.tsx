@@ -1821,6 +1821,13 @@ export default function Home() {
     setSearchLoading(false);
   };
 
+  // Tap/click outside the search UI: collapse it back to the normal top UI,
+  // but keep the current query/results so reopening search does not lose context.
+  const dismissSearchOverlay = () => {
+    setSearchOpen(false);
+    setSearchLoading(false);
+  };
+
   // ============================================
   // NOTIFICATIONS - LOAD
   // ============================================
@@ -8041,7 +8048,7 @@ export default function Home() {
             aria-label="Đóng tìm kiếm"
             onPointerDown={(event) => {
               event.preventDefault();
-              closeSearch();
+              dismissSearchOverlay();
             }}
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
