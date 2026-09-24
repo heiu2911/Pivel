@@ -7388,105 +7388,107 @@ export default function Home() {
         {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
           <section className="fixed inset-0 z-40 bg-black text-white">
-            <div className="relative h-full w-full overflow-hidden">
-              <div className="pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/65 via-black/20 to-transparent px-5 pb-16 pt-[calc(env(safe-area-inset-top)+1rem)]">
-                <div className="flex items-center justify-between">
-                  <div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-white/55">TravelQuest</p><p className="mt-1 text-lg font-black">Khoảnh khắc</p></div>
-                  <span className="rounded-full bg-black/35 px-3 py-1.5 text-[10px] font-bold text-white/65 backdrop-blur">{visiblePosts.length} moments</span>
-                </div>
-              </div>
-
-              {cameraOpen ? (
-                <div className="relative h-full w-full bg-black">
-                  <video ref={cameraVideoRef} autoPlay playsInline muted className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`} />
-                  <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/80 via-black/30 to-transparent px-5 pb-[calc(env(safe-area-inset-bottom)+6.5rem)] pt-28">
-                    <div className="mx-auto flex max-w-sm items-center justify-between gap-6">
-                      <button type="button" onClick={() => imageInputRef.current?.click()} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-xl backdrop-blur active:scale-95" aria-label="Chọn ảnh từ thư viện">🖼️</button>
-                      <button type="button" onClick={captureCameraPhoto} className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-[5px] border-white/90 bg-white/20 shadow-2xl active:scale-90" aria-label="Chụp ảnh"><span className="h-[4.5rem] w-[4.5rem] rounded-full bg-white" /></button>
-                      <button type="button" onClick={() => void switchCamera()} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-xl backdrop-blur active:scale-95" aria-label="Đổi camera">🔄</button>
-                    </div>
-                    <button type="button" onClick={closeCamera} className="mx-auto mt-5 block rounded-full bg-black/45 px-4 py-2 text-[11px] font-bold text-white/65 backdrop-blur">Đóng camera</button>
+            {cameraOpen ? (
+              <div className="relative h-full w-full">
+                <video
+                  ref={cameraVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-5 pb-28 pt-24">
+                  <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
+                    <button type="button" onClick={() => imageInputRef.current?.click()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🖼️</button>
+                    <button type="button" onClick={captureCameraPhoto} className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2">
+                      <span className="block h-full w-full rounded-full bg-white" />
+                    </button>
+                    <button type="button" onClick={() => void switchCamera()} className="h-12 w-12 rounded-full bg-white/15 text-xl backdrop-blur">🔄</button>
                   </div>
-                  {cameraError && <div className="absolute left-4 right-4 top-20 z-30 rounded-2xl bg-black/70 p-3 text-center text-xs text-white/80 backdrop-blur">{cameraError}</div>}
-                </div>
-              ) : (
-                <div className="relative h-full w-full bg-[#101010]">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08),_transparent_48%)]" />
-                  <button type="button" onClick={() => void openCamera()} className="relative flex h-full w-full flex-col items-center justify-center px-8 text-center active:bg-white/[0.03]">
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl text-black shadow-2xl">📸</div>
-                    <p className="mt-6 text-2xl font-black">Chụp một khoảnh khắc</p>
-                    <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/40">Camera là màn hình chính. Chụp xong, xác nhận và chia sẻ ngay.</p>
-                    <span className="mt-6 rounded-full bg-white px-6 py-3 text-xs font-black text-black">Mở camera</span>
+                  <button type="button" onClick={closeCamera} className="mx-auto mt-4 block rounded-full bg-black/50 px-4 py-2 text-xs font-bold text-white/70">
+                    Đóng camera
                   </button>
-                  {visiblePosts.length > 0 && <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] z-10 text-center"><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">Vuốt lên để xem moment</p></div>}
                 </div>
-              )}
-
-              <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
-
-              {cameraPreviewOpen && imagePreview && (
-                <div className="fixed inset-0 z-[120] bg-black">
-                  <div className="relative h-full w-full">
-                    <img src={imagePreview} alt="Ảnh moment vừa chụp" className="h-full w-full object-contain" />
-                    <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent px-5 pb-10 pt-[calc(env(safe-area-inset-top)+1rem)]">
-                      <button type="button" onClick={handleRemoveImage} className="flex h-10 w-10 items-center justify-center rounded-full bg-black/45 text-xl backdrop-blur" aria-label="Hủy ảnh">×</button>
-                      <span className="rounded-full bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">Preview</span><span className="h-10 w-10" />
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/90 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-24">
-                      <textarea value={postContent} onChange={(event) => setPostContent(event.target.value)} maxLength={1000} placeholder="Thêm chú thích..." className="min-h-14 w-full resize-none rounded-2xl border border-white/10 bg-white/10 p-3 text-sm text-white outline-none placeholder:text-white/35 backdrop-blur" />
-                      <div className="mt-2 flex gap-2">
-                        <select value={selectedPostCheckpoint ?? ""} onChange={(event) => setSelectedPostCheckpoint(event.target.value ? Number(event.target.value) : null)} className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-black/50 px-3 py-3 text-xs text-white outline-none">
-                          <option value="">📍 Không gắn địa điểm</option>{checkpoints.map((checkpoint) => <option key={checkpoint.id} value={checkpoint.id}>{checkpoint.icon ?? "📍"} {checkpoint.name}</option>)}
-                        </select>
-                        <button type="button" onClick={() => void handleCreatePost()} disabled={posting} className="rounded-2xl bg-white px-5 py-3 text-xs font-black text-black disabled:opacity-50">{posting ? "..." : "Chia sẻ"}</button>
-                      </div>
-                      {postMessage && <p className="px-1 pt-2 text-xs text-blue-300">{postMessage}</p>}
-                    </div>
+                {cameraError && (
+                  <div className="absolute left-4 right-4 top-20 rounded-2xl bg-black/70 p-3 text-center text-xs backdrop-blur">
+                    {cameraError}
                   </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center bg-[#101010] px-6 text-center">
+                <button type="button" onClick={() => void openCamera()} className="flex h-24 w-24 items-center justify-center rounded-full bg-white text-4xl text-black">
+                  📸
+                </button>
+                <p className="mt-6 text-2xl font-black">Chụp một khoảnh khắc</p>
+                <p className="mt-2 max-w-xs text-sm text-white/45">Camera là màn hình chính của TravelQuest.</p>
+                <button type="button" onClick={() => void openCamera()} className="mt-6 rounded-full bg-white px-6 py-3 text-xs font-black text-black">
+                  Mở camera
+                </button>
+              </div>
+            )}
+
+            <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
+
+            {cameraPreviewOpen && imagePreview && (
+              <div className="fixed inset-0 z-[120] bg-black">
+                <img src={imagePreview} alt="Ảnh moment vừa chụp" className="h-full w-full object-contain" />
+                <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-5">
+                  <button type="button" onClick={handleRemoveImage} className="h-10 w-10 rounded-full bg-black/50 text-xl">×</button>
+                  <span className="rounded-full bg-black/50 px-3 py-2 text-[10px] font-bold">PREVIEW</span>
+                  <span className="h-10 w-10" />
                 </div>
-              )}
-
-              <div className="absolute inset-x-0 bottom-0 z-30 pointer-events-none">
-                <div className="mx-auto max-w-md pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
-                  <div className="pointer-events-auto mx-3 rounded-2xl border border-white/10 bg-black/45 p-1.5 backdrop-blur-xl">
-                    <div className="flex h-14 items-center justify-around">
-                      <button type="button" onClick={() => setActiveTab("map")} className="flex min-w-[72px] flex-col items-center gap-0.5 rounded-xl px-4 py-1.5 text-white/45"><span className="text-lg">🗺️</span><span className="text-[9px] font-bold">Map</span></button>
-                      <button type="button" onClick={() => setActiveTab("badges")} className="flex min-w-[72px] flex-col items-center gap-0.5 rounded-xl px-4 py-1.5 text-white/45"><span className="text-lg">🏆</span><span className="text-[9px] font-bold">Huy hiệu</span></button>
-                      <button type="button" onClick={() => { if (!cameraOpen) void openCamera(); }} className="flex min-w-[72px] flex-col items-center gap-0.5 rounded-xl bg-white/10 px-4 py-1.5 text-white"><span className="text-lg">📸</span><span className="text-[9px] font-black">Chụp</span></button>
-                    </div>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-24">
+                  <textarea
+                    value={postContent}
+                    onChange={(event) => setPostContent(event.target.value)}
+                    placeholder="Thêm chú thích..."
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 p-3 text-sm outline-none"
+                  />
+                  <div className="mt-2 flex gap-2">
+                    <select
+                      value={selectedPostCheckpoint ?? ""}
+                      onChange={(event) => setSelectedPostCheckpoint(event.target.value ? Number(event.target.value) : null)}
+                      className="min-w-0 flex-1 rounded-2xl bg-black/60 px-3 py-3 text-xs outline-none"
+                    >
+                      <option value="">📍 Không gắn địa điểm</option>
+                      {checkpoints.map((checkpoint) => (
+                        <option key={checkpoint.id} value={checkpoint.id}>
+                          {checkpoint.icon ?? "📍"} {checkpoint.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={() => void handleCreatePost()} disabled={posting} className="rounded-2xl bg-white px-5 py-3 text-xs font-black text-black">
+                      {posting ? "..." : "Chia sẻ"}
+                    </button>
                   </div>
+                  {postMessage && <p className="mt-2 text-xs text-blue-300">{postMessage}</p>}
                 </div>
               </div>
+            )}
 
-              {!cameraOpen && !cameraPreviewOpen && visiblePosts.length > 0 && (
-                <div className="pointer-events-none absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 h-[calc(100dvh-8rem)] overflow-y-auto snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="min-h-full pt-[calc(100dvh-8.5rem)]">
-                    {visiblePosts.map((post) => (
-                      <article key={post.id} className="relative mb-2 h-[calc(100dvh-8.5rem)] snap-start overflow-hidden bg-black">
-                        {post.image_url ? <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover" loading="lazy" /> : <div className="flex h-full w-full items-center justify-center bg-[#171717] text-7xl">📸</div>}
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent p-5 pt-24">
-                          <div className="flex items-end justify-between gap-4">
-                            <div className="min-w-0">
-                              <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
-                              <p className="mt-1 text-[11px] text-white/45">{formatPostTime(post.created_at)}</p>
-                              {post.content && <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-white/85">{post.content}</p>}
-                              {post.checkpoint && <button type="button" onClick={() => { selectCheckpoint(post.checkpoint!); setActiveTab("map"); }} className="pointer-events-auto mt-3 rounded-full bg-black/45 px-3 py-2 text-[10px] font-bold text-white/75 backdrop-blur">{post.checkpoint.icon ?? "📍"} {post.checkpoint.name}</button>}
-                            </div>
-                            <div className="pointer-events-auto flex shrink-0 flex-col items-center gap-3">
-                              <button type="button" onClick={() => handleLike(post)} disabled={likeLoading[post.id]} className="flex h-11 w-11 flex-col items-center justify-center rounded-full bg-black/40 text-xs backdrop-blur"><span className={likedPostIds.includes(post.id) ? "text-red-300" : "text-white"}>{likedPostIds.includes(post.id) ? "♥" : "♡"}</span><span className="text-[9px] text-white/65">{post.likes}</span></button>
-                              <button type="button" onClick={() => { const input = document.getElementById(`comment-${post.id}`); input?.scrollIntoView({ behavior: "smooth", block: "center" }); }} className="flex h-11 w-11 flex-col items-center justify-center rounded-full bg-black/40 text-xs backdrop-blur"><span>💬</span><span className="text-[9px] text-white/65">{comments.filter((comment) => comment.post_id === post.id).length}</span></button>
-                              <button type="button" onClick={() => savePost(post.id)} className="flex h-11 w-11 items-center justify-center rounded-full bg-black/40 text-xs backdrop-blur">{savedPostIds.includes(post.id) ? "🔖" : "☆"}</button>
-                            </div>
-                          </div>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            {!cameraOpen && !cameraPreviewOpen && visiblePosts.length > 0 && (
+              <div className="absolute inset-x-0 bottom-20 top-0 overflow-y-auto snap-y snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {visiblePosts.map((post) => (
+                  <article key={post.id} className="relative h-[calc(100dvh-5rem)] snap-start bg-black">
+                    {post.image_url ? (
+                      <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-7xl">📸</div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-5 pt-24">
+                      <p className="text-sm font-black">{post.user_id === user?.id ? profileName : "Traveller"}</p>
+                      <p className="mt-1 text-[11px] text-white/50">{formatPostTime(post.created_at)}</p>
+                      {post.content && <p className="mt-2 text-sm text-white/85">{post.content}</p>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
-        )}      {/* ================= BOTTOM NAV ================= */}
+        )}
+
+      {/* ================= BOTTOM NAV ================= */}
 
       <nav className="fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)]">
         <div className="rounded-2xl border border-white/10 bg-[#07182a]/55 p-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-xl">
