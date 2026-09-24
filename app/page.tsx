@@ -905,6 +905,17 @@ export default function Home() {
 
   const [commentOpenPostId, setCommentOpenPostId] = useState<number | null>(null);
   const [ugcFeedIndex, setUgcFeedIndex] = useState(0);
+  const ugcDoubleTapRef = useRef<{ postId: number | null; at: number }>({ postId: null, at: 0 });
+  const handleUgcTap = (post: Post) => {
+    const now = Date.now();
+    const previous = ugcDoubleTapRef.current;
+    if (previous.postId === post.id && now - previous.at < 320) {
+      ugcDoubleTapRef.current = { postId: null, at: 0 };
+      void handleLike(post);
+      return;
+    }
+    ugcDoubleTapRef.current = { postId: post.id, at: now };
+  };
 
   const [, setCommentsLoading] =
     useState(false);
@@ -7643,7 +7654,7 @@ export default function Home() {
                 const authorName = post.user_id === user?.id ? profileName : friend?.display_name ?? "Traveller";
                 const authorAvatar = post.user_id === user?.id ? avatarImageUrl : friend?.avatar_url ?? null;
                 return (
-                  <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black touch-manipulation" onDoubleClick={() => void handleLike(post)}>
+                  <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black touch-manipulation" onPointerUp={() => handleUgcTap(post)}>
                     {post.image_url ? (
                       <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover select-none" draggable={false} />
                     ) : (
