@@ -1028,6 +1028,12 @@ export default function Home() {
   const imageInputRef =
     useRef<HTMLInputElement | null>(null);
 
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("environment");
+  const [cameraError, setCameraError] = useState("");
+  const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
   // ============================================
   // BADGE UNLOCK ANIMATION
   // ============================================
@@ -2945,6 +2951,124 @@ export default function Home() {
     }
   };
 
+  const stopCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    if (cameraVideoRef.current) cameraVideoRef.current.srcObject = null;
+  };
+
+  const closeCamera = () => {
+    stopCamera();
+    setCameraOpen(false);
+    setCameraError("");
+  };
+
+  const openCamera = async () => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage("🔐 Hãy đăng nhập để chụp và đăng moment.");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Trình duyệt này không hỗ trợ camera. Cậu có thể chọn ảnh từ máy.");
+      return;
+    }
+
+    stopCamera();
+    setCameraError("");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cameraFacing },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      setCameraOpen(true);
+      requestAnimationFrame(() => {
+        if (cameraVideoRef.current) {
+          cameraVideoRef.current.srcObject = stream;
+          void cameraVideoRef.current.play();
+        }
+      });
+    } catch (error) {
+      console.error("Lỗi mở camera:", error);
+      setCameraError("Không mở được camera. Hãy cấp quyền camera cho trình duyệt rồi thử lại.");
+    }
+  };
+
+  const switchCamera = async () => {
+    const nextFacing = cameraFacing === "user" ? "environment" : "user";
+    setCameraFacing(nextFacing);
+
+    if (!cameraOpen) return;
+
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: nextFacing },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      if (cameraVideoRef.current) {
+        cameraVideoRef.current.srcObject = stream;
+        await cameraVideoRef.current.play();
+      }
+    } catch (error) {
+      console.error("Lỗi đổi camera:", error);
+      setCameraError("Không thể đổi camera.");
+    }
+  };
+
+  const captureCameraPhoto = () => {
+    const video = cameraVideoRef.current;
+    if (!video || video.readyState < 2 || video.videoWidth === 0) {
+      setCameraError("Camera chưa sẵn sàng, thử lại sau một chút.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    const maxWidth = 1440;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setCameraError("Không thể chụp ảnh trên thiết bị này.");
+      return;
+    }
+
+    if (cameraFacing === "user") {
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setCameraError("Không tạo được ảnh. Thử lại nhé.");
+        return;
+      }
+
+      const file = new File([blob], `travelquest-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
+
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+      setPostMessage("");
+      closeCamera();
+    }, "image/jpeg", 0.9);
+  };
+
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
+
   // ============================================
   // IMAGE PREVIEW CLEANUP
   // ============================================
@@ -4312,21 +4436,20 @@ export default function Home() {
       const content =
         postContent.trim();
 
-      if (!content) {
+      if (!content && !selectedImage) {
         setPostMessage(
-          "✍️ Hãy viết nội dung trước khi đăng."
+          "📸 Chụp ảnh hoặc viết một moment trước khi đăng."
         );
-
         return;
       }
 
       if (
+        content &&
         content.length < 3
       ) {
         setPostMessage(
           "Bài viết cần ít nhất 3 ký tự."
         );
-
         return;
       }
 
@@ -4453,7 +4576,7 @@ export default function Home() {
               currentUserId,
             checkpoint_id:
               selectedPostCheckpoint,
-            content,
+            content: content || "📸 Khoảnh khắc của tôi",
             likes: 0,
             image_url:
               imageUrl,
@@ -7268,12 +7391,70 @@ export default function Home() {
               {/* Floating camera + compact composer */}
               <button
                 type="button"
-                onClick={() => imageInputRef.current?.click()}
+                onClick={() => void openCamera()}
                 className="fixed bottom-24 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-white/15 bg-blue-500 text-2xl shadow-2xl shadow-blue-950/50 transition hover:scale-105 hover:bg-blue-400 active:scale-95"
                 aria-label="Chia sẻ moment"
               >
                 📸
               </button>
+
+              {cameraOpen && (
+                <div className="fixed inset-0 z-[100] bg-black">
+                  <video
+                    ref={cameraVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+                  />
+
+                  <div className="absolute inset-x-0 top-0 flex items-center justify-between p-5 pt-[calc(env(safe-area-inset-top)+1rem)]">
+                    <button
+                      type="button"
+                      onClick={closeCamera}
+                      className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-xl backdrop-blur"
+                      aria-label="Đóng camera"
+                    >
+                      ×
+                    </button>
+                    <span className="rounded-full bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] backdrop-blur">
+                      Travel Moment
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void switchCamera()}
+                      className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-lg backdrop-blur"
+                      aria-label="Đổi camera"
+                    >
+                      🔄
+                    </button>
+                  </div>
+
+                  {cameraError && (
+                    <div className="absolute left-5 right-5 top-24 rounded-2xl bg-black/65 p-4 text-center text-xs text-white/80 backdrop-blur">
+                      {cameraError}
+                    </div>
+                  )}
+
+                  <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-5 p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+                    <button
+                      type="button"
+                      onClick={captureCameraPhoto}
+                      className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-white/20 shadow-2xl active:scale-90"
+                      aria-label="Chụp ảnh"
+                    >
+                      <span className="h-14 w-14 rounded-full bg-white" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      className="rounded-full bg-black/45 px-4 py-2 text-xs text-white/80 backdrop-blur"
+                    >
+                      🖼️ Chọn ảnh từ máy
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-4 rounded-[26px] border border-white/10 bg-white/[0.045] p-3">
                 <div className="flex items-center gap-3">
@@ -7320,7 +7501,7 @@ export default function Home() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => imageInputRef.current?.click()}
+                    onClick={() => void openCamera()}
                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-black/15 py-4 text-xs text-white/45 transition hover:bg-white/5 hover:text-white"
                   >
                     📸 Thêm ảnh
