@@ -1030,6 +1030,7 @@ export default function Home() {
 
   const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraPreviewOpen, setCameraPreviewOpen] = useState(false);
+  const ugcCameraStartedRef = useRef(false);
   const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("environment");
   const [cameraError, setCameraError] = useState("");
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -3023,12 +3024,14 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (activeTab === "ugc" && user?.id && !cameraOpen && !cameraPreviewOpen) {
+    if (activeTab === "ugc" && user?.id && !ugcCameraStartedRef.current && !cameraOpen && !cameraPreviewOpen) {
+      ugcCameraStartedRef.current = true;
       void openCamera();
     }
 
-    if (activeTab !== "ugc" && cameraOpen) {
-      closeCamera();
+    if (activeTab !== "ugc") {
+      ugcCameraStartedRef.current = false;
+      if (cameraOpen) closeCamera();
     }
   }, [activeTab, user?.id, cameraOpen, cameraPreviewOpen]);
 
