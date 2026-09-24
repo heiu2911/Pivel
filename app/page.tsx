@@ -7693,18 +7693,6 @@ export default function Home() {
                     ) : (
                       <div className="flex h-full items-center justify-center text-7xl">📸</div>
                     )}
-                    <button
-                      type="button"
-                      onPointerUp={(event) => event.stopPropagation()}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setUgcMorePostId(post.id);
-                      }}
-                      className="absolute right-4 top-16 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/35 text-2xl font-black tracking-[0.15em] backdrop-blur-md border border-white/10 shadow-lg active:scale-95 transition"
-                      aria-label="Thêm tùy chọn cho moment"
-                    >
-                      ···
-                    </button>
                     <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-40 pt-28">
                       <div className="flex items-end justify-between gap-4">
                         <div className="min-w-0 flex-1">
