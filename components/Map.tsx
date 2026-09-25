@@ -86,6 +86,9 @@ const CHECKPOINT_LOCAL_IMAGES: Record<string, string[]> = {
     "/checkpoints/hoang-thanh-thang-long-2.jpg",
     "/checkpoints/hoang-thanh-thang-long-3.jpg",
   ],
+  "Miếu ông Trường (con)": [
+    "/checkpoints/mieu-ong-truong-con.webp",
+  ],
 };
 
 const CHECKPOINT_IMAGE_QUERIES: Record<string, string> = {
@@ -2176,8 +2179,22 @@ export default function Map({
         "0 5px 20px rgba(0,0,0,0.45)";
       markerIcon.style.transition =
         "transform 0.15s ease";
-      markerIcon.textContent =
-        checkpoint.icon?.trim() || "📍";
+      markerIcon.style.overflow = "hidden";
+
+      const checkpointImage = CHECKPOINT_LOCAL_IMAGES[checkpoint.name]?.[0];
+      if (checkpointImage) {
+        const image = document.createElement("img");
+        image.src = checkpointImage;
+        image.alt = checkpoint.name;
+        image.style.width = "100%";
+        image.style.height = "100%";
+        image.style.objectFit = "cover";
+        image.style.display = "block";
+        markerIcon.appendChild(image);
+      } else {
+        markerIcon.textContent =
+          checkpoint.icon?.trim() || "📍";
+      }
 
       markerElement.appendChild(markerIcon);
       markerElement.title = checkpoint.name;
