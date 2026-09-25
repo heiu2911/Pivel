@@ -5489,13 +5489,6 @@ export default function Home() {
     return `https://www.google.com/maps/dir/?api=1&origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ""}`;
   };
 
-  const buildCheckpointDirectionsUrl = (checkpoint: Checkpoint) =>
-    "https://www.google.com/maps/dir/?api=1&destination=" +
-    checkpoint.latitude +
-    "," +
-    checkpoint.longitude +
-    "&travelmode=driving";
-
   const startNewJourney = () => {
     const record: JourneyRecord = {
       id: crypto.randomUUID ? crypto.randomUUID() : `journey-${Date.now()}`,
@@ -6470,18 +6463,22 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <a
-                      href={buildCheckpointDirectionsUrl(selectedCheckpoint)}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      type="button"
                       onPointerDown={(event) => event.stopPropagation()}
-                      onClick={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const marker = document.querySelector(
+                          `[data-travelquest-checkpoint-id="${selectedCheckpoint.id}"]`
+                        ) as HTMLElement | null;
+                        marker?.click();
+                      }}
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-300/20 bg-blue-500/15 text-base text-blue-200 transition hover:bg-blue-500/25"
-                      title="Chỉ đường tới checkpoint"
-                      aria-label="Chỉ đường tới checkpoint"
+                      title="Chỉ đường trên bản đồ"
+                      aria-label="Chỉ đường trên bản đồ"
                     >
                       🧭
-                    </a>
+                    </button>
 
                     <button
                       type="button"
