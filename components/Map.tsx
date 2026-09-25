@@ -1766,6 +1766,7 @@ function createCheckpointDetailsModal({
 
   const actionButtons = [
     makeAction("➤", "Đường đi", () => {
+      overlay.remove();
       openDirectionsPanel();
     }),
     saveButton,
