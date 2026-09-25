@@ -2198,6 +2198,7 @@ export default function Map({
 
       markerElement.appendChild(markerIcon);
       markerElement.title = checkpoint.name;
+      markerElement.dataset.travelquestCheckpointId = String(checkpoint.id);
 
       markerElement.addEventListener("mouseenter", () => {
         markerIcon.style.transform = "scale(1.12)";
