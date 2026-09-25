@@ -91,9 +91,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 @media (max-width: 640px) {
   .tq-map-chip { min-height: 34px; padding-inline: 12px; }
   .mapboxgl-ctrl-group {
-    border: 1px solid rgba(148,163,184,.12) !important;
-    background: rgba(10,17,29,.88) !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,.34) !important;
+    border: 0 !important;
+    box-shadow: 0 8px 24px rgba(15,23,42,.16) !important;
   }
 }
 
