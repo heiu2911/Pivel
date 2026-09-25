@@ -7918,7 +7918,7 @@ export default function Home() {
 
        {/* ================= BOTTOM NAV ================= */}
 
-      <nav className={`fixed bottom-2 left-1/2 z-50 w-[min(94vw,520px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null || ugcMorePostId !== null ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+      <nav className={`fixed bottom-2 left-1/2 z-50 w-[min(94vw,520px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null || ugcMorePostId !== null || (activeTab === "ugc" && (cameraOpen || cameraPreviewOpen)) ? "pointer-events-none opacity-0" : "opacity-100"}`}>
         <div className="rounded-[1.7rem] border border-white/15 bg-[#07182a]/72 p-1.5 shadow-[0_14px_45px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
           <div className="flex h-[64px] items-center justify-around gap-1 px-1">
             <button
