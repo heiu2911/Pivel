@@ -1896,7 +1896,7 @@ export default function Map({
           mapContainer.current,
 
         style:
-          "mapbox://styles/mapbox/dark-v11",
+          "mapbox://styles/mapbox/streets-v12",
 
         center: [
           105.852,
