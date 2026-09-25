@@ -6471,6 +6471,19 @@ export default function Home() {
                           `[data-travelquest-checkpoint-id="${selectedCheckpoint.id}"]`
                         ) as HTMLElement | null;
                         marker?.click();
+
+                        window.setTimeout(() => {
+                          const modal = document.querySelector(
+                            '[data-travelquest-checkpoint-modal="true"]'
+                          );
+                          const directionsButton = Array.from(
+                            modal?.querySelectorAll("button") ?? []
+                          ).find(
+                            (button) =>
+                              button.textContent?.trim() === "Đường đi"
+                          ) as HTMLButtonElement | undefined;
+                          directionsButton?.click();
+                        }, 60);
                       }}
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-300/20 bg-blue-500/15 text-base text-blue-200 transition hover:bg-blue-500/25"
                       title="Chỉ đường trên bản đồ"
