@@ -5956,10 +5956,38 @@ export default function Home() {
         }}
       >
         <div className="pointer-events-auto mx-auto max-w-[1600px]">
-          <div className={`flex items-center gap-2 rounded-2xl border border-white/10 bg-[#07182a]/55 px-2 py-2 shadow-[0_8px_30px_rgba(0,0,0,0.18)] backdrop-blur-xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
+          <div className="mb-2 flex items-center justify-between px-2 sm:px-4">
+            <button
+              type="button"
+              onClick={() => setActiveTab("map")}
+              className="flex items-center gap-2.5 text-left transition active:scale-[0.98]"
+              aria-label="TravelQuest - Bản đồ"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-xl shadow-lg backdrop-blur-xl">🧭</span>
+              <span>
+                <span className="block text-lg font-black tracking-tight text-white drop-shadow">TravelQuest</span>
+                <span className="block text-[9px] font-semibold tracking-[0.16em] text-white/45">EXPLORE • CHECK-IN • MOMENT</span>
+              </span>
+            </button>
+            <div className="flex items-center gap-2">
+              {authReady && user && (
+                <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/65 text-base shadow-lg backdrop-blur-xl transition hover:bg-white/10" title="Thông báo">
+                  🔔
+                  {notifications.some((item) => !item.is_read) && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#07182a] bg-red-400" />}
+                </button>
+              )}
+              {authReady && (
+                <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-white/10 shadow-lg backdrop-blur-xl transition hover:scale-[1.03]" title={user ? "Tài khoản" : "Đăng nhập"}>
+                  {user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-base">{user ? avatarEmoji : "🔐"}</span>}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className={`flex items-center gap-2 rounded-[1.6rem] border border-white/15 bg-[#07182a]/60 px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
             <div data-map-search-box className="relative min-w-0 flex-1">
-              <div className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white px-2.5 text-slate-900 shadow-sm">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-base">⌕</span>
+              <div className="flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-white shadow-inner backdrop-blur-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">⌕</span>
                 <input
                   value={mapSearchQuery}
                   onChange={(event) => setMapSearchQuery(event.target.value)}
@@ -5968,14 +5996,14 @@ export default function Home() {
                     if (event.key === "Enter") setMapSearchActive(false);
                   }}
                   placeholder="Tìm địa điểm, checkpoint..."
-                  className="min-w-0 flex-1 bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/45"
                   aria-label="Tìm địa điểm trên bản đồ"
                 />
                 {mapSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setMapSearchQuery("")}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-white/15"
                     aria-label="Xóa tìm kiếm"
                   >
                     ×
@@ -5987,7 +6015,7 @@ export default function Home() {
                     updateLocation();
                     startWatchingGPS();
                   }}
-                  className="flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-slate-900 px-2.5 text-xs font-bold text-white transition hover:bg-slate-700"
+                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-slate-900 transition hover:bg-slate-100"
                   title="Định vị tôi"
                 >
                   <span>⌖</span>
@@ -6050,69 +6078,8 @@ export default function Home() {
             </div>
 
             <div className={`shrink-0 items-center gap-1.5 ${mapSearchActive ? "hidden" : "flex"}`}>
-              {authReady && user && (
-                <button
-                  type="button"
-                  onClick={openSearch}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-base transition hover:bg-white/14"
-                  title="Tìm Traveller"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="h-5 w-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.9"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="9" cy="8" r="3.2" />
-                    <path d="M3.8 19.2c.7-3 2.6-4.7 5.2-4.7s4.5 1.7 5.2 4.7" />
-                    <circle cx="17.2" cy="16.8" r="3.1" />
-                    <path d="m19.5 19.1 2 2" />
-                  </svg>
-                </button>
-              )}
-
-              {authReady && user && (
-                <button
-                  type="button"
-                  onClick={toggleNotifications}
-                  className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-base transition hover:bg-white/14"
-                  title="Thông báo"
-                >
-                  🔔
-                  {notifications.some((item) => !item.is_read) && (
-                    <span className="absolute right-1 top-1 h-2.5 min-w-2.5 rounded-full border-2 border-[#070b11] bg-red-400" />
-                  )}
-                </button>
-              )}
-
-              {authReady && (
-                <button
-                  onClick={() => {
-                    if (user) {
-                      setAuthMessage("");
-                      setAuthOpen(true);
-                    } else {
-                      openAuth("login");
-                    }
-                  }}
-                  className="flex h-10 items-center gap-2 rounded-xl bg-white/8 px-2.5 transition hover:bg-white/14"
-                  title={user ? "Tài khoản" : "Đăng nhập"}
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10">
-                    {user && avatarImageUrl ? (
-                      <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="text-sm">{user ? avatarEmoji : "🔐"}</span>
-                    )}
-                  </span>
-                  <span className="hidden xl:block max-w-[110px] truncate text-xs font-semibold">
-                    {user ? profileName : "Đăng nhập"}
-                  </span>
-                </button>
+                            {authReady && user && (
+                <button type="button" onClick={openSearch} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-base transition hover:bg-white/15" title="Tìm Traveller" aria-label="Tìm Traveller">👥</button>
               )}
 
               <div className="relative">
@@ -7935,22 +7902,22 @@ export default function Home() {
 
        {/* ================= BOTTOM NAV ================= */}
 
-      <nav className={`fixed bottom-3 left-1/2 z-50 w-[min(92vw,420px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null || ugcMorePostId !== null ? "pointer-events-none opacity-0" : "opacity-100"}`}>
-        <div className="rounded-2xl border border-white/10 bg-[#07182a]/55 p-1.5 shadow-[0_10px_35px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-          <div className="flex h-[60px] items-center justify-around px-1">
+      <nav className={`fixed bottom-2 left-1/2 z-50 w-[min(94vw,520px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null || ugcMorePostId !== null ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+        <div className="rounded-[1.7rem] border border-white/15 bg-[#07182a]/72 p-1.5 shadow-[0_14px_45px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+          <div className="flex h-[64px] items-center justify-around gap-1 px-1">
             <button
               type="button"
               onClick={() => setActiveTab("map")}
-              className={`flex min-w-[76px] flex-col items-center gap-1 rounded-2xl px-6 py-2 transition ${activeTab === "map" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "map" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
             >
               <span className="text-xl">🗺️</span>
-              <span className="text-[11px] font-semibold">Map</span>
+              <span className="text-[11px] font-semibold">Bản đồ</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab("badges")}
-              className={`flex min-w-[76px] flex-col items-center gap-1 rounded-2xl px-6 py-2 transition ${activeTab === "badges" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "badges" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
             >
               <span className="text-xl">🏆</span>
               <span className="text-[11px] font-semibold">Huy hiệu</span>
@@ -7959,7 +7926,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => void openFriends()}
-              className="flex min-w-[76px] flex-col items-center gap-1 rounded-2xl px-4 py-2 text-white/40 hover:text-white transition"
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 text-white/45 hover:text-white transition"
             >
               <span className="text-xl">👥</span>
               <span className="text-[11px] font-semibold">Bạn bè</span>
@@ -7968,7 +7935,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setActiveTab("ugc")}
-              className={`flex min-w-[76px] flex-col items-center gap-1 rounded-2xl px-6 py-2 transition ${activeTab === "ugc" ? "bg-white/10 text-white" : "text-white/40 hover:text-white"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "ugc" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
             >
               <span className="text-xl">📸</span>
               <span className="text-[11px] font-semibold">UGC</span>
