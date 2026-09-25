@@ -6421,9 +6421,9 @@ export default function Home() {
             )}
 
             {selectedCheckpoint && showCheckpointCard && (
-              <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center px-3 sm:px-4">
+              <div className="absolute inset-0 z-40 pointer-events-none flex items-end justify-center px-3 pb-[calc(92px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
                 <div
-                  className="pointer-events-auto mx-auto w-full max-w-lg cursor-grab overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a]/80 shadow-[0_20px_60px_rgba(0,0,0,.35)] backdrop-blur-2xl touch-none select-none active:cursor-grabbing"
+                  className="pointer-events-auto mx-auto w-full max-w-xl cursor-grab overflow-hidden rounded-[1.7rem] border border-white/15 bg-[#07182a]/78 shadow-[0_18px_55px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-none select-none active:cursor-grabbing"
                   style={{ transform: `translate3d(${checkpointCardOffset.x}px, ${checkpointCardOffset.y}px, 0)` }}
                   onPointerDown={handleCheckpointCardPointerDown}
                   onPointerMove={handleCheckpointCardPointerMove}
