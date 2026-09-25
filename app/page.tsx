@@ -5940,7 +5940,7 @@ export default function Home() {
       {/* MAP TOOLBAR */}
       {activeTab === "map" && (
       <header
-        className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-2 pt-2 sm:px-3"
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-3 pt-3 sm:px-4"
         onPointerDownCapture={(event) => {
           if (searchOpen) {
             const target = event.target as HTMLElement | null;
@@ -5956,11 +5956,11 @@ export default function Home() {
         }}
       >
         <div className="pointer-events-auto mx-auto max-w-[1600px]">
-          <div className="mb-2 flex items-center justify-between px-2 sm:px-4">
+          <div className="mb-1 flex items-center justify-end px-1 sm:px-2">
             <button
               type="button"
               onClick={() => setActiveTab("map")}
-              className="flex items-center gap-2.5 text-left transition active:scale-[0.98]"
+              className="hidden"
               aria-label="TravelQuest - Bản đồ"
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-xl shadow-lg backdrop-blur-xl">🧭</span>
@@ -5984,10 +5984,10 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`flex items-center gap-2 rounded-[1.6rem] border border-white/15 bg-[#07182a]/60 px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
+          <div className={`flex items-center gap-2 rounded-[1.35rem] border border-white/10 bg-[#30343b]/95 px-2 py-2 shadow-[0_12px_36px_rgba(0,0,0,0.34)] backdrop-blur-xl sm:px-2.5 ${mapSearchActive ? "w-full" : "w-full"}`}>
             <div data-map-search-box className="relative min-w-0 flex-1">
-              <div className="flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-white shadow-inner backdrop-blur-sm">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">⌕</span>
+              <div className="flex h-12 items-center gap-2 rounded-full bg-transparent px-2.5 text-white">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-fuchsia-500 to-emerald-400 text-base shadow-lg">📍</span>
                 <input
                   value={mapSearchQuery}
                   onChange={(event) => setMapSearchQuery(event.target.value)}
@@ -5995,8 +5995,8 @@ export default function Home() {
                   onKeyDown={(event) => {
                     if (event.key === "Enter") setMapSearchActive(false);
                   }}
-                  placeholder="Tìm địa điểm, checkpoint..."
-                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/45"
+                  placeholder="Search here"
+                  className="min-w-0 flex-1 bg-transparent text-[18px] font-medium text-white outline-none placeholder:text-white/45 sm:text-base"
                   aria-label="Tìm địa điểm trên bản đồ"
                 />
                 {mapSearchQuery && (
@@ -6015,11 +6015,10 @@ export default function Home() {
                     updateLocation();
                     startWatchingGPS();
                   }}
-                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-slate-900 transition hover:bg-slate-100"
-                  title="Định vị tôi"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl text-white transition hover:bg-white/10"
+                  title="Cập nhật GPS"
                 >
-                  <span>⌖</span>
-                  <span className="hidden sm:inline">Vị trí</span>
+                  <span>🎙️</span>
                 </button>
               </div>
 
@@ -6070,7 +6069,7 @@ export default function Home() {
                   key={value}
                   type="button"
                   onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
-                  className={`tq-map-chip ${mapFilter === value ? "tq-map-chip-active" : ""}`}
+                  className={`tq-map-chip bg-[#30343b]/95 border-white/5 text-white/85 shadow-[0_8px_22px_rgba(0,0,0,.22)] ${mapFilter === value ? "tq-map-chip-active" : ""}`}
                 >
                   {label}
                 </button>
@@ -6104,18 +6103,18 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden [scrollbar-width:none]">
+          <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none]">
             {[
-              ["all", "✨ Tất cả"],
-              ["nearby", "📍 Gần tôi"],
-              ["unvisited", "🎯 Chưa check-in"],
-              ["saved", "🔖 Đã lưu"],
+              ["all", "⌂ Trang chủ"],
+              ["nearby", "🍽 Nhà hàng"],
+              ["unvisited", "☕ Cà phê"],
+              ["saved", "🛏 Khách sạn"],
             ].map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
-                className={`tq-map-chip shrink-0 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
+                className={`tq-map-chip shrink-0 bg-[#30343b]/95 border-white/5 text-white/85 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
               >
                 {label}
               </button>
@@ -6362,24 +6361,24 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="fixed bottom-[92px] left-3 sm:bottom-24 sm:left-4 z-40 flex flex-col gap-2">
+              <div className="fixed bottom-[132px] right-3 sm:bottom-28 sm:right-4 z-40 flex flex-col gap-2">
                 <button
                   type="button"
                   onClick={() => setShowMapCheckpoints((value) => !value)}
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/95 text-base text-white shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
-                  title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
-                  aria-label={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
+                  title={showMapCheckpoints ? "Lớp bản đồ / ẩn checkpoint" : "Lớp bản đồ / hiện checkpoint"}
+                  aria-label={showMapCheckpoints ? "Lớp bản đồ / ẩn checkpoint" : "Lớp bản đồ / hiện checkpoint"}
                 >
-                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-base ${showMapCheckpoints ? "bg-blue-500/15" : "bg-white/10"}`}>📍</span>
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-base ${showMapCheckpoints ? "bg-white/10" : "bg-white/5"}`}>▱</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowExplorePanel(true)}
+                  onClick={() => { void updateLocation(); startWatchingGPS(); }}
                   className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/95 text-base text-white shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
-                  title="Hiện khám phá"
-                  aria-label="Hiện khám phá"
+                  title="Định vị tôi"
+                  aria-label="Định vị tôi"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-base">🧭</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-base">➤</span>
                 </button>
               </div>
             )}
@@ -7919,12 +7918,12 @@ export default function Home() {
        {/* ================= BOTTOM NAV ================= */}
 
       <nav className={`fixed bottom-2 left-1/2 z-50 w-[min(94vw,520px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null || ugcMorePostId !== null ? "pointer-events-none opacity-0" : "opacity-100"}`}>
-        <div className="rounded-[1.7rem] border border-white/15 bg-[#07182a]/72 p-1.5 shadow-[0_14px_45px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
-          <div className="flex h-[64px] items-center justify-around gap-1 px-1">
+        <div className="rounded-t-[1.35rem] border-t border-white/10 bg-[#171c20]/96 px-2 py-2 shadow-[0_-10px_32px_rgba(0,0,0,.28)] backdrop-blur-2xl">
+          <div className="mx-auto flex h-[70px] max-w-lg items-center justify-around gap-1 px-1">
             <button
               type="button"
               onClick={() => setActiveTab("map")}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "map" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 transition ${activeTab === "map" ? "bg-[#063b46] text-cyan-300" : "text-white/45 hover:text-white"}`}
             >
               <span className="text-xl">🗺️</span>
               <span className="text-[11px] font-semibold">Bản đồ</span>
@@ -7933,7 +7932,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setActiveTab("badges")}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "badges" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 transition ${activeTab === "badges" ? "bg-[#063b46] text-cyan-300" : "text-white/45 hover:text-white"}`}
             >
               <span className="text-xl">🏆</span>
               <span className="text-[11px] font-semibold">Huy hiệu</span>
@@ -7951,7 +7950,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setActiveTab("ugc")}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "ugc" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 transition ${activeTab === "ugc" ? "bg-[#063b46] text-cyan-300" : "text-white/45 hover:text-white"}`}
             >
               <span className="text-xl">📸</span>
               <span className="text-[11px] font-semibold">UGC</span>
