@@ -6421,17 +6421,17 @@ export default function Home() {
             )}
 
             {selectedCheckpoint && showCheckpointCard && (
-              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none flex justify-center px-3 pb-[calc(86px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
+              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none flex justify-center px-3 pb-[calc(82px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
                 <div
-                  className="pointer-events-auto w-full max-w-md overflow-hidden rounded-[1.35rem] border border-white/15 bg-[#07182a]/90 shadow-[0_18px_55px_rgba(0,0,0,.48)] backdrop-blur-2xl touch-none select-none"
+                  className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-white/15 bg-[#07182a]/90 shadow-[0_12px_35px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-none select-none"
                   style={{ transform: `translate3d(${checkpointCardOffset.x}px, ${checkpointCardOffset.y}px, 0)` }}
                   onPointerDown={handleCheckpointCardPointerDown}
                   onPointerMove={handleCheckpointCardPointerMove}
                   onPointerUp={handleCheckpointCardPointerUp}
                   onPointerCancel={handleCheckpointCardPointerUp}
                 >
-                  <div className="flex items-center gap-3 p-3.5">
-                    <div className="relative h-[76px] w-[76px] shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-[#10243b]">
+                  <div className="flex items-center gap-2.5 px-2.5 py-2.5">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#10243b]">
                       {selectedCheckpoint.name === "Miếu ông Trường (con)" ? (
                         <img
                           src="/checkpoints/mieu-ong-truong-con.webp"
@@ -6439,128 +6439,119 @@ export default function Home() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-3xl">
+                        <div className="flex h-full w-full items-center justify-center text-xl">
                           {selectedCheckpoint.icon ?? "📍"}
                         </div>
-                      )}
-                      {isCheckedIn(selectedCheckpoint.id) && (
-                        <span className="absolute bottom-1 left-1 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[8px] font-black text-white shadow">
-                          ✓ ĐÃ ĐI
-                        </span>
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-300/80">
-                            CHECKPOINT
-                          </p>
-                          <h2 className="mt-0.5 line-clamp-2 text-[15px] font-black leading-tight text-white">
-                            {selectedCheckpoint.name}
-                          </h2>
-                        </div>
-                        <button
-                          type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={() => {
-                            setSelectedCheckpoint(null);
-                            selectedCheckpointRef.current = null;
-                            setDistance(null);
-                            setMessage("");
-                          }}
-                          className="h-8 w-8 shrink-0 rounded-full bg-white/5 text-sm text-white/45 transition hover:bg-white/10 hover:text-white"
-                          aria-label="Đóng checkpoint"
-                        >
-                          ✕
-                        </button>
+                      <div className="flex items-center gap-1.5">
+                        <h2 className="truncate text-[13px] font-black leading-tight text-white">
+                          {selectedCheckpoint.name}
+                        </h2>
+                        {isCheckedIn(selectedCheckpoint.id) && (
+                          <span className="shrink-0 text-[8px] font-bold text-emerald-300">✓</span>
+                        )}
                       </div>
-
-                      <p className="mt-1 truncate text-[10px] text-white/40">
+                      <p className="mt-0.5 truncate text-[9px] text-white/40">
                         {distance !== null
                           ? canCheckIn
-                            ? `Bạn đang ở đây · ${distance}m`
+                            ? "Bạn đang ở đây"
                             : `${distance}m từ vị trí hiện tại`
-                          : "Kiểm tra GPS để biết khoảng cách"}
+                          : "Chưa xác định khoảng cách"}
                       </p>
-
-                      <div className="mt-2 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={handleCheckIn}
-                          disabled={checkingIn || isCheckedIn(selectedCheckpoint.id)}
-                          className={`min-h-9 flex-1 rounded-xl px-3 text-[11px] font-black transition ${
-                            isCheckedIn(selectedCheckpoint.id)
-                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20"
-                              : canCheckIn
-                              ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20 hover:bg-blue-400"
-                              : "bg-white/10 text-white/75 hover:bg-white/15"
-                          }`}
-                        >
-                          {checkingIn
-                            ? "📡 Đang xác nhận..."
-                            : isCheckedIn(selectedCheckpoint.id)
-                            ? "✓ Đã check-in"
-                            : canCheckIn
-                            ? "📍 Check-in"
-                            : "📍 Kiểm tra"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={openCheckpointDetail}
-                          className="h-9 w-9 shrink-0 rounded-xl border border-white/10 bg-white/5 text-sm text-white/65 transition hover:bg-white/10 hover:text-white"
-                          title="Xem chi tiết"
-                          aria-label="Xem chi tiết"
-                        >
-                          ›
-                        </button>
-                      </div>
                     </div>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => void updateLocation()}
+                      disabled={locationLoading}
+                      className="h-9 w-9 shrink-0 rounded-full border border-blue-300/20 bg-blue-500/15 text-base text-blue-200 transition hover:bg-blue-500/25 disabled:opacity-50"
+                      title="Định vị và tính khoảng cách tới checkpoint này"
+                      aria-label="Định vị checkpoint"
+                    >
+                      {locationLoading ? "…" : "◎"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={openCheckpointDetail}
+                      className="h-9 w-9 shrink-0 rounded-full bg-white/5 text-sm text-white/55 transition hover:bg-white/10 hover:text-white"
+                      title="Xem chi tiết"
+                      aria-label="Xem chi tiết"
+                    >
+                      ›
+                    </button>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => {
+                        setSelectedCheckpoint(null);
+                        selectedCheckpointRef.current = null;
+                        setDistance(null);
+                        setMessage("");
+                      }}
+                      className="h-9 w-9 shrink-0 rounded-full bg-white/5 text-xs text-white/35 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Đóng checkpoint"
+                    >
+                      ✕
+                    </button>
                   </div>
 
-                  {message && (
-                    <div className="mx-3.5 mb-2 rounded-xl bg-white/5 px-3 py-2 text-[10px] leading-relaxed text-white/55">
-                      {message}
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2 border-t border-white/5 px-2.5 py-1.5">
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={handleCheckIn}
+                      disabled={checkingIn || isCheckedIn(selectedCheckpoint.id)}
+                      className={`min-h-8 flex-1 rounded-xl px-3 text-[10px] font-black transition ${
+                        isCheckedIn(selectedCheckpoint.id)
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : canCheckIn
+                          ? "bg-blue-500 text-white"
+                          : "bg-white/8 text-white/70"
+                      }`}
+                    >
+                      {checkingIn
+                        ? "📡..."
+                        : isCheckedIn(selectedCheckpoint.id)
+                        ? "✓ Đã check-in"
+                        : canCheckIn
+                        ? "📍 Check-in"
+                        : "📍 Kiểm tra"}
+                    </button>
 
-                  <div className="flex items-center justify-between border-t border-white/5 px-3.5 py-2">
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/35 transition hover:bg-white/5 hover:text-white/70"
+                    >
+                      {savedCheckpoints.some((item) => item.id === selectedCheckpoint.id) ? "🔖 Đã lưu" : "🔖 Lưu"}
+                    </button>
+
                     <button
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={() => setShowCheckpointCard(false)}
-                      className="rounded-lg px-2 py-1 text-[10px] font-semibold text-white/35 transition hover:bg-white/5 hover:text-white/70"
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/30 transition hover:bg-white/5 hover:text-white/60"
                     >
-                      Ẩn card
+                      Ẩn
                     </button>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onClick={updateLocation}
-                        disabled={locationLoading}
-                        className="rounded-lg px-2.5 py-1 text-[10px] font-semibold text-white/40 transition hover:bg-white/5 hover:text-white/70 disabled:opacity-50"
-                        title="Kiểm tra GPS"
-                      >
-                        {locationLoading ? "📡 GPS..." : "◎ GPS"}
-                      </button>
-                      <button
-                        type="button"
-                        onPointerDown={(event) => event.stopPropagation()}
-                        onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
-                        className="rounded-lg px-2.5 py-1 text-[10px] font-semibold text-white/40 transition hover:bg-white/5 hover:text-white/70"
-                      >
-                        {savedCheckpoints.some((item) => item.id === selectedCheckpoint.id) ? "🔖 Đã lưu" : "🔖 Lưu"}
-                      </button>
-                    </div>
                   </div>
+
+                  {message && (
+                    <div className="px-3 pb-2 text-[9px] leading-relaxed text-white/45">
+                      {message}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
-
           </section>
         )}
 
