@@ -151,11 +151,9 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       }
 
       /*
-       * Không nhận vị trí quá kém chính xác làm GPS hiện tại.
+       * Nếu chưa đạt mức ưu tiên thì tiếp tục lấy mẫu.
+       * Chỉ dùng fix <= 150m khi hết thời gian chờ.
        */
-      if (isUsableGPSLocation(location)) {
-        finishResolve(location);
-      }
     };
 
     const handleError = (
