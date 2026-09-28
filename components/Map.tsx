@@ -1253,16 +1253,16 @@ function createCheckpointDetailsModal({
       arrow.style.fontWeight = "900";
       arrow.style.lineHeight = "1";
 
-      const instruction = document.createElement("div");
-      instruction.dataset.tqNavInstruction = "true";
-      instruction.textContent = instruction;
-      instruction.style.fontSize = "20px";
-      instruction.style.fontWeight = "900";
-      instruction.style.lineHeight = "1.15";
-      instruction.style.flex = "1";
+      const instructionText = document.createElement("div");
+      instructionText.dataset.tqNavInstruction = "true";
+      instructionText.textContent = instruction;
+      instructionText.style.fontSize = "20px";
+      instructionText.style.fontWeight = "900";
+      instructionText.style.lineHeight = "1.15";
+      instructionText.style.flex = "1";
 
       instructionRow.appendChild(arrow);
-      instructionRow.appendChild(instruction);
+      instructionRow.appendChild(instructionText);
 
       const after = document.createElement("div");
       after.textContent = "Tiếp tục theo tuyến đường";
