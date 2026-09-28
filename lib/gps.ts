@@ -6,9 +6,9 @@ export type GPSLocation = {
   accuracy?: number;
 };
 
-const DEFAULT_TIMEOUT = 10000;
-const HIGH_ACCURACY_TIMEOUT = 15000;
-const CACHE_MAX_AGE = 30000;
+const HIGH_ACCURACY_TIMEOUT = 20000;
+const GPS_MAX_ACCEPTABLE_ACCURACY = 150;
+const GPS_PREFERRED_ACCURACY = 50;
 
 function ensureBrowser(): void {
   if (
@@ -55,35 +55,58 @@ function toGPSLocation(
   };
 }
 
+function isUsableGPSLocation(
+  location: GPSLocation
+): boolean {
+  return (
+    Number.isFinite(location.latitude) &&
+    Number.isFinite(location.longitude) &&
+    Number.isFinite(location.accuracy) &&
+    location.latitude >= -90 &&
+    location.latitude <= 90 &&
+    location.longitude >= -180 &&
+    location.longitude <= 180 &&
+    (location.accuracy ?? Infinity) <=
+      GPS_MAX_ACCEPTABLE_ACCURACY
+  );
+}
+
 /**
  * Lấy vị trí hiện tại.
  *
- * Ưu tiên vị trí cache / network location trước.
- * Chỉ yêu cầu GPS độ chính xác cao nếu lần đầu thất bại.
+ * Không sử dụng vị trí cache cũ. Luôn ưu tiên high accuracy và
+ * lấy nhiều mẫu trong một khoảng ngắn để tránh nhận ngay một
+ * network location có độ chính xác quá thấp.
  */
 export function getCurrentLocation(): Promise<GPSLocation> {
   ensureBrowser();
 
   return new Promise((resolve, reject) => {
     let finished = false;
+    let bestLocation: GPSLocation | null = null;
+    let watchId: number | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    let highAccuracyTimer:
-      ReturnType<typeof setTimeout> | null = null;
+    const cleanup = () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
 
     const finishResolve = (
-      position: GeolocationPosition
+      location: GPSLocation
     ) => {
       if (finished) return;
 
       finished = true;
-
-      if (highAccuracyTimer) {
-        clearTimeout(highAccuracyTimer);
-      }
-
-      resolve(
-        toGPSLocation(position)
-      );
+      cleanup();
+      resolve(location);
     };
 
     const finishReject = (
@@ -92,63 +115,100 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       if (finished) return;
 
       finished = true;
-
-      if (highAccuracyTimer) {
-        clearTimeout(highAccuracyTimer);
-      }
-
+      cleanup();
       reject(error);
     };
 
-    /*
-     * LẦN 1:
-     * Không ép high accuracy.
-     */
-    navigator.geolocation.getCurrentPosition(
-      finishResolve,
-      () => {
-        if (finished) return;
+    const handlePosition = (
+      position: GeolocationPosition
+    ) => {
+      if (finished) return;
 
-        /*
-         * LẦN 2:
-         * Chỉ bật high accuracy khi lần đầu thất bại.
-         */
-        navigator.geolocation.getCurrentPosition(
-          finishResolve,
-          (error) => {
-            finishReject(
-              mapGeolocationError(error)
-            );
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: HIGH_ACCURACY_TIMEOUT,
-            maximumAge: CACHE_MAX_AGE,
-          }
-        );
+      const location =
+        toGPSLocation(position);
 
-        /*
-         * Không để GPS chờ vô hạn.
-         */
-        highAccuracyTimer = setTimeout(() => {
-          finishReject(
-            new Error(
-              "GPS chưa xác định được vị trí. Hãy thử lại ở nơi có tín hiệu tốt hơn."
-            )
-          );
-        }, HIGH_ACCURACY_TIMEOUT + 1000);
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: DEFAULT_TIMEOUT,
-        maximumAge: CACHE_MAX_AGE,
+      if (!Number.isFinite(location.accuracy)) {
+        return;
       }
-    );
+
+      if (
+        bestLocation === null ||
+        (location.accuracy ?? Infinity) <
+          (bestLocation.accuracy ?? Infinity)
+      ) {
+        bestLocation = location;
+      }
+
+      /*
+       * Khi đã có fix đủ tốt thì trả về ngay.
+       */
+      if (
+        (location.accuracy ?? Infinity) <=
+        GPS_PREFERRED_ACCURACY
+      ) {
+        finishResolve(location);
+        return;
+      }
+
+      /*
+       * Không nhận vị trí quá kém chính xác làm GPS hiện tại.
+       */
+      if (isUsableGPSLocation(location)) {
+        finishResolve(location);
+      }
+    };
+
+    const handleError = (
+      error: GeolocationPositionError
+    ) => {
+      if (finished) return;
+
+      if (
+        error.code ===
+        error.PERMISSION_DENIED
+      ) {
+        finishReject(
+          mapGeolocationError(error)
+        );
+      }
+    };
+
+    /*
+     * Watch high-accuracy trong thời gian ngắn giúp trình duyệt
+     * có cơ hội lấy GPS thật thay vì trả về network/cached location.
+     */
+    watchId =
+      navigator.geolocation.watchPosition(
+        handlePosition,
+        handleError,
+        {
+          enableHighAccuracy: true,
+          timeout: HIGH_ACCURACY_TIMEOUT,
+          maximumAge: 0,
+        }
+      );
+
+    timeoutId = setTimeout(() => {
+      if (finished) return;
+
+      if (bestLocation && isUsableGPSLocation(bestLocation)) {
+        finishResolve(bestLocation);
+        return;
+      }
+
+      finishReject(
+        new Error(
+          "GPS chưa xác định được vị trí đủ chính xác. Hãy bật Vị trí chính xác (Precise Location) cho trình duyệt và thử lại."
+        )
+      );
+    }, HIGH_ACCURACY_TIMEOUT + 1000);
   });
 }
 
 /**
  * Theo dõi GPS liên tục.
+ *
+ * Không dùng cache và luôn ưu tiên GPS độ chính xác cao.
  */
 export function watchCurrentLocation(
   onLocation: (
@@ -162,9 +222,14 @@ export function watchCurrentLocation(
 
   return navigator.geolocation.watchPosition(
     (position) => {
-      onLocation(
-        toGPSLocation(position)
-      );
+      const location =
+        toGPSLocation(position);
+
+      if (!isUsableGPSLocation(location)) {
+        return;
+      }
+
+      onLocation(location);
     },
     (error) => {
       onError?.(
@@ -172,9 +237,9 @@ export function watchCurrentLocation(
       );
     },
     {
-      enableHighAccuracy: false,
-      timeout: 20000,
-      maximumAge: 10000,
+      enableHighAccuracy: true,
+      timeout: HIGH_ACCURACY_TIMEOUT,
+      maximumAge: 0,
     }
   );
 }
