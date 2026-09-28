@@ -6,9 +6,9 @@ export type GPSLocation = {
   accuracy?: number;
 };
 
-const HIGH_ACCURACY_TIMEOUT = 20000;
-const GPS_MAX_ACCEPTABLE_ACCURACY = 500;
-const GPS_PREFERRED_ACCURACY = 50;
+const HIGH_ACCURACY_TIMEOUT = 12000;
+const GPS_MAX_ACCEPTABLE_ACCURACY = 1000;
+const GPS_PREFERRED_ACCURACY = 200;
 
 function ensureBrowser(): void {
   if (
@@ -30,18 +30,16 @@ function mapGeolocationError(
 
     case error.POSITION_UNAVAILABLE:
       return new Error(
-        "Không thể xác định vị trí hiện tại. Hãy bật GPS/vị trí và thử lại."
+        "Không thể xác định vị trí hiện tại. Hãy bật Vị trí cho trình duyệt và thử lại."
       );
 
     case error.TIMEOUT:
       return new Error(
-        "GPS chưa xác định được vị trí. Hãy thử lại ở nơi có tín hiệu tốt hơn."
+        "Không thể lấy vị trí đủ nhanh. Hãy kiểm tra quyền Vị trí của trình duyệt."
       );
 
     default:
-      return new Error(
-        "Không thể lấy vị trí hiện tại."
-      );
+      return new Error("Không thể lấy vị trí hiện tại.");
   }
 }
 
@@ -66,17 +64,17 @@ function isUsableGPSLocation(
     location.latitude <= 90 &&
     location.longitude >= -180 &&
     location.longitude <= 180 &&
-    (location.accuracy ?? Infinity) <=
-      GPS_MAX_ACCEPTABLE_ACCURACY
+    (location.accuracy ?? Infinity) <= GPS_MAX_ACCEPTABLE_ACCURACY
   );
 }
 
 /**
  * Lấy vị trí hiện tại.
  *
- * Không sử dụng vị trí cache cũ. Luôn ưu tiên high accuracy và
- * lấy nhiều mẫu trong một khoảng ngắn để tránh nhận ngay một
- * network location có độ chính xác quá thấp.
+ * Ưu tiên vị trí mới từ trình duyệt nhưng không bắt laptop
+ * phải có GPS vật lý hoặc Precise Location. Laptop thường
+ * cung cấp vị trí qua Wi-Fi/network nên độ chính xác có thể
+ * thấp hơn điện thoại.
  */
 export function getCurrentLocation(): Promise<GPSLocation> {
   ensureBrowser();
@@ -99,37 +97,26 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       }
     };
 
-    const finishResolve = (
-      location: GPSLocation
-    ) => {
+    const finishResolve = (location: GPSLocation) => {
       if (finished) return;
-
       finished = true;
       cleanup();
       resolve(location);
     };
 
-    const finishReject = (
-      error: Error
-    ) => {
+    const finishReject = (error: Error) => {
       if (finished) return;
-
       finished = true;
       cleanup();
       reject(error);
     };
 
-    const handlePosition = (
-      position: GeolocationPosition
-    ) => {
+    const handlePosition = (position: GeolocationPosition) => {
       if (finished) return;
 
-      const location =
-        toGPSLocation(position);
+      const location = toGPSLocation(position);
 
-      if (!Number.isFinite(location.accuracy)) {
-        return;
-      }
+      if (!isUsableGPSLocation(location)) return;
 
       if (
         bestLocation === null ||
@@ -139,52 +126,35 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         bestLocation = location;
       }
 
-      /*
-       * Khi đã có fix đủ tốt thì trả về ngay.
-       */
+      // Trên laptop, một fix <= 200m đã đủ dùng để hiển thị
+      // marker và các tính năng vị trí cơ bản.
       if (
         (location.accuracy ?? Infinity) <=
         GPS_PREFERRED_ACCURACY
       ) {
         finishResolve(location);
-        return;
       }
-
-      /*
-       * Nếu chưa đạt mức ưu tiên thì tiếp tục lấy mẫu.
-       * Chỉ dùng fix <= 150m khi hết thời gian chờ.
-       */
     };
 
-    const handleError = (
-      error: GeolocationPositionError
-    ) => {
+    const handleError = (error: GeolocationPositionError) => {
       if (finished) return;
 
-      if (
-        error.code ===
-        error.PERMISSION_DENIED
-      ) {
-        finishReject(
-          mapGeolocationError(error)
-        );
+      if (error.code === error.PERMISSION_DENIED) {
+        finishReject(mapGeolocationError(error));
       }
     };
 
-    /*
-     * Watch high-accuracy trong thời gian ngắn giúp trình duyệt
-     * có cơ hội lấy GPS thật thay vì trả về network/cached location.
-     */
-    watchId =
-      navigator.geolocation.watchPosition(
-        handlePosition,
-        handleError,
-        {
-          enableHighAccuracy: true,
-          timeout: HIGH_ACCURACY_TIMEOUT,
-          maximumAge: 0,
-        }
-      );
+    // Không ép high accuracy ở laptop: Chrome/Windows thường
+    // định vị bằng Wi-Fi/network thay vì GPS phần cứng.
+    watchId = navigator.geolocation.watchPosition(
+      handlePosition,
+      handleError,
+      {
+        enableHighAccuracy: false,
+        timeout: HIGH_ACCURACY_TIMEOUT,
+        maximumAge: 5000,
+      }
+    );
 
     timeoutId = setTimeout(() => {
       if (finished) return;
@@ -196,7 +166,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 
       finishReject(
         new Error(
-          "Không lấy được vị trí GPS. Hãy bật quyền Vị trí cho trình duyệt và bật Vị trí chính xác (Precise Location) nếu thiết bị hỗ trợ."
+          "Không lấy được vị trí. Hãy bật quyền Vị trí cho Chrome/Edge trong Windows và cho phép TravelQuest truy cập vị trí."
         )
       );
     }, HIGH_ACCURACY_TIMEOUT + 1000);
@@ -204,50 +174,36 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 }
 
 /**
- * Theo dõi GPS liên tục.
+ * Theo dõi vị trí liên tục.
  *
- * Không dùng cache và luôn ưu tiên GPS độ chính xác cao.
+ * Phù hợp với laptop: không yêu cầu GPS phần cứng và vẫn
+ * nhận các lần cập nhật vị trí mới từ trình duyệt.
  */
 export function watchCurrentLocation(
-  onLocation: (
-    location: GPSLocation
-  ) => void,
-  onError?: (
-    error: Error
-  ) => void
+  onLocation: (location: GPSLocation) => void,
+  onError?: (error: Error) => void
 ): number {
   ensureBrowser();
 
   return navigator.geolocation.watchPosition(
     (position) => {
-      const location =
-        toGPSLocation(position);
+      const location = toGPSLocation(position);
 
-      if (!isUsableGPSLocation(location)) {
-        return;
-      }
+      if (!isUsableGPSLocation(location)) return;
 
       onLocation(location);
     },
     (error) => {
-      onError?.(
-        mapGeolocationError(error)
-      );
+      onError?.(mapGeolocationError(error));
     },
     {
-      enableHighAccuracy: true,
+      enableHighAccuracy: false,
       timeout: HIGH_ACCURACY_TIMEOUT,
-      maximumAge: 0,
+      maximumAge: 5000,
     }
   );
 }
 
-/**
- * Dừng GPS watcher.
- *
- * Chấp nhận cả number và null
- * để tương thích với state trong page.tsx.
- */
 export function stopWatchingLocation(
   watchId: number | null
 ): void {
@@ -259,27 +215,8 @@ export function stopWatchingLocation(
     return;
   }
 
-  navigator.geolocation.clearWatch(
-    watchId
-  );
+  navigator.geolocation.clearWatch(watchId);
 }
-
-/**
- * Tính khoảng cách giữa hai vị trí.
- *
- * Hỗ trợ:
- *
- * calculateDistance(location1, location2)
- *
- * và:
- *
- * calculateDistance(
- *   latitude1,
- *   longitude1,
- *   latitude2,
- *   longitude2
- * )
- */
 
 export function calculateDistance(
   location1: GPSLocation,
@@ -304,31 +241,15 @@ export function calculateDistance(
   let latitude2: number;
   let longitude2: number;
 
-  /*
-   * Dạng:
-   * calculateDistance(location1, location2)
-   */
   if (
     typeof a === "object" &&
     typeof b === "object"
   ) {
     latitude1 = a.latitude;
     longitude1 = a.longitude;
-
     latitude2 = b.latitude;
     longitude2 = b.longitude;
-  }
-
-  /*
-   * Dạng:
-   * calculateDistance(
-   *   lat1,
-   *   lng1,
-   *   lat2,
-   *   lng2
-   * )
-   */
-  else if (
+  } else if (
     typeof a === "number" &&
     typeof b === "number" &&
     typeof c === "number" &&
@@ -338,9 +259,7 @@ export function calculateDistance(
     longitude1 = b;
     latitude2 = c;
     longitude2 = d;
-  }
-
-  else {
+  } else {
     throw new Error(
       "calculateDistance cần 2 GPSLocation hoặc 4 tọa độ."
     );
@@ -348,19 +267,10 @@ export function calculateDistance(
 
   const earthRadius = 6371000;
 
-  const lat1 =
-    (latitude1 * Math.PI) / 180;
-
-  const lat2 =
-    (latitude2 * Math.PI) / 180;
-
-  const deltaLat =
-    ((latitude2 - latitude1) * Math.PI) /
-    180;
-
-  const deltaLng =
-    ((longitude2 - longitude1) * Math.PI) /
-    180;
+  const lat1 = (latitude1 * Math.PI) / 180;
+  const lat2 = (latitude2 * Math.PI) / 180;
+  const deltaLat = ((latitude2 - latitude1) * Math.PI) / 180;
+  const deltaLng = ((longitude2 - longitude1) * Math.PI) / 180;
 
   const aValue =
     Math.sin(deltaLat / 2) ** 2 +
