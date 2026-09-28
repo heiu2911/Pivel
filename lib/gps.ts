@@ -7,7 +7,7 @@ export type GPSLocation = {
 };
 
 const HIGH_ACCURACY_TIMEOUT = 20000;
-const GPS_MAX_ACCEPTABLE_ACCURACY = 150;
+const GPS_MAX_ACCEPTABLE_ACCURACY = 500;
 const GPS_PREFERRED_ACCURACY = 50;
 
 function ensureBrowser(): void {
@@ -196,7 +196,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 
       finishReject(
         new Error(
-          "GPS chưa xác định được vị trí đủ chính xác. Hãy bật Vị trí chính xác (Precise Location) cho trình duyệt và thử lại."
+          "Không lấy được vị trí GPS. Hãy bật quyền Vị trí cho trình duyệt và bật Vị trí chính xác (Precise Location) nếu thiết bị hỗ trợ."
         )
       );
     }, HIGH_ACCURACY_TIMEOUT + 1000);
