@@ -3862,13 +3862,14 @@ export default function Home() {
 
     const startGpsOnAppOpen = async () => {
       try {
-        // Lấy vị trí ngay khi app mở. Nếu quyền đã được cấp,
-        // trình duyệt sẽ không hỏi lại và GPS tự chạy.
-        await updateLocation();
-
+        // Bắt đầu watcher trước để không bị kẹt nếu lần lấy GPS đầu tiên
+        // chậm hoặc trình duyệt chỉ trả về vị trí gần đúng.
         if (!cancelled) {
           startWatchingGPS();
         }
+
+        // Lấy một fix ngay lập tức để map có vị trí ban đầu.
+        await updateLocation();
       } catch (error) {
         console.error("Không thể tự khởi động GPS:", error);
       }
