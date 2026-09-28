@@ -1128,7 +1128,7 @@ function createCheckpointDetailsModal({
     let navigationControl: HTMLDivElement | null = null;
     let navigationHud: HTMLDivElement | null = null;
     let navigationHudInstruction = "";
-    let navigationHudMode = "";
+
 
     const getNavigationInstruction = (route: {
       legs?: Array<{
@@ -1182,7 +1182,6 @@ function createCheckpointDetailsModal({
     ) => {
       const instruction = getNavigationInstruction(route);
       navigationHudInstruction = instruction;
-      navigationHudMode = mode.label;
 
       if (navigationHud) {
         const topInstruction = navigationHud.querySelector(
@@ -1216,7 +1215,7 @@ function createCheckpointDetailsModal({
       hud.dataset.travelquestNavigationHud = "true";
       hud.style.position = "fixed";
       hud.style.inset = "0";
-      hud.style.zIndex = "10000";
+      hud.style.zIndex = "10002";
       hud.style.pointerEvents = "none";
       hud.style.fontFamily =
         "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
@@ -1304,6 +1303,27 @@ function createCheckpointDetailsModal({
         utterance.lang = "vi-VN";
         utterance.rate = 0.95;
         window.speechSynthesis.speak(utterance);
+      };
+
+      const modeButton = document.createElement("button");
+      modeButton.type = "button";
+      modeButton.textContent = "⚙️";
+      modeButton.title = "Đổi phương tiện";
+      modeButton.setAttribute("aria-label", "Đổi phương tiện");
+      modeButton.style.position = "absolute";
+      modeButton.style.right = "18px";
+      modeButton.style.top = "188px";
+      modeButton.style.width = "48px";
+      modeButton.style.height = "48px";
+      modeButton.style.border = "1px solid rgba(255,255,255,.65)";
+      modeButton.style.borderRadius = "50%";
+      modeButton.style.background = "rgba(15,23,42,.78)";
+      modeButton.style.color = "#fff";
+      modeButton.style.fontSize = "18px";
+      modeButton.style.cursor = "pointer";
+      modeButton.style.pointerEvents = "auto";
+      modeButton.onclick = () => {
+        panel.style.display = "flex";
       };
 
       const recenter = document.createElement("button");
@@ -1398,6 +1418,7 @@ function createCheckpointDetailsModal({
 
       hud.appendChild(top);
       hud.appendChild(speaker);
+      hud.appendChild(modeButton);
       hud.appendChild(recenter);
       hud.appendChild(bottom);
       document.body.appendChild(hud);
@@ -1501,6 +1522,7 @@ function createCheckpointDetailsModal({
       clearRouteFromMap();
 
       showNavigationHud(route, mode);
+      panel.style.display = "none";
 
       mapInstance.addSource("travelquest-route-source", {
         type: "geojson",
