@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -2152,6 +2152,8 @@ export default function Map({
   const map =
     useRef<mapboxgl.Map | null>(null);
 
+  const [mapReady, setMapReady] = useState(false);
+
   const userMarker =
     useRef<mapboxgl.Marker | null>(null);
 
@@ -2215,6 +2217,8 @@ export default function Map({
     map.current =
       mapInstance;
 
+    setMapReady(true);
+
     mapInstance.addControl(
       new mapboxgl.NavigationControl(),
       "bottom-right"
@@ -2246,6 +2250,7 @@ export default function Map({
       mapInstance.remove();
 
       map.current = null;
+      setMapReady(false);
 
       checkpointZonesAdded.current =
         false;
@@ -3004,6 +3009,7 @@ export default function Map({
     checkpoints,
     avatarUrl,
     avatarEmoji,
+    mapReady,
   ]);
 
   return (
