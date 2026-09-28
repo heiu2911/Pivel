@@ -8,7 +8,7 @@ export type GPSLocation = {
 
 // Laptop thường định vị bằng Wi‑Fi/network nên có thể cần lâu hơn
 // và độ chính xác thấp hơn GPS trên điện thoại.
-const GPS_REQUEST_TIMEOUT = 30000;
+const GPS_REQUEST_TIMEOUT = 10000;
 const GPS_MAX_ACCEPTABLE_ACCURACY = 10000;
 const GPS_PREFERRED_ACCURACY = 1000;
 
@@ -126,15 +126,9 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         bestLocation = location;
       }
 
-      // Không bắt laptop phải đạt độ chính xác GPS.
-      // Fix <= 1km được dùng ngay; fix kém hơn vẫn được giữ
-      // làm fallback nếu trình duyệt không có dữ liệu tốt hơn.
-      if (
-        location.accuracy === undefined ||
-        location.accuracy <= GPS_PREFERRED_ACCURACY
-      ) {
-        finishResolve(location);
-      }
+      // Phản hồi ngay khi trình duyệt trả về bất kỳ tọa độ hợp lệ nào.
+      // Không chờ accuracy tốt hơn: vị trí tốt hơn sẽ được cập nhật bởi watcher.
+      finishResolve(location);
     };
 
     const handleError = (error: GeolocationPositionError) => {
@@ -170,7 +164,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
           "Chrome/Edge chưa trả về tọa độ. Hãy bật Location Services trong Windows, cho phép Location cho Chrome/Edge và tải lại TravelQuest."
         )
       );
-    }, GPS_REQUEST_TIMEOUT + 1000);
+    }, GPS_REQUEST_TIMEOUT);
   });
 }
 
