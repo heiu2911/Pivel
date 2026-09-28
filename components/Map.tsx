@@ -933,6 +933,8 @@ function createCheckpointDetailsModal({
     const routeLayerId = "travelquest-route-line";
     const routeSourceId = "travelquest-route-source";
 
+    if (!mapInstance || !mapInstance.isStyleLoaded()) return;
+
     if (mapInstance.getLayer(routeLayerId)) {
       mapInstance.removeLayer(routeLayerId);
     }
