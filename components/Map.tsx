@@ -1078,6 +1078,7 @@ function createCheckpointDetailsModal({
       routeRequestId += 1;
       stopNavigationTracking();
       removeNavigationControl();
+      removeNavigationHud();
       panel.remove();
       clearRouteFromMap();
     };
@@ -1125,6 +1126,283 @@ function createCheckpointDetailsModal({
     let latestOrigin: UserLocation | null = null;
     let isInitialRoute = true;
     let navigationControl: HTMLDivElement | null = null;
+    let navigationHud: HTMLDivElement | null = null;
+    let navigationHudInstruction = "";
+    let navigationHudMode = "";
+
+    const getNavigationInstruction = (route: {
+      legs?: Array<{
+        steps?: Array<{
+          name?: string;
+          maneuver?: { instruction?: string };
+        }>;
+      }>;
+    }) => {
+      const firstStep = route.legs?.[0]?.steps?.find(
+        (step) => step.maneuver?.instruction || step.name
+      );
+      return (
+        firstStep?.maneuver?.instruction ||
+        (firstStep?.name
+          ? "Đi theo " + firstStep.name
+          : "Tiếp tục theo tuyến đường")
+      );
+    };
+
+    const getArrivalTime = (seconds: number) => {
+      const arrival = new Date(Date.now() + Math.max(0, seconds) * 1000);
+      return arrival.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const removeNavigationHud = () => {
+      navigationHud?.remove();
+      navigationHud = null;
+      navigationHudInstruction = "";
+      navigationHudMode = "";
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+
+    const showNavigationHud = (
+      route: {
+        distance: number;
+        duration: number;
+        legs?: Array<{
+          steps?: Array<{
+            name?: string;
+            maneuver?: { instruction?: string };
+          }>;
+        }>;
+      },
+      mode: (typeof modeConfig)[number]
+    ) => {
+      const instruction = getNavigationInstruction(route);
+      navigationHudInstruction = instruction;
+      navigationHudMode = mode.label;
+
+      if (navigationHud) {
+        const topInstruction = navigationHud.querySelector(
+          "[data-tq-nav-instruction]"
+        ) as HTMLElement | null;
+        const modeLabel = navigationHud.querySelector(
+          "[data-tq-nav-mode]"
+        ) as HTMLElement | null;
+        const summary = navigationHud.querySelector(
+          "[data-tq-nav-summary]"
+        ) as HTMLElement | null;
+        const eta = navigationHud.querySelector(
+          "[data-tq-nav-eta]"
+        ) as HTMLElement | null;
+
+        if (topInstruction) topInstruction.textContent = instruction;
+        if (modeLabel) modeLabel.textContent = mode.label + " · đang chỉ đường";
+        if (summary) {
+          summary.textContent =
+            formatRouteDuration(route.duration) +
+            " · " +
+            formatRouteDistance(route.distance);
+        }
+        if (eta) {
+          eta.textContent = "Dự kiến đến " + getArrivalTime(route.duration);
+        }
+        return;
+      }
+
+      const hud = document.createElement("div");
+      hud.dataset.travelquestNavigationHud = "true";
+      hud.style.position = "fixed";
+      hud.style.inset = "0";
+      hud.style.zIndex = "10000";
+      hud.style.pointerEvents = "none";
+      hud.style.fontFamily =
+        "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+
+      const top = document.createElement("div");
+      top.style.position = "absolute";
+      top.style.top = "max(18px, env(safe-area-inset-top))";
+      top.style.left = "12px";
+      top.style.right = "12px";
+      top.style.padding = "14px 16px";
+      top.style.borderRadius = "18px";
+      top.style.background = "linear-gradient(135deg,#0b6b57,#087f67)";
+      top.style.border = "3px solid rgba(255,255,255,.96)";
+      top.style.boxShadow = "0 12px 32px rgba(0,0,0,.35)";
+      top.style.color = "#fff";
+      top.style.pointerEvents = "auto";
+
+      const modeLabel = document.createElement("div");
+      modeLabel.dataset.tqNavMode = "true";
+      modeLabel.textContent = mode.label + " · đang chỉ đường";
+      modeLabel.style.fontSize = "11px";
+      modeLabel.style.fontWeight = "800";
+      modeLabel.style.opacity = ".88";
+      modeLabel.style.marginBottom = "4px";
+
+      const instructionRow = document.createElement("div");
+      instructionRow.style.display = "flex";
+      instructionRow.style.alignItems = "center";
+      instructionRow.style.gap = "10px";
+
+      const arrow = document.createElement("div");
+      arrow.textContent = "↑";
+      arrow.style.fontSize = "32px";
+      arrow.style.fontWeight = "900";
+      arrow.style.lineHeight = "1";
+
+      const instruction = document.createElement("div");
+      instruction.dataset.tqNavInstruction = "true";
+      instruction.textContent = instruction;
+      instruction.style.fontSize = "20px";
+      instruction.style.fontWeight = "900";
+      instruction.style.lineHeight = "1.15";
+      instruction.style.flex = "1";
+
+      instructionRow.appendChild(arrow);
+      instructionRow.appendChild(instruction);
+
+      const after = document.createElement("div");
+      after.textContent = "Tiếp tục theo tuyến đường";
+      after.style.marginTop = "8px";
+      after.style.padding = "7px 10px";
+      after.style.width = "fit-content";
+      after.style.borderRadius = "10px";
+      after.style.background = "rgba(0,0,0,.18)";
+      after.style.fontSize = "12px";
+      after.style.fontWeight = "800";
+
+      top.appendChild(modeLabel);
+      top.appendChild(instructionRow);
+      top.appendChild(after);
+
+      const speaker = document.createElement("button");
+      speaker.type = "button";
+      speaker.textContent = "🔊";
+      speaker.title = "Đọc hướng dẫn";
+      speaker.setAttribute("aria-label", "Đọc hướng dẫn");
+      speaker.style.position = "absolute";
+      speaker.style.right = "18px";
+      speaker.style.top = "132px";
+      speaker.style.width = "48px";
+      speaker.style.height = "48px";
+      speaker.style.border = "1px solid rgba(255,255,255,.65)";
+      speaker.style.borderRadius = "50%";
+      speaker.style.background = "rgba(15,23,42,.78)";
+      speaker.style.color = "#fff";
+      speaker.style.fontSize = "20px";
+      speaker.style.cursor = "pointer";
+      speaker.style.pointerEvents = "auto";
+      speaker.onclick = () => {
+        if (!("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(
+          navigationHudInstruction
+        );
+        utterance.lang = "vi-VN";
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      };
+
+      const recenter = document.createElement("button");
+      recenter.type = "button";
+      recenter.textContent = "⌾  Về giữa";
+      recenter.style.position = "absolute";
+      recenter.style.left = "16px";
+      recenter.style.bottom = "112px";
+      recenter.style.padding = "11px 14px";
+      recenter.style.border = "1px solid rgba(255,255,255,.28)";
+      recenter.style.borderRadius = "999px";
+      recenter.style.background = "rgba(15,23,42,.82)";
+      recenter.style.color = "#fff";
+      recenter.style.fontWeight = "800";
+      recenter.style.fontSize = "12px";
+      recenter.style.cursor = "pointer";
+      recenter.style.pointerEvents = "auto";
+      recenter.onclick = () => {
+        const origin = latestOrigin ?? getLatestUserLocation?.() ?? userLocation;
+        if (!origin) return;
+        mapInstance.flyTo({
+          center: [origin.longitude, origin.latitude],
+          zoom: 16,
+          duration: 700,
+          essential: true,
+        });
+      };
+
+      const bottom = document.createElement("div");
+      bottom.style.position = "absolute";
+      bottom.style.left = "12px";
+      bottom.style.right = "12px";
+      bottom.style.bottom = "max(12px, env(safe-area-inset-bottom))";
+      bottom.style.padding = "16px";
+      bottom.style.borderRadius = "22px";
+      bottom.style.background = "rgba(255,255,255,.96)";
+      bottom.style.boxShadow = "0 14px 40px rgba(0,0,0,.35)";
+      bottom.style.display = "flex";
+      bottom.style.alignItems = "center";
+      bottom.style.gap = "12px";
+      bottom.style.pointerEvents = "auto";
+
+      const stats = document.createElement("div");
+      stats.style.minWidth = "0";
+      stats.style.flex = "1";
+
+      const big = document.createElement("div");
+      big.dataset.tqNavSummary = "true";
+      big.textContent =
+        formatRouteDuration(route.duration) +
+        " · " +
+        formatRouteDistance(route.distance);
+      big.style.fontSize = "22px";
+      big.style.fontWeight = "900";
+      big.style.color = "#111827";
+
+      const eta = document.createElement("div");
+      eta.dataset.tqNavEta = "true";
+      eta.textContent = "Dự kiến đến " + getArrivalTime(route.duration);
+      eta.style.marginTop = "4px";
+      eta.style.fontSize = "13px";
+      eta.style.color = "#667085";
+
+      stats.appendChild(big);
+      stats.appendChild(eta);
+
+      const stop = document.createElement("button");
+      stop.type = "button";
+      stop.textContent = "STOP";
+      stop.style.width = "64px";
+      stop.style.height = "64px";
+      stop.style.flex = "0 0 64px";
+      stop.style.border = "4px solid rgba(255,255,255,.72)";
+      stop.style.borderRadius = "50%";
+      stop.style.background = "#ef4444";
+      stop.style.color = "#fff";
+      stop.style.fontSize = "13px";
+      stop.style.fontWeight = "950";
+      stop.style.cursor = "pointer";
+      stop.style.boxShadow = "0 5px 14px rgba(239,68,68,.4)";
+      stop.onclick = () => {
+        routeRequestId += 1;
+        stopNavigationTracking();
+        removeNavigationControl();
+        removeNavigationHud();
+        clearRouteFromMap();
+        panel.remove();
+      };
+
+      bottom.appendChild(stats);
+      bottom.appendChild(stop);
+
+      hud.appendChild(top);
+      hud.appendChild(speaker);
+      hud.appendChild(recenter);
+      hud.appendChild(bottom);
+      document.body.appendChild(hud);
+      navigationHud = hud;
+    };
 
     const stopNavigationTracking = () => {
       if (navigationWatchId !== null && navigator.geolocation) {
@@ -1187,6 +1465,7 @@ function createCheckpointDetailsModal({
         routeRequestId += 1;
         clearRouteFromMap();
         removeNavigationControl();
+        removeNavigationHud();
       });
 
       control.appendChild(status);
@@ -1221,6 +1500,8 @@ function createCheckpointDetailsModal({
 
       clearRouteFromMap();
 
+      showNavigationHud(route, mode);
+
       mapInstance.addSource("travelquest-route-source", {
         type: "geojson",
         data: {
@@ -1239,7 +1520,7 @@ function createCheckpointDetailsModal({
           "line-join": "round",
         },
         paint: {
-          "line-color": "#00897b",
+          "line-color": "#1da1f2",
           "line-width": 7,
           "line-opacity": 0.92,
         },
@@ -1639,6 +1920,7 @@ function createCheckpointDetailsModal({
       routeRequestId += 1;
       stopNavigationTracking();
       removeNavigationControl();
+      removeNavigationHud();
       document.removeEventListener("keydown", onRouteKeyDown);
       panel.remove();
       clearRouteFromMap();
