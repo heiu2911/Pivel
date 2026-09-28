@@ -10,7 +10,8 @@ export type GPSLocation = {
 // và độ chính xác thấp hơn GPS trên điện thoại.
 const GPS_REQUEST_TIMEOUT = 10000;
 const GPS_MAX_ACCEPTABLE_ACCURACY = 10000;
-const GPS_PREFERRED_ACCURACY = 1000;
+const GPS_PREFERRED_ACCURACY = 500;
+const GPS_FIRST_FIX_WAIT = 3500;
 
 function ensureBrowser(): void {
   if (
@@ -126,9 +127,15 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         bestLocation = location;
       }
 
-      // Phản hồi ngay khi trình duyệt trả về bất kỳ tọa độ hợp lệ nào.
-      // Không chờ accuracy tốt hơn: vị trí tốt hơn sẽ được cập nhật bởi watcher.
-      finishResolve(location);
+      // Nếu fix đã khá chính xác thì trả về ngay.
+      // Nếu browser chỉ trả về vị trí thô (thường gặp trên laptop),
+      // giữ watch thêm một khoảng ngắn để có cơ hội nhận fix tốt hơn.
+      if (
+        location.accuracy === undefined ||
+        location.accuracy <= GPS_PREFERRED_ACCURACY
+      ) {
+        finishResolve(location);
+      }
     };
 
     const handleError = (error: GeolocationPositionError) => {
@@ -147,7 +154,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       {
         enableHighAccuracy: false,
         timeout: GPS_REQUEST_TIMEOUT,
-        maximumAge: 60000,
+        maximumAge: 10000,
       }
     );
 
@@ -165,6 +172,15 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         )
       );
     }, GPS_REQUEST_TIMEOUT);
+
+    // Cho browser một khoảng ngắn để cải thiện fix đầu tiên,
+    // thay vì khóa UI trong toàn bộ timeout.
+    setTimeout(() => {
+      if (finished) return;
+      if (bestLocation && isUsableGPSLocation(bestLocation)) {
+        finishResolve(bestLocation);
+      }
+    }, GPS_FIRST_FIX_WAIT);
   });
 }
 
