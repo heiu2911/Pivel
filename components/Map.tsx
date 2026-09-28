@@ -1161,7 +1161,6 @@ function createCheckpointDetailsModal({
       navigationHud?.remove();
       navigationHud = null;
       navigationHudInstruction = "";
-      navigationHudMode = "";
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -2166,7 +2165,7 @@ export default function Map({
     useRef<mapboxgl.Marker[]>([]);
 
   const currentMapMode =
-    useRef<"cities" | "checkpoints" | null>(null);
+    useRef<"cities" | "checkpoints" | "hidden" | null>(null);
 
   const checkpointZonesAdded =
     useRef(false);
