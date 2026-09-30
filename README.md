@@ -13,7 +13,11 @@
 1. Sao chép `.env.example` thành `.env.local`.
 2. Điền ba biến môi trường từ Mapbox và Supabase.
 3. Cài dependencies với `npm install`.
-4. Chạy ứng dụng với `npm run dev` và mở `http://localhost:3000`.
+4. Chạy ứng dụng với `npm run dev`.
+5. Trên máy tính, tìm địa chỉ IPv4 trong mạng LAN (Windows: `ipconfig`). Ví dụ `192.168.1.10`.
+6. Trên điện thoại cùng Wi-Fi với máy tính, mở `http://192.168.1.10:3000` (thay bằng IPv4 thực tế của máy tính).
+
+Lưu ý: cấu hình LAN này giúp điện thoại truy cập dev server, nhưng GPS trên thiết bị thật có thể yêu cầu HTTPS. Nếu trình duyệt điện thoại không cho Location trên URL HTTP LAN, cần dùng một tunnel HTTPS như Cloudflare Tunnel hoặc ngrok.
 
 Không đưa `.env.local` lên Git hoặc chia sẻ private/service-role key. Ứng dụng chỉ dùng Supabase anon key ở trình duyệt.
 
