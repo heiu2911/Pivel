@@ -15,9 +15,12 @@
 3. Cài dependencies với `npm install`.
 4. Chạy ứng dụng với `npm run dev`.
 5. Trên máy tính, tìm địa chỉ IPv4 trong mạng LAN (Windows: `ipconfig`). Ví dụ `192.168.1.10`.
-6. Trên điện thoại cùng Wi-Fi với máy tính, mở `http://192.168.1.10:3000` (thay bằng IPv4 thực tế của máy tính).
+6. Nếu chỉ cần truy cập giao diện qua LAN, điện thoại cùng Wi-Fi có thể mở `http://192.168.1.10:3000` (thay bằng IPv4 thực tế của máy tính).
+7. Để test GPS trên điện thoại, chạy `npm run dev:https`. Next.js 16 hỗ trợ `--experimental-https` và sẽ tạo chứng chỉ HTTPS dùng cho development. citeturn1search0
+8. Điện thoại mở `https://192.168.1.10:3000`. Vì chứng chỉ dev là chứng chỉ cục bộ/tự ký, trình duyệt có thể cảnh báo chứng chỉ; nếu thiết bị không tin chứng chỉ thì dùng tunnel HTTPS có chứng chỉ công khai.
+9. Với tunnel HTTPS, giữ `npm run dev` hoặc `npm run dev:https` chạy trên máy tính rồi đưa cổng `3000` qua một tunnel HTTPS có hostname công khai. Không commit token, credentials hoặc file chứng chỉ vào Git.
 
-Lưu ý: cấu hình LAN này giúp điện thoại truy cập dev server, nhưng GPS trên thiết bị thật có thể yêu cầu HTTPS. Nếu trình duyệt điện thoại không cho Location trên URL HTTP LAN, cần dùng một tunnel HTTPS như Cloudflare Tunnel hoặc ngrok.
+Lưu ý: `allowedDevOrigins` trong `next.config.ts` phải chứa hostname/IP mà điện thoại dùng để truy cập dev server. GPS của trình duyệt trên thiết bị thật cần secure context; HTTPS với chứng chỉ được thiết bị tin cậy là lựa chọn phù hợp.
 
 Không đưa `.env.local` lên Git hoặc chia sẻ private/service-role key. Ứng dụng chỉ dùng Supabase anon key ở trình duyệt.
 
