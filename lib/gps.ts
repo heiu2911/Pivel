@@ -179,11 +179,9 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         return;
       }
 
-      finishReject(
-        new Error(
-          "Chrome/Edge không trả về tọa độ dù quyền Vị trí đã được cấp. Hãy kiểm tra Windows Location Services, quyền vị trí của trình duyệt và thử tải lại trang."
-        )
-      );
+      finishReject(new Error(
+        "Chrome/Edge không trả về tọa độ dù quyền Vị trí đã được cấp. Hãy kiểm tra Windows Location Services, quyền vị trí của trình duyệt và thử tải lại trang."
+      ));
     }, GPS_REQUEST_TIMEOUT);
 
     // Cho browser một khoảng ngắn để cải thiện fix đầu tiên,
