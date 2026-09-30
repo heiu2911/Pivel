@@ -83,7 +83,6 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 
   return new Promise((resolve, reject) => {
     let finished = false;
-    let bestLocation: GPSLocation | null = null;
     let watchId: number | null = null;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -117,23 +116,11 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       if (finished) return;
 
       const location = toGPSLocation(position);
-      if (!isUsableGPSLocation(location)) return;
 
-      if (
-        bestLocation === null ||
-        (location.accuracy ?? Infinity) <
-          (bestLocation.accuracy ?? Infinity)
-      ) {
-        bestLocation = location;
-      }
-
-      // Nếu fix đã khá chính xác thì trả về ngay.
-      // Nếu browser chỉ trả về vị trí thô (thường gặp trên laptop),
-      // giữ watch thêm một khoảng ngắn để có cơ hội nhận fix tốt hơn.
-      if (
-        location.accuracy === undefined ||
-        location.accuracy <= GPS_PREFERRED_ACCURACY
-      ) {
+      // Không chặn vị trí chỉ vì accuracy thấp.
+      // Laptop/Windows thường chỉ trả về vị trí tương đối và vẫn có
+      // thể sử dụng được cho việc hiển thị marker trên bản đồ.
+      if (isUsableGPSLocation(location)) {
         finishResolve(location);
       }
     };
@@ -141,65 +128,46 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     const handleError = (error: GeolocationPositionError) => {
       if (finished) return;
 
-      // Chrome/Edge có thể trả PERMISSION_DENIED khi quyền trang vừa
-      // được cấp nhưng Windows Location chưa đồng bộ kịp. Không reject
-      // ngay ở request đầu tiên; giữ request còn lại để thử lại.
+      // Chỉ reject ngay khi trình duyệt thực sự từ chối quyền.
+      // Các lỗi tạm thời như POSITION_UNAVAILABLE/TIMEOUT được chờ
+      // tới timeout tổng để browser có cơ hội trả về fix.
       if (error.code === error.PERMISSION_DENIED) {
-        if (bestLocation && isUsableGPSLocation(bestLocation)) {
-          finishResolve(bestLocation);
-        }
-        // Chỉ báo lỗi ở timeout tổng nếu cả hai request đều không có fix.
-        return;
+        finishReject(mapGeolocationError(error));
       }
-
-      // TIMEOUT/POSITION_UNAVAILABLE: tiếp tục chờ hoặc dùng
-      // bestLocation ở cuối timeout tổng.
     };
 
-    // Dùng getCurrentPosition song song với watchPosition.
-    // Một số bản Chrome/Edge trên Windows không phát fix qua watch ngay,
-    // nhưng lại trả về được qua request một lần.
+    // Request trực tiếp trước để lấy fix đầu tiên nhanh nhất.
     navigator.geolocation.getCurrentPosition(
       handlePosition,
       handleError,
       {
         enableHighAccuracy: false,
         timeout: GPS_REQUEST_TIMEOUT,
-        maximumAge: 10000,
+        maximumAge: 0,
       }
     );
 
+    // Đồng thời watch để các browser/laptop chỉ phát vị trí qua watch
+    // vẫn được nhận ngay khi có fix.
     watchId = navigator.geolocation.watchPosition(
       handlePosition,
       handleError,
       {
         enableHighAccuracy: false,
         timeout: GPS_REQUEST_TIMEOUT,
-        maximumAge: 10000,
+        maximumAge: 0,
       }
     );
 
     timeoutId = setTimeout(() => {
       if (finished) return;
 
-      if (bestLocation && isUsableGPSLocation(bestLocation)) {
-        finishResolve(bestLocation);
-        return;
-      }
-
-      finishReject(new Error(
-        "Chrome/Edge không trả về tọa độ dù quyền Vị trí đã được cấp. Hãy kiểm tra Windows Location Services, quyền vị trí của trình duyệt và thử tải lại trang."
-      ));
+      finishReject(
+        new Error(
+          "Không lấy được vị trí từ Chrome/Edge. Hãy kiểm tra quyền Location của trang TravelQuest và Location Services của Windows."
+        )
+      );
     }, GPS_REQUEST_TIMEOUT);
-
-    // Cho browser một khoảng ngắn để cải thiện fix đầu tiên,
-    // thay vì khóa UI trong toàn bộ timeout.
-    setTimeout(() => {
-      if (finished) return;
-      if (bestLocation && isUsableGPSLocation(bestLocation)) {
-        finishResolve(bestLocation);
-      }
-    }, GPS_FIRST_FIX_WAIT);
   });
 }
 
