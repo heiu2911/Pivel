@@ -141,9 +141,17 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     const handleError = (error: GeolocationPositionError) => {
       if (finished) return;
 
+      // Chrome/Edge có thể trả PERMISSION_DENIED khi quyền trang vừa
+      // được cấp nhưng Windows Location chưa đồng bộ kịp. Không reject
+      // ngay ở request đầu tiên; giữ request còn lại để thử lại.
       if (error.code === error.PERMISSION_DENIED) {
-        finishReject(mapGeolocationError(error));
+        if (bestLocation && isUsableGPSLocation(bestLocation)) {
+          finishResolve(bestLocation);
+        }
+        // Chỉ báo lỗi ở timeout tổng nếu cả hai request đều không có fix.
+        return;
       }
+
       // TIMEOUT/POSITION_UNAVAILABLE: tiếp tục chờ hoặc dùng
       // bestLocation ở cuối timeout tổng.
     };
