@@ -91,7 +91,6 @@ export function getCurrentLocation(): Promise<GPSLocation> {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
-
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
@@ -114,12 +113,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 
     const handlePosition = (position: GeolocationPosition) => {
       if (finished) return;
-
       const location = toGPSLocation(position);
-
-      // Không chặn vị trí chỉ vì accuracy thấp.
-      // Laptop/Windows thường chỉ trả về vị trí tương đối và vẫn có
-      // thể sử dụng được cho việc hiển thị marker trên bản đồ.
       if (isUsableGPSLocation(location)) {
         finishResolve(location);
       }
@@ -128,35 +122,30 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     const handleError = (error: GeolocationPositionError) => {
       if (finished) return;
 
-      // Chỉ reject ngay khi trình duyệt thực sự từ chối quyền.
-      // Các lỗi tạm thời như POSITION_UNAVAILABLE/TIMEOUT được chờ
-      // tới timeout tổng để browser có cơ hội trả về fix.
+      // Không hiển thị lỗi permission ngay. Một số bản Chrome/Edge trên
+      // Windows có thể trả lỗi tạm thời trước khi Windows Location phản hồi.
       if (error.code === error.PERMISSION_DENIED) {
-        finishReject(mapGeolocationError(error));
+        // Cho request còn lại cơ hội trả về tọa độ.
+        return;
       }
     };
 
-    // Request trực tiếp trước để lấy fix đầu tiên nhanh nhất.
+    const options: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 30000,
+      maximumAge: 0,
+    };
+
     navigator.geolocation.getCurrentPosition(
       handlePosition,
       handleError,
-      {
-        enableHighAccuracy: false,
-        timeout: GPS_REQUEST_TIMEOUT,
-        maximumAge: 0,
-      }
+      options
     );
 
-    // Đồng thời watch để các browser/laptop chỉ phát vị trí qua watch
-    // vẫn được nhận ngay khi có fix.
     watchId = navigator.geolocation.watchPosition(
       handlePosition,
       handleError,
-      {
-        enableHighAccuracy: false,
-        timeout: GPS_REQUEST_TIMEOUT,
-        maximumAge: 0,
-      }
+      options
     );
 
     timeoutId = setTimeout(() => {
@@ -164,10 +153,10 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 
       finishReject(
         new Error(
-          "Không lấy được vị trí từ Chrome/Edge. Hãy kiểm tra quyền Location của trang TravelQuest và Location Services của Windows."
+          "Chrome/Edge không trả về tọa độ. Hãy kiểm tra Location Services của Windows và quyền Location của trang TravelQuest."
         )
       );
-    }, GPS_REQUEST_TIMEOUT);
+    }, 30000);
   });
 }
 
