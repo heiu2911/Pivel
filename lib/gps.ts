@@ -128,9 +128,12 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     };
 
     const options: PositionOptions = {
-      enableHighAccuracy: true,
-      timeout: 30000,
-      maximumAge: 0,
+      // Laptop Windows thường định vị qua Wi-Fi/network.
+      // Không ép high accuracy để tránh timeout và lỗi scope/fallback
+      // khi Chrome/Edge chưa có GPS hardware.
+      enableHighAccuracy: false,
+      timeout: GPS_REQUEST_TIMEOUT,
+      maximumAge: 30000,
     };
 
     navigator.geolocation.getCurrentPosition(
@@ -155,7 +158,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
               "Chrome/Edge không trả về tọa độ. Hãy kiểm tra Location Services của Windows và quyền Location của trang TravelQuest."
             )
       );
-    }, 30000);
+    }, GPS_REQUEST_TIMEOUT);
   });
 }
 
