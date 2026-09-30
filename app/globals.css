@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0f18;
+  --foreground: #f8fafc;
 }
 
 @theme inline {
@@ -12,15 +12,90 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --tq-ink: #f8fafc;
+  --tq-surface: rgba(15, 23, 42, 0.96);
+  --tq-border: rgba(148, 163, 184, 0.14);
+  --tq-brand: #60a5fa;
+}
+
+html { background: #060b13; }
+
+body {
+  min-height: 100dvh;
+  margin: 0;
+  overflow-x: hidden;
+  background: #060b13;
+  color: #f8fafc;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+::selection { background: rgba(59, 130, 246, 0.35); }
+
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 3px solid rgba(96, 165, 250, 0.45);
+  outline-offset: 2px;
+}
+
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.18) transparent; }
+
+.tq-map-chip {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148,163,184,.16);
+  border-radius: 999px;
+  background: rgba(10,17,29,.82);
+  padding: 0 13px;
+  color: rgba(248,250,252,.78);
+  box-shadow: 0 8px 24px rgba(0,0,0,.28);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.tq-map-chip:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0,0,0,.34); }
+
+.tq-map-chip-active {
+  background: rgba(37,99,235,.9);
+  border-color: rgba(96,165,250,.9);
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(0,0,0,.36);
+}
+
+.tq-bottom-nav {
+  background: rgba(6,11,19,.92);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
+  box-shadow: 0 -10px 30px rgba(0,0,0,.34);
+}
+
+.mapboxgl-popup-content {
+  border-radius: 16px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  background: #0f172a !important;
+  color: #f8fafc;
+  box-shadow: 0 16px 45px rgba(0,0,0,.42) !important;
+}
+
+.mapboxgl-popup-tip { border-top-color: #0f172a !important; }
+
+@media (max-width: 640px) {
+  .tq-map-chip { min-height: 34px; padding-inline: 12px; }
+  .mapboxgl-ctrl-group {
+    border: 0 !important;
+    box-shadow: 0 8px 24px rgba(15,23,42,.16) !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

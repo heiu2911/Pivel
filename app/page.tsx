@@ -94,6 +94,18 @@ type PublicProfile = {
   following_count: number;
   xp: number;
   level: number;
+  avatar_url?: string | null;
+};
+
+type FriendLocation = {
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  display_name: string;
+  level: number;
+  xp: number;
+  avatar_url?: string | null;
+  updated_at: string;
 };
 
 type Notification = {
@@ -129,6 +141,8 @@ type ChatMessage = {
   id: string;
   text: string;
   sender: string;
+  senderId?: string;
+  recipientId?: string;
   createdAt: string;
 };
 
@@ -343,6 +357,71 @@ export default function Home() {
     null
   );
 
+  const [showCheckpointCard, setShowCheckpointCard] = useState(true);
+  const [checkpointCardOffset, setCheckpointCardOffset] = useState({ x: 0, y: 0 });
+  const checkpointCardDragRef = useRef<{ active: boolean; startX: number; startY: number; originX: number; originY: number }>({
+    active: false,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+  });
+  const checkpointRevealSwipeRef = useRef<{ startX: number; startY: number } | null>(null);
+
+  useEffect(() => {
+    setShowCheckpointCard(selectedCheckpoint !== null);
+    setCheckpointCardOffset({ x: 0, y: 0 });
+  }, [selectedCheckpoint]);
+
+  const handleCheckpointCardPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const target = event.target as HTMLElement;
+    if (target.closest("button, a, input, textarea, select")) return;
+
+    checkpointCardDragRef.current = {
+      active: true,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: checkpointCardOffset.x,
+      originY: checkpointCardOffset.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleCheckpointCardPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = checkpointCardDragRef.current;
+    if (!drag.active) return;
+
+    const maxX = Math.max(0, window.innerWidth / 2 - 24);
+    const maxY = Math.max(0, window.innerHeight / 2 - 80);
+
+    setCheckpointCardOffset({
+      x: Math.max(-maxX, Math.min(maxX, drag.originX + event.clientX - drag.startX)),
+      y: Math.max(-maxY, Math.min(maxY, drag.originY + event.clientY - drag.startY)),
+    });
+  };
+
+  const handleCheckpointCardPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = checkpointCardDragRef.current;
+    checkpointCardDragRef.current.active = false;
+
+    const currentX = checkpointCardOffset.x;
+    const currentY = checkpointCardOffset.y;
+    const snapX = Math.abs(currentX) < 90 ? 0 : currentX > 0 ? Math.min(180, window.innerWidth * 0.22) : Math.max(-180, -window.innerWidth * 0.22);
+    const snapY = Math.abs(currentY) < 90 ? 0 : currentY > 0 ? Math.min(260, window.innerHeight * 0.28) : Math.max(-260, -window.innerHeight * 0.28);
+
+    setCheckpointCardOffset({
+      x: snapX,
+      y: snapY,
+    });
+
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // Ignore pointer capture cleanup errors.
+    }
+  };
+
   // ============================================
   // ACCOUNT SETTINGS
   // ============================================
@@ -391,6 +470,12 @@ export default function Home() {
     setGpsEnabled(next);
     setSettingsMessage(next ? "📍 Đã bật GPS." : "📍 Đã tắt GPS.");
 
+    if (!next && gpsWatchId.current !== null) {
+      stopWatchingLocation(gpsWatchId.current);
+      gpsWatchId.current = null;
+      setLocationLoading(false);
+    }
+
     try {
       window.localStorage.setItem(
         "travelquest-gps-enabled",
@@ -403,8 +488,17 @@ export default function Home() {
 
   const handleClearLocalData = () => {
     try {
-      window.localStorage.removeItem("travelquest-saved-places");
-      window.localStorage.removeItem("travelquest-journey");
+      if (user?.id) {
+        window.localStorage.removeItem(
+          `travelquest-saved-places:${user.id}`
+        );
+        window.localStorage.removeItem(
+          `travelquest-journey:${user.id}`
+        );
+        window.localStorage.removeItem(
+          `travelquest-avatar-image:${user.id}`
+        );
+      }
     } catch {
       // Ignore localStorage errors.
     }
@@ -419,6 +513,15 @@ export default function Home() {
   // SAVED PLACES
   // ============================================
 
+  // Auth state must be initialized before effects that depend on user.
+  const [user, setUser] =
+    useState<User | null>(null);
+
+  const [authReady, setAuthReady] =
+    useState(false);
+
+  const authUserIdRef = useRef<string | null>(null);
+
   const [savedPlaceIds, setSavedPlaceIds] =
     useState<number[]>([]);
 
@@ -428,8 +531,15 @@ export default function Home() {
   const [showAllMapCheckpoints, setShowAllMapCheckpoints] =
     useState(false);
 
+  const [showMapCheckpoints, setShowMapCheckpoints] =
+    useState(true);
+
   const [showExplorePanel, setShowExplorePanel] =
     useState(false);
+
+  const [mapSearchQuery, setMapSearchQuery] = useState("");
+  const [mapSearchActive, setMapSearchActive] = useState(false);
+  const [mapFilter, setMapFilter] = useState<"none" | "all" | "nearby" | "unvisited" | "saved">("none");
 
   const [headerMenuOpen, setHeaderMenuOpen] =
     useState(false);
@@ -504,10 +614,29 @@ export default function Home() {
   const [userLocation, setUserLocation] =
     useState<GPSLocation | null>(null);
 
+  const [friendLocations, setFriendLocations] =
+    useState<FriendLocation[]>([]);
+
+  const lastPublishedLocationAt = useRef(0);
+
   useEffect(() => {
+    if (activeTab === "ugc") setFriendsOpen(false);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setSavedPlaceIds([]);
+      return;
+    }
+
     try {
-      const raw = window.localStorage.getItem("travelquest-saved-places");
-      if (!raw) return;
+      const raw = window.localStorage.getItem(
+        `travelquest-saved-places:${user.id}`
+      );
+      if (!raw) {
+        setSavedPlaceIds([]);
+        return;
+      }
       const parsed: unknown = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         setSavedPlaceIds(
@@ -515,26 +644,42 @@ export default function Home() {
         );
       }
     } catch {
-      // Ignore invalid local saved-place data.
+      setSavedPlaceIds([]);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     try {
       window.localStorage.setItem(
-        "travelquest-saved-places",
+        `travelquest-saved-places:${user.id}`,
         JSON.stringify(savedPlaceIds)
       );
     } catch {
       // Ignore localStorage failures.
     }
-  }, [savedPlaceIds]);
+  }, [savedPlaceIds, user?.id]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setJourneyName("Hành trình Hà Nội");
+      setJourneyCheckpointIds([]);
+      setJourneyStarted(false);
+      return;
+    }
+
     queueMicrotask(() => {
       try {
-        const raw = window.localStorage.getItem("travelquest-journey");
-        if (!raw) return;
+        const raw = window.localStorage.getItem(
+          `travelquest-journey:${user.id}`
+        );
+        if (!raw) {
+          setJourneyName("Hành trình Hà Nội");
+          setJourneyCheckpointIds([]);
+          setJourneyStarted(false);
+          return;
+        }
         const parsed: unknown = JSON.parse(raw);
         if (!parsed || typeof parsed !== "object") return;
         const data = parsed as {
@@ -557,12 +702,14 @@ export default function Home() {
         // Ignore invalid local journey data.
       }
     });
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     try {
       window.localStorage.setItem(
-        "travelquest-journey",
+        `travelquest-journey:${user.id}`,
         JSON.stringify({
           name: journeyName,
           checkpointIds: journeyCheckpointIds,
@@ -572,17 +719,11 @@ export default function Home() {
     } catch {
       // Ignore localStorage failures.
     }
-  }, [journeyName, journeyCheckpointIds, journeyStarted]);
+  }, [journeyName, journeyCheckpointIds, journeyStarted, user?.id]);
 
   // ============================================
   // AUTH
   // ============================================
-
-  const [user, setUser] =
-    useState<User | null>(null);
-
-  const [authReady, setAuthReady] =
-    useState(false);
 
   const ownCheckpointReview = user?.id
     ? checkpointReviews.find((item) => item.user_id === user.id) ?? null
@@ -762,6 +903,20 @@ export default function Home() {
   const [commentLoading, setCommentLoading] =
     useState<Record<number, boolean>>({});
 
+  const [commentOpenPostId, setCommentOpenPostId] = useState<number | null>(null);
+  const [ugcFeedIndex, setUgcFeedIndex] = useState(0);
+  const ugcDoubleTapRef = useRef<{ postId: number | null; at: number }>({ postId: null, at: 0 });
+  const handleUgcTap = (post: Post) => {
+    const now = Date.now();
+    const previous = ugcDoubleTapRef.current;
+    if (previous.postId === post.id && now - previous.at < 320) {
+      ugcDoubleTapRef.current = { postId: null, at: 0 };
+      void handleLike(post);
+      return;
+    }
+    ugcDoubleTapRef.current = { postId: post.id, at: now };
+  };
+
   const [, setCommentsLoading] =
     useState(false);
 
@@ -803,22 +958,46 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [friendsOpen, setFriendsOpen] = useState(false);
+  const [ugcSelectedUserId, setUgcSelectedUserId] = useState<string | null>(null);
+  const [friendProfiles, setFriendProfiles] = useState<PublicProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [selectedChatFriend, setSelectedChatFriend] = useState<PublicProfile | null>(null);
+  const [ugcMorePostId, setUgcMorePostId] = useState<number | null>(null);
+  const [hiddenUgcPostIds, setHiddenUgcPostIds] = useState<number[]>([]);
 
   useEffect(() => {
+    if (!user?.id) {
+      setSavedPostIds([]);
+      setAvatarEmoji("🧭");
+      setAvatarImageUrl(null);
+      return;
+    }
+
     queueMicrotask(() => {
       try {
         const savedPosts = window.localStorage.getItem("travelquest-saved-posts");
         if (savedPosts) {
           const parsed: unknown = JSON.parse(savedPosts);
           if (Array.isArray(parsed)) setSavedPostIds(parsed.filter((id): id is number => typeof id === "number"));
+        } else {
+          setSavedPostIds([]);
         }
-        const avatar = window.localStorage.getItem("travelquest-avatar");
-        if (avatar) setAvatarEmoji(avatar);
 
-        const avatarImage = window.localStorage.getItem("travelquest-avatar-image");
-        if (avatarImage?.startsWith("data:image/")) {
-          setAvatarImageUrl(avatarImage);
-        }
+        const avatar = window.localStorage.getItem(
+          `travelquest-avatar:${user.id}`
+        );
+        setAvatarEmoji(avatar || "🧭");
+
+        const avatarImage = window.localStorage.getItem(
+          `travelquest-avatar-image:${user.id}`
+        );
+        setAvatarImageUrl(
+          avatarImage?.startsWith("data:image/")
+            ? avatarImage
+            : null
+        );
+
         const missionData = window.localStorage.getItem("travelquest-daily-missions");
         if (missionData) {
           const parsed = JSON.parse(missionData) as { claims?: unknown; bonusXP?: unknown };
@@ -839,37 +1018,58 @@ export default function Home() {
         // Ignore invalid local feature data.
       }
     });
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
+
     try {
       window.localStorage.setItem("travelquest-saved-posts", JSON.stringify(savedPostIds));
-      window.localStorage.setItem("travelquest-avatar", avatarEmoji);
+      window.localStorage.setItem(
+        `travelquest-avatar:${user.id}`,
+        avatarEmoji
+      );
       window.localStorage.setItem("travelquest-daily-missions", JSON.stringify({ claims: dailyMissionClaims, bonusXP: missionBonusXP }));
       window.localStorage.setItem("travelquest-journeys", JSON.stringify(journeys));
       window.localStorage.setItem("travelquest-chat", JSON.stringify(chatMessages.slice(-100)));
     } catch {
       // Ignore localStorage failures.
     }
-  }, [savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages]);
+  }, [user?.id, savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages]);
 
   useEffect(() => {
-    if (!chatOpen) return;
+    if (!chatOpen || !user?.id) return;
     const channel = supabase.channel("travelquest-traveller-chat", { config: { broadcast: { self: false } } });
     channel.on("broadcast", { event: "message" }, ({ payload }) => {
       if (!payload || typeof payload !== "object") return;
       const data = payload as Partial<ChatMessage>;
-      if (typeof data.id !== "string" || typeof data.text !== "string" || typeof data.sender !== "string") return;
+      if (
+        typeof data.id !== "string" ||
+        typeof data.text !== "string" ||
+        typeof data.sender !== "string" ||
+        typeof data.senderId !== "string" ||
+        typeof data.recipientId !== "string"
+      ) return;
+      if (data.recipientId !== user.id) return;
       setChatMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data as ChatMessage].slice(-100));
     }).subscribe();
     return () => { void supabase.removeChannel(channel); };
-  }, [chatOpen]);
+  }, [chatOpen, user?.id]);
 
   const [imagePreview, setImagePreview] =
     useState<string | null>(null);
 
   const imageInputRef =
     useRef<HTMLInputElement | null>(null);
+
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraPreviewOpen, setCameraPreviewOpen] = useState(false);
+  const ugcCameraStartedRef = useRef(false);
+  const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("environment");
+  const [cameraError, setCameraError] = useState("");
+  const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const cameraPermissionBlockedRef = useRef(false);
 
   // ============================================
   // BADGE UNLOCK ANIMATION
@@ -946,9 +1146,10 @@ export default function Home() {
       }
 
       if (mounted) {
-        setUser(
-          data.session?.user ?? null
-        );
+        const sessionUser = data.session?.user ?? null;
+        authUserIdRef.current = sessionUser?.id ?? null;
+
+        setUser(sessionUser);
 
         setAuthReady(true);
       }
@@ -965,9 +1166,46 @@ export default function Home() {
             return;
           }
 
-          setUser(
-            session?.user ?? null
-          );
+          const nextUser = session?.user ?? null;
+
+          if (nextUser?.id !== authUserIdRef.current) {
+            if (gpsWatchId.current !== null) {
+              stopWatchingLocation(gpsWatchId.current);
+              gpsWatchId.current = null;
+            }
+
+            lastPublishedLocationAt.current = 0;
+            geofenceCheckpointId.current = null;
+            autoCheckinInProgress.current.clear();
+
+            setCheckins([]);
+            setFollowingUserIds([]);
+            setFriendLocations([]);
+            setNotifications([]);
+            setPublicProfile(null);
+            setPublicProfileOpen(false);
+            setSearchResults([]);
+            setSearchQuery("");
+            setSavedPlaceIds([]);
+            setJourneyName("Hành trình Hà Nội");
+            setJourneyCheckpointIds([]);
+            setJourneyStarted(false);
+            setUserLocation(null);
+            setDistance(null);
+            setSelectedCheckpoint(null);
+            setPosts([]);
+            setComments([]);
+            setCommentInputs({});
+            setLikedPostIds([]);
+            setSavedPostIds([]);
+            setAvatarImageUrl(null);
+            setAvatarEmoji("🧭");
+            setProfileName("Traveller");
+            setProfileNameInput("");
+          }
+
+          authUserIdRef.current = nextUser?.id ?? null;
+          setUser(nextUser);
         }
       );
 
@@ -1169,14 +1407,36 @@ export default function Home() {
     try {
       const dataUrl = await prepareAvatarImage(file);
 
+      if (!user?.id) {
+        throw new Error("Bạn cần đăng nhập để lưu avatar.");
+      }
+
       window.localStorage.setItem(
-        "travelquest-avatar-image",
+        `travelquest-avatar-image:${user.id}`,
         dataUrl
       );
 
+      const { error: avatarError } = await supabase
+        .from("travelquest_profile_avatars")
+        .upsert(
+          {
+            user_id: user.id,
+            avatar_url: dataUrl,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+
+      if (avatarError) {
+        console.error("Lỗi đồng bộ avatar:", avatarError);
+        throw new Error(
+          "Không thể đồng bộ avatar lên server. Hãy chạy SQL migration avatar rồi thử lại."
+        );
+      }
+
       setAvatarImageUrl(dataUrl);
       setProfileMessage(
-        "✅ Đã cập nhật ảnh avatar. Ảnh được lưu trên thiết bị này."
+        "✅ Đã cập nhật avatar và đồng bộ lên server."
       );
     } catch (error) {
       setProfileMessage(
@@ -1195,7 +1455,11 @@ export default function Home() {
 
   const removeAvatarImage = () => {
     try {
-      window.localStorage.removeItem("travelquest-avatar-image");
+      if (user?.id) {
+        window.localStorage.removeItem(
+          `travelquest-avatar-image:${user.id}`
+        );
+      }
     } catch {
       // Ignore localStorage failures.
     }
@@ -1432,20 +1696,55 @@ export default function Home() {
       return;
     }
 
+    // Clear all account-scoped UI state before ending the session.
+    if (gpsWatchId.current !== null) {
+      stopWatchingLocation(gpsWatchId.current);
+      gpsWatchId.current = null;
+    }
+
+    lastPublishedLocationAt.current = 0;
+    geofenceCheckpointId.current = null;
+    autoCheckinInProgress.current.clear();
+    previousCheckins.current = [];
+
     setUser(null);
-
-    setProfileName(
-      "Traveller"
-    );
-
-    setProfileNameInput(
-      ""
-    );
-
-    setProfileMessage(
-      ""
-    );
-
+    setCheckins([]);
+    setFollowingUserIds([]);
+    setFriendLocations([]);
+    setNotifications([]);
+    setPublicProfile(null);
+    setPublicProfileOpen(false);
+    setPublicProfileMessage("");
+    setSearchResults([]);
+    setSearchQuery("");
+    setSearchMessage("");
+    setSavedPlaceIds([]);
+    setJourneyName("Hành trình Hà Nội");
+    setJourneyCheckpointIds([]);
+    setJourneyStarted(false);
+    setJourneys([]);
+    setJourneyStartDate("");
+    setJourneyEndDate("");
+    setRouteShareMessage("");
+    setUserLocation(null);
+    setDistance(null);
+    setLocationLoading(false);
+    setSelectedCheckpoint(null);
+    setCheckpointReviews([]);
+    setReviewText("");
+    setReviewRating(5);
+    setReviewMessage("");
+    setPosts([]);
+    setComments([]);
+    setCommentInputs({});
+    setLikedPostIds([]);
+    setSavedPostIds([]);
+    setAvatarImageUrl(null);
+    setAvatarEmoji("🧭");
+    setProfileName("Traveller");
+    setProfileNameInput("");
+    setProfileMessage("");
+    setMessage("");
     setAuthOpen(false);
     setAuthEmail("");
     setAuthPassword("");
@@ -1521,6 +1820,29 @@ export default function Home() {
     setSearchMessage("");
     setSearchLoading(false);
   };
+
+  // Tap/click outside the search UI: collapse it back to the normal top UI,
+  // but keep the current query/results so reopening search does not lose context.
+  const dismissSearchOverlay = () => {
+    setSearchOpen(false);
+    setSearchLoading(false);
+  };
+
+  useEffect(() => {
+    if (!searchOpen) return;
+
+    // Capture at window level so map/canvas handlers cannot swallow the tap.
+    // Closing only collapses the search UI; the query/results stay intact.
+    const handleGlobalPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-traveller-search-panel]")) return;
+      dismissSearchOverlay();
+    };
+
+    window.addEventListener("pointerdown", handleGlobalPointerDown, true);
+    return () =>
+      window.removeEventListener("pointerdown", handleGlobalPointerDown, true);
+  }, [searchOpen]);
 
   // ============================================
   // NOTIFICATIONS - LOAD
@@ -1656,6 +1978,194 @@ export default function Home() {
       console.error("Lỗi load following:", error);
     }
   };
+
+  // ============================================
+  // FRIEND LOCATIONS - MUTUAL FOLLOWS
+  // ============================================
+
+  const loadFriendLocations = async () => {
+    if (!user?.id) {
+      setFriendLocations([]);
+      return;
+    }
+
+    try {
+      const [{ data: following, error: followingError }, { data: followers, error: followersError }] = await Promise.all([
+        supabase
+          .from("user_follows")
+          .select("following_id")
+          .eq("follower_id", user.id),
+        supabase
+          .from("user_follows")
+          .select("follower_id")
+          .eq("following_id", user.id),
+      ]);
+
+      if (followingError || followersError) {
+        console.warn("Không tải được quan hệ Follow để tìm bạn bè:", {
+          followingError: followingError?.message,
+          followersError: followersError?.message,
+        });
+        setFriendLocations([]);
+        return;
+      }
+
+      const followingIds = new Set(
+        (following ?? [])
+          .map((row) => row.following_id)
+          .filter((id): id is string => typeof id === "string")
+      );
+
+      const friendIds = (followers ?? [])
+        .map((row) => row.follower_id)
+        .filter(
+          (id): id is string =>
+            typeof id === "string" && followingIds.has(id)
+        );
+
+      if (!friendIds.length) {
+        setFriendLocations([]);
+        return;
+      }
+
+      const { data: locations, error: locationError } = await supabase
+        .from("travelquest_friend_locations")
+        .select("user_id, latitude, longitude, updated_at")
+        .in("user_id", friendIds)
+        .eq("sharing_enabled", true);
+
+      if (locationError) {
+        // The SQL table may not have been created yet; keep the map usable.
+        console.warn("Friend locations chưa sẵn sàng:", locationError.message);
+        setFriendLocations([]);
+        return;
+      }
+
+      const { data: profiles, error: profileError } = await supabase
+        .from("travelquest_public_profiles")
+        .select("user_id, display_name, level, xp")
+        .in("user_id", friendIds);
+
+      if (profileError) {
+        console.warn("Không tải được public profile bạn bè, vẫn hiển thị marker GPS:", profileError.message);
+      }
+
+      const { data: avatarRows, error: avatarError } = await supabase
+        .from("travelquest_profile_avatars")
+        .select("user_id, avatar_url")
+        .in("user_id", friendIds);
+
+      if (avatarError) {
+        console.warn(
+          "Không tải được avatar bạn bè, vẫn hiển thị marker GPS:",
+          avatarError.message
+        );
+      }
+
+      const profileMap = new globalThis.Map(
+        (profiles ?? []).map((profile) => [
+          profile.user_id,
+          profile,
+        ])
+      );
+
+      const avatarMap = new globalThis.Map(
+        (avatarRows ?? []).map((row) => [
+          row.user_id,
+          row.avatar_url,
+        ])
+      );
+
+      const nextFriendLocations = (locations ?? [])
+        .map((location) => {
+          const profile = profileMap.get(location.user_id);
+
+          return {
+            user_id: location.user_id,
+            latitude: Number(location.latitude),
+            longitude: Number(location.longitude),
+            display_name: profile?.display_name || "Traveller",
+            level: Number(profile?.level ?? 1),
+            xp: Number(profile?.xp ?? 0),
+            avatar_url:
+              typeof avatarMap.get(location.user_id) === "string" &&
+              avatarMap.get(location.user_id).startsWith("data:image/")
+                ? avatarMap.get(location.user_id)
+                : null,
+            updated_at: location.updated_at,
+          } satisfies FriendLocation;
+        })
+        .filter(
+          (item) =>
+            Number.isFinite(item.latitude) &&
+            Number.isFinite(item.longitude) &&
+            item.latitude >= -90 &&
+            item.latitude <= 90 &&
+            item.longitude >= -180 &&
+            item.longitude <= 180
+        );
+
+      console.info("TravelQuest Friend GPS:", {
+        currentUserId: user.id,
+        mutualFriendIds: friendIds,
+        locationRows: locations?.length ?? 0,
+        visibleFriendLocations: nextFriendLocations.length,
+      });
+
+      setFriendLocations(nextFriendLocations);
+    } catch (error) {
+      console.warn("Lỗi tải vị trí bạn bè:", error);
+      setFriendLocations([]);
+    }
+  };
+
+  const publishOwnLocation = async (location: GPSLocation) => {
+    if (!user?.id) return;
+
+    const now = Date.now();
+    if (now - lastPublishedLocationAt.current < 15000) return;
+    lastPublishedLocationAt.current = now;
+
+    const { error } = await supabase
+      .from("travelquest_friend_locations")
+      .upsert(
+        {
+          user_id: user.id,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          sharing_enabled: true,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
+
+    if (error) {
+      console.warn("Chưa thể chia sẻ vị trí với bạn bè:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+    } else {
+      console.info("TravelQuest: đã publish GPS cho bạn bè.", {
+        userId: user.id,
+        latitude: location.latitude,
+        longitude: location.longitude,
+      });
+    }
+  };
+
+  useEffect(() => {
+    void loadFriendLocations();
+
+    if (!user?.id) return;
+
+    const intervalId = window.setInterval(() => {
+      void loadFriendLocations();
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [user?.id]);
 
   // ============================================
   // PUBLIC PROFILE - OPEN
@@ -2501,6 +3011,160 @@ export default function Home() {
     }
   };
 
+  const stopCamera = () => {
+    cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
+    cameraStreamRef.current = null;
+    if (cameraVideoRef.current) cameraVideoRef.current.srcObject = null;
+  };
+
+  const closeCamera = () => {
+    stopCamera();
+    setCameraOpen(false);
+    setCameraError("");
+  };
+
+  const openCamera = async () => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage("🔐 Hãy đăng nhập để chụp và đăng moment.");
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError("Trình duyệt này không hỗ trợ camera. Cậu có thể chọn ảnh từ máy.");
+      return;
+    }
+
+    if (cameraPermissionBlockedRef.current) {
+      setCameraError("Camera đang bị chặn. Hãy bật quyền camera cho trình duyệt rồi nhấn Thử lại.");
+      return;
+    }
+
+    stopCamera();
+    setCameraError("");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cameraFacing },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      setCameraOpen(true);
+      requestAnimationFrame(() => {
+        if (cameraVideoRef.current) {
+          cameraVideoRef.current.srcObject = stream;
+          void cameraVideoRef.current.play();
+        }
+      });
+    } catch (error) {
+      console.error("Lỗi mở camera:", error);
+      setCameraOpen(false);
+      stopCamera();
+      const cameraErrorName = error instanceof DOMException ? error.name : "";
+      if (cameraErrorName === "NotAllowedError" || cameraErrorName === "PermissionDeniedError") {
+        cameraPermissionBlockedRef.current = true;
+        setCameraError("Camera đang bị chặn. Hãy cấp quyền camera cho trình duyệt rồi nhấn Thử lại.");
+      } else if (cameraErrorName === "NotFoundError") {
+        setCameraError("Không tìm thấy camera trên thiết bị này. Cậu vẫn có thể chọn ảnh từ máy.");
+      } else if (cameraErrorName === "NotReadableError") {
+        setCameraError("Camera đang được ứng dụng khác sử dụng. Hãy đóng ứng dụng đó rồi thử lại.");
+      } else {
+        setCameraError("Không mở được camera. Hãy kiểm tra quyền camera rồi thử lại.");
+      }
+    }
+  };
+
+  const retryCamera = async () => {
+    cameraPermissionBlockedRef.current = false;
+    ugcCameraStartedRef.current = true;
+    await openCamera();
+  };
+
+  const switchCamera = async () => {
+    const nextFacing = cameraFacing === "user" ? "environment" : "user";
+    setCameraFacing(nextFacing);
+
+    if (!cameraOpen) return;
+
+    stopCamera();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: nextFacing },
+        audio: false,
+      });
+      cameraStreamRef.current = stream;
+      if (cameraVideoRef.current) {
+        cameraVideoRef.current.srcObject = stream;
+        await cameraVideoRef.current.play();
+      }
+    } catch (error) {
+      console.error("Lỗi đổi camera:", error);
+      setCameraError("Không thể đổi camera.");
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "ugc" && !ugcSelectedUserId && user?.id && !ugcCameraStartedRef.current && !cameraOpen && !cameraPreviewOpen) {
+      ugcCameraStartedRef.current = true;
+      void openCamera();
+    }
+
+    if (activeTab !== "ugc") {
+      ugcCameraStartedRef.current = false;
+      if (cameraOpen) closeCamera();
+    }
+  }, [activeTab, user?.id, cameraOpen, cameraPreviewOpen, ugcSelectedUserId]);
+
+  const captureCameraPhoto = () => {
+    const video = cameraVideoRef.current;
+    if (!video || video.readyState < 2 || video.videoWidth === 0) {
+      setCameraError("Camera chưa sẵn sàng, thử lại sau một chút.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    const maxWidth = 1440;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setCameraError("Không thể chụp ảnh trên thiết bị này.");
+      return;
+    }
+
+    if (cameraFacing === "user") {
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
+    }
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setCameraError("Không tạo được ảnh. Thử lại nhé.");
+        return;
+      }
+
+      const file = new File([blob], `travelquest-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
+
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+      setPostMessage("");
+      closeCamera();
+      setCameraPreviewOpen(true);
+    }, "image/jpeg", 0.9);
+  };
+
+  useEffect(() => {
+    return () => stopCamera();
+  }, []);
+
   // ============================================
   // IMAGE PREVIEW CLEANUP
   // ============================================
@@ -2568,6 +3232,8 @@ export default function Home() {
     setSelectedImage(file);
     setImagePreview(preview);
     setPostMessage("");
+    if (cameraOpen) closeCamera();
+    setCameraPreviewOpen(true);
   };
 
   // ============================================
@@ -2583,10 +3249,19 @@ export default function Home() {
 
     setSelectedImage(null);
     setImagePreview(null);
+    setCameraPreviewOpen(false);
 
     if (imageInputRef.current) {
       imageInputRef.current.value =
         "";
+    }
+  };
+
+  const handleRetakePhoto = async () => {
+    handleRemoveImage();
+    setPostMessage("");
+    if (activeTab === "ugc" && !ugcSelectedUserId) {
+      await openCamera();
     }
   };
 
@@ -2997,6 +3672,8 @@ export default function Home() {
           location
         );
 
+        void publishOwnLocation(location);
+
         await autoCheckIn(
           location
         );
@@ -3096,6 +3773,8 @@ export default function Home() {
               location
             );
 
+            void publishOwnLocation(location);
+
             setLocationLoading(
               false
             );
@@ -3173,6 +3852,45 @@ export default function Home() {
     };
 
   // ============================================
+  // AUTO START GPS WHEN APP OPENS
+  // ============================================
+
+  useEffect(() => {
+    if (!gpsEnabled || !authReady) return;
+
+    let cancelled = false;
+
+    const startGpsOnAppOpen = async () => {
+      try {
+        // Bắt đầu watcher trước để không bị kẹt nếu lần lấy GPS đầu tiên
+        // chậm hoặc trình duyệt chỉ trả về vị trí gần đúng.
+        if (!cancelled) {
+          startWatchingGPS();
+        }
+
+        // Lấy một fix ngay lập tức để map có vị trí ban đầu.
+        await updateLocation();
+      } catch (error) {
+        console.error("Không thể tự khởi động GPS:", error);
+      }
+    };
+
+    void startGpsOnAppOpen();
+
+    return () => {
+      cancelled = true;
+
+      if (gpsWatchId.current !== null) {
+        stopWatchingLocation(gpsWatchId.current);
+        gpsWatchId.current = null;
+      }
+    };
+    // Restart when authentication becomes ready or changes user.
+    // This ensures the current user's location is published after login.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gpsEnabled, authReady, user?.id]);
+
+  // ============================================
   // SELECT CHECKPOINT
   // ============================================
 
@@ -3208,6 +3926,34 @@ export default function Home() {
   const journeyCheckpoints = checkpoints.filter((checkpoint) =>
     journeyCheckpointIds.includes(checkpoint.id)
   );
+
+  const mapSearchResults = checkpoints
+    .filter((checkpoint) => {
+      const query = mapSearchQuery.trim().toLowerCase();
+      const matchesQuery =
+        !query ||
+        checkpoint.name.toLowerCase().includes(query) ||
+        (checkpoint.description ?? "").toLowerCase().includes(query);
+
+      if (!matchesQuery) return false;
+
+      if (mapFilter === "unvisited") {
+        return !isCheckedIn(checkpoint.id);
+      }
+
+      if (mapFilter === "saved") {
+        return isSavedPlace(checkpoint.id);
+      }
+
+      if (mapFilter === "nearby") {
+        if (!userLocation) return false;
+        const checkpointDistance = getValidGpsDistance(userLocation, checkpoint);
+        return checkpointDistance !== null && checkpointDistance <= 50000;
+      }
+
+      return true;
+    })
+    .slice(0, 6);
 
   const journeyCompletedCount = journeyCheckpoints.filter((checkpoint) =>
     isCheckedIn(checkpoint.id)
@@ -3798,21 +4544,20 @@ export default function Home() {
       const content =
         postContent.trim();
 
-      if (!content) {
+      if (!content && !selectedImage) {
         setPostMessage(
-          "✍️ Hãy viết nội dung trước khi đăng."
+          "📸 Chụp ảnh hoặc viết một moment trước khi đăng."
         );
-
         return;
       }
 
       if (
+        content &&
         content.length < 3
       ) {
         setPostMessage(
           "Bài viết cần ít nhất 3 ký tự."
         );
-
         return;
       }
 
@@ -3929,6 +4674,7 @@ export default function Home() {
         // ============================================
 
         const {
+          data: createdPost,
           error,
         } = await supabase
           .from("posts")
@@ -3939,11 +4685,15 @@ export default function Home() {
               currentUserId,
             checkpoint_id:
               selectedPostCheckpoint,
-            content,
+            content: content || "📸 Khoảnh khắc của tôi",
             likes: 0,
             image_url:
               imageUrl,
-          });
+          })
+          .select(
+            "id, device_id, user_id, checkpoint_id, content, likes, created_at, image_url"
+          )
+          .single();
 
         if (error) {
           console.error(
@@ -3959,6 +4709,21 @@ export default function Home() {
           return;
         }
 
+        if (createdPost) {
+          const optimisticPost: Post = {
+            id: createdPost.id,
+            device_id: createdPost.device_id,
+            user_id: createdPost.user_id ?? null,
+            checkpoint_id: createdPost.checkpoint_id,
+            content: createdPost.content,
+            likes: createdPost.likes ?? 0,
+            created_at: createdPost.created_at,
+            image_url: createdPost.image_url ?? null,
+            checkpoint: null,
+          };
+          setPosts((current) => [optimisticPost, ...current]);
+        }
+
         setPostContent("");
 
         setSelectedPostCheckpoint(
@@ -3970,6 +4735,7 @@ export default function Home() {
         setPostMessage(
           "🎉 Đăng bài thành công!"
         );
+        setCameraPreviewOpen(false);
 
         await loadPosts();
       } catch (error) {
@@ -4238,6 +5004,35 @@ export default function Home() {
     }
   };
 
+  const submitComment = async (postId: number) => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage("🔐 Hãy đăng nhập để bình luận.");
+      return;
+    }
+
+    const content = (commentInputs[postId] ?? "").trim();
+    if (!content || commentLoading[postId]) return;
+
+    setCommentLoading((current) => ({ ...current, [postId]: true }));
+    try {
+      const { data, error } = await supabase
+        .from("post_comments")
+        .insert({ post_id: postId, user_id: user.id, content })
+        .select("id, post_id, user_id, content, created_at")
+        .single();
+
+      if (error) throw error;
+      setComments((current) => [...current, data as PostComment]);
+      setCommentInputs((current) => ({ ...current, [postId]: "" }));
+    } catch (error) {
+      console.error("Lỗi gửi bình luận:", error);
+    } finally {
+      setCommentLoading((current) => ({ ...current, [postId]: false }));
+    }
+  };
+
   // ============================================
   // RESET
   // ============================================
@@ -4376,6 +5171,9 @@ export default function Home() {
 
   const visiblePosts =
     posts.filter((post) => {
+      if (activeTab === "ugc" && ugcSelectedUserId) {
+        return post.user_id === ugcSelectedUserId;
+      }
       const followingMatch =
         feedMode === "all" ||
         (post.user_id !== null && followingUserIds.includes(post.user_id));
@@ -4733,7 +5531,8 @@ export default function Home() {
   };
 
   const deletePost = async (postId: number) => {
-    if (!user?.id || !window.confirm("Xóa bài viết này?")) return;
+    if (!user?.id || !window.confirm("Xóa moment này?")) return;
+    setUgcMorePostId(null);
     const { error } = await supabase.from("posts").delete().eq("id", postId).eq("user_id", user.id);
     if (error) {
       setPostMessage("❌ Không thể xóa bài viết.");
@@ -4741,7 +5540,36 @@ export default function Home() {
     }
     setPosts((current) => current.filter((post) => post.id !== postId));
     setSavedPostIds((current) => current.filter((id) => id !== postId));
-    setPostMessage("🗑️ Đã xóa bài viết.");
+    setPostMessage("🗑️ Đã xóa moment.");
+  };
+
+  const shareUgcPost = async (post: Post) => {
+    setUgcMorePostId(null);
+    const shareUrl = typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname}#moment-${post.id}`
+      : "";
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "TravelQuest Moment",
+          text: post.content || "📸 Khoảnh khắc TravelQuest",
+          url: shareUrl,
+        });
+      } else if (navigator.clipboard && shareUrl) {
+        await navigator.clipboard.writeText(shareUrl);
+        setPostMessage("🔗 Đã sao chép liên kết moment.");
+      }
+    } catch {
+      // Người dùng có thể đóng sheet chia sẻ; không cần báo lỗi.
+    }
+  };
+
+  const hideUgcPost = (postId: number) => {
+    setHiddenUgcPostIds((current) =>
+      current.includes(postId) ? current : [...current, postId]
+    );
+    setUgcMorePostId(null);
+    setPostMessage("👋 Đã ẩn moment khỏi feed của cậu.");
   };
 
   const askTravelAssistant = () => {
@@ -4762,12 +5590,90 @@ export default function Home() {
     }
   };
 
+  const loadFriendProfiles = async () => {
+    if (!user?.id) {
+      setFriendProfiles([]);
+      return;
+    }
+
+    setFriendsLoading(true);
+    try {
+      const { data: following, error } = await supabase
+        .from("user_follows")
+        .select("following_id")
+        .eq("follower_id", user.id);
+
+      if (error) throw error;
+
+      const ids = (following ?? [])
+        .map((row) => row.following_id)
+        .filter((id): id is string => typeof id === "string");
+
+      if (!ids.length) {
+        setFriendProfiles([]);
+        return;
+      }
+
+      const { data: profiles, error: profileError } = await supabase
+        .from("travelquest_public_profiles")
+        .select("user_id, display_name, checkpoint_count, post_count, follower_count, following_count, xp, level")
+        .in("user_id", ids)
+        .order("xp", { ascending: false });
+
+      if (profileError) throw profileError;
+      setFriendProfiles((profiles ?? []) as PublicProfile[]);
+    } catch (error) {
+      console.error("Lỗi tải danh sách bạn bè:", error);
+      setFriendProfiles([]);
+    } finally {
+      setFriendsLoading(false);
+    }
+  };
+
+  const openFriends = async () => {
+    if (!user?.id) {
+      setAuthOpen(true);
+      setAuthMode("login");
+      setAuthMessage("🔐 Hãy đăng nhập để xem bạn bè.");
+      return;
+    }
+    setFriendsOpen(true);
+    setActiveTab("friends");
+    await loadFollowing();
+    await loadFriendProfiles();
+  };
+
+  const selectUgcTraveller = (travellerId: string | null) => {
+    setUgcSelectedUserId(travellerId);
+    setFriendsOpen(false);
+    setActiveTab("ugc");
+  };
+
+  const openChatWithFriend = (friend: PublicProfile) => {
+    setSelectedChatFriend(friend);
+    setChatInput("");
+    setChatOpen(true);
+  };
+
   const sendChatMessage = () => {
     const text = chatInput.trim();
-    if (!text) return;
-    const message: ChatMessage = { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, text, sender: profileName, createdAt: new Date().toISOString() };
+    if (!text || !user?.id || !selectedChatFriend) return;
+
+    const message: ChatMessage = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      text,
+      sender: profileName,
+      senderId: user.id,
+      recipientId: selectedChatFriend.user_id,
+      createdAt: new Date().toISOString(),
+    };
+
     setChatMessages((current) => [...current, message].slice(-100));
-    void supabase.channel("travelquest-traveller-chat").send({ type: "broadcast", event: "message", payload: message });
+    void supabase.channel("travelquest-traveller-chat").send({
+      type: "broadcast",
+      event: "message",
+      payload: message,
+    });
     setChatInput("");
   };
 
@@ -4776,7 +5682,7 @@ export default function Home() {
   // ============================================
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#06111f] text-white pb-20">
+    <main className={`min-h-screen overflow-x-hidden bg-[#06111f] text-white ${activeTab === "map" ? "pb-0 overflow-y-hidden" : "pb-20"}`}>
 
       {/* ============================================
           AUTH MODAL
@@ -5032,159 +5938,206 @@ export default function Home() {
         </div>
       )}
 
-      {/* HEADER */}
-
-      <header className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-3 pt-3 sm:px-4 sm:pt-4">
-        <div className="pointer-events-auto flex items-center justify-between rounded-2xl border border-white/10 bg-[#06111f]/82 px-3 py-2.5 shadow-lg backdrop-blur-xl">
-
-        <div>
-          <h1 className="text-sm font-black tracking-tight">
-            TravelQuest
-          </h1>
-
-          <p className="text-[9px] text-white/40">
-            Explore • Check-in • Collect
-          </p>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-
-          {/* SEARCH TRAVELLER */}
-
-          {authReady && user && (
+      {/* MAP TOOLBAR */}
+      {activeTab === "map" && (
+      <header
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-none px-2 pt-2 sm:px-3"
+        onPointerDownCapture={(event) => {
+          if (searchOpen) {
+            const target = event.target as HTMLElement | null;
+            if (!target?.closest("[data-traveller-search-panel]")) {
+              dismissSearchOverlay();
+            }
+          }
+          if (!mapSearchActive) return;
+          const target = event.target as HTMLElement | null;
+          if (!target?.closest("[data-map-search-box]")) {
+            setMapSearchActive(false);
+          }
+        }}
+      >
+        <div className="pointer-events-auto mx-auto max-w-[1600px]">
+          <div className="mb-2 flex items-center justify-between px-2 sm:px-4">
             <button
               type="button"
-              onClick={openSearch}
-              className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-              title="Tìm Traveller"
+              onClick={() => setActiveTab("map")}
+              className="flex items-center gap-2.5 text-left transition active:scale-[0.98]"
+              aria-label="TravelQuest - Bản đồ"
             >
-              🔎
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/15 bg-white/10 text-xl shadow-lg backdrop-blur-xl">🧭</span>
+              <span>
+                <span className="block text-lg font-black tracking-tight text-white drop-shadow">TravelQuest</span>
+                <span className="block text-[9px] font-semibold tracking-[0.16em] text-white/45">EXPLORE • CHECK-IN • MOMENT</span>
+              </span>
             </button>
-          )}
-
-          {/* NOTIFICATIONS */}
-
-          {authReady && user && (
-            <button
-              type="button"
-              onClick={toggleNotifications}
-              className="relative w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/15 transition"
-              title="Thông báo"
-            >
-              🔔
-
-              {notifications.some(
-                (item) => !item.is_read
-              ) && (
-                <span className="absolute top-1 right-1 min-w-2.5 h-2.5 rounded-full bg-red-400 border-2 border-[#06111f]" />
+            <div className="flex items-center gap-2">
+              {authReady && user && (
+                <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/65 text-base shadow-lg backdrop-blur-xl transition hover:bg-white/10" title="Thông báo">
+                  🔔
+                  {notifications.some((item) => !item.is_read) && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#07182a] bg-red-400" />}
+                </button>
               )}
-            </button>
-          )}
+              {authReady && (
+                <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-white/10 shadow-lg backdrop-blur-xl transition hover:scale-[1.03]" title={user ? "Tài khoản" : "Đăng nhập"}>
+                  {user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-base">{user ? avatarEmoji : "🔐"}</span>}
+                </button>
+              )}
+            </div>
+          </div>
 
-          {/* ACCOUNT */}
-
-          {authReady && (
-            <button
-              onClick={() => {
-                if (user) {
-                  setAuthMessage("");
-                  setAuthOpen(true);
-                } else {
-                  openAuth("login");
-                }
-              }}
-              className="h-10 rounded-full bg-white/10 hover:bg-white/15 px-3 flex items-center gap-2 transition"
-              title={
-                user
-                  ? "Tài khoản"
-                  : "Đăng nhập"
-              }
-            >
-
-              <span className="w-7 h-7 rounded-full overflow-hidden bg-white/10 flex items-center justify-center shrink-0">
-                {user && avatarImageUrl ? (
-                  <img
-                    src={avatarImageUrl}
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-sm">
-                    {user ? avatarEmoji : "🔐"}
-                  </span>
+          <div className={`flex items-center gap-2 rounded-[1.6rem] border border-white/15 bg-[#07182a]/60 px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
+            <div data-map-search-box className="relative min-w-0 flex-1">
+              <div className="flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-white shadow-inner backdrop-blur-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">⌕</span>
+                <input
+                  value={mapSearchQuery}
+                  onChange={(event) => setMapSearchQuery(event.target.value)}
+                  onFocus={() => setMapSearchActive(true)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") setMapSearchActive(false);
+                  }}
+                  placeholder="Tìm địa điểm, checkpoint..."
+                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/45"
+                  aria-label="Tìm địa điểm trên bản đồ"
+                />
+                {mapSearchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setMapSearchQuery("")}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10 text-white/60 transition hover:bg-white/15"
+                    aria-label="Xóa tìm kiếm"
+                  >
+                    ×
+                  </button>
                 )}
-              </span>
-
-              <span className="hidden sm:block text-xs font-semibold max-w-[120px] truncate">
-                {user
-                  ? profileName
-                  : "Đăng nhập"}
-              </span>
-
-            </button>
-          )}
-
-          <div className="relative">
-            <button
-              type="button"
-              className="w-9 h-9 rounded-xl bg-white/8 flex items-center justify-center hover:bg-white/12 transition text-lg"
-              onClick={() => setHeaderMenuOpen((value) => !value)}
-              title="Công cụ"
-              aria-label="Công cụ"
-            >
-              ⋯
-            </button>
-
-            {headerMenuOpen && (
-              <div className="absolute right-0 top-11 z-[70] w-48 rounded-2xl border border-white/10 bg-[#07182a]/98 p-2 shadow-2xl backdrop-blur-xl">
                 <button
                   type="button"
                   onClick={() => {
-                    setHeaderMenuOpen(false);
                     updateLocation();
                     startWatchingGPS();
                   }}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
+                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-slate-900 transition hover:bg-slate-100"
+                  title="Định vị tôi"
                 >
-                  📍 Cập nhật GPS
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeaderMenuOpen(false);
-                    setSmartTravelOpen(true);
-                  }}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
-                >
-                  ✨ Smart Travel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHeaderMenuOpen(false);
-                    setChatOpen(true);
-                  }}
-                  className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 hover:bg-white/8 transition"
-                >
-                  💬 Traveller Chat
+                  <span>⌖</span>
+                  <span className="hidden sm:inline">Vị trí</span>
                 </button>
               </div>
-            )}
+
+              {(mapSearchQuery.trim() || mapFilter !== "none") && (
+                <div className="fixed right-3 top-[104px] z-[90] w-[min(320px,calc(100vw-24px))] max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:top-[68px] sm:right-4">
+                  {mapSearchResults.length === 0 ? (
+                    <div className="px-4 py-5 text-center text-xs text-slate-500">
+                      Chưa tìm thấy checkpoint phù hợp.
+                    </div>
+                  ) : (
+                    mapSearchResults.map((checkpoint) => (
+                      <button
+                        key={checkpoint.id}
+                        type="button"
+                        onClick={() => {
+                          selectCheckpoint(checkpoint);
+                          setShowExplorePanel(false);
+                          setMapSearchQuery("");
+                          setMapFilter("none");
+                        }}
+                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
+                      >
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl">
+                          {checkpoint.icon ?? "📍"}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-slate-800">{checkpoint.name}</span>
+                          <span className="mt-0.5 block truncate text-[11px] text-slate-500">
+                            {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
+                          </span>
+                        </span>
+                        <span className="text-slate-400 transition group-hover:translate-x-0.5">›</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className={`shrink-0 items-center gap-1.5 ${mapSearchActive ? "hidden" : "hidden lg:flex"}`}>
+              {[
+                ["all", "✨ Tất cả"],
+                ["nearby", "📍 Gần tôi"],
+                ["unvisited", "🎯 Chưa check-in"],
+                ["saved", "🔖 Đã lưu"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
+                  className={`tq-map-chip ${mapFilter === value ? "tq-map-chip-active" : ""}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className={`shrink-0 items-center gap-1.5 ${mapSearchActive ? "hidden" : "flex"}`}>
+                            {authReady && user && (
+                <button type="button" onClick={openSearch} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-base transition hover:bg-white/15" title="Tìm Traveller" aria-label="Tìm Traveller">👥</button>
+              )}
+
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-lg transition hover:bg-white/14"
+                  onClick={() => setHeaderMenuOpen((value) => !value)}
+                  title="Công cụ"
+                  aria-label="Công cụ"
+                >
+                  ⋯
+                </button>
+
+                {headerMenuOpen && (
+                  <div className="absolute right-0 top-12 z-[90] w-48 rounded-2xl border border-white/10 bg-[#07182a]/98 p-2 shadow-2xl backdrop-blur-xl">
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 transition hover:bg-white/8">📍 Cập nhật GPS</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 transition hover:bg-white/8">✨ Smart Travel</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-white/75 transition hover:bg-white/8">💬 Traveller Chat</button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-        </div>
-
+          <div className="mt-2 flex gap-2 overflow-x-auto px-1 pb-1 lg:hidden [scrollbar-width:none]">
+            {[
+              ["all", "✨ Tất cả"],
+              ["nearby", "📍 Gần tôi"],
+              ["unvisited", "🎯 Chưa check-in"],
+              ["saved", "🔖 Đã lưu"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
+                className={`tq-map-chip shrink-0 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
-
-      <div className="pb-24">
+      )}
+     <div className={activeTab === "map" ? "pb-0" : "pb-24"}>
 
         {/* ================= MAP ================= */}
 
         {activeTab === "map" && (
-          <section className="relative h-[100dvh] min-h-[560px]">
+          <section
+            className="relative h-[100dvh] min-h-0 overflow-hidden"
+            onPointerDownCapture={() => {
+              if (mapSearchActive) setMapSearchActive(false);
+            }}
+          >
 
-            <div className="absolute inset-0 pb-20">
+            <div className="absolute inset-0">
               <Map
                 userLocation={
                   userLocation
@@ -5198,13 +6151,22 @@ export default function Home() {
                 avatarEmoji={
                   avatarEmoji
                 }
+                friendLocations={
+                  friendLocations
+                }
+                showCheckpoints={
+                  showMapCheckpoints
+                }
+                onFriendMarkerClick={
+                  openPublicProfile
+                }
               />
             </div>
 
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
-              <div className="absolute top-[88px] left-3 sm:left-4 z-20 w-[min(390px,calc(100vw-24px))] pointer-events-none">
-                <div className="pointer-events-auto max-h-[calc(100vh-180px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/94 backdrop-blur-2xl shadow-2xl [scrollbar-width:thin]">
+              <div className="fixed left-1/2 top-1/2 z-[80] w-[min(380px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+                <div className="pointer-events-auto max-h-[min(60vh,540px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/96 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,.45)] [scrollbar-width:thin]">
 
                 {/* SUMMARY */}
                 <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
@@ -5238,10 +6200,11 @@ export default function Home() {
                 </div>
 
                 {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
-                <div className="p-3">
-                  <div className="flex items-center justify-between px-1 pb-2">
+                <div className="p-2.5">
+                  <div className="flex items-center justify-between gap-2 px-1 pb-1.5">
                     <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
-                    {checkpoints.length > 3 && (
+                    <div className="flex items-center gap-2">
+                      {checkpoints.length > 3 && (
                       <button
                         type="button"
                         onClick={() => setShowAllMapCheckpoints((value) => !value)}
@@ -5249,7 +6212,8 @@ export default function Home() {
                       >
                         {showAllMapCheckpoints ? "Thu gọn" : `Xem tất cả (${checkpoints.length})`}
                       </button>
-                    )}
+                      )}
+                    </div>
                   </div>
 
                   {loading ? (
@@ -5261,7 +6225,7 @@ export default function Home() {
                       Chưa có checkpoint.
                     </div>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {(showAllMapCheckpoints ? checkpoints : checkpoints.slice(0, 3)).map((checkpoint) => {
                         const checked = isCheckedIn(checkpoint.id);
                         const selected = selectedCheckpoint?.id === checkpoint.id;
@@ -5270,7 +6234,7 @@ export default function Home() {
                             key={checkpoint.id}
                             type="button"
                             onClick={() => selectCheckpoint(checkpoint)}
-                            className={`flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition ${
+                            className={`flex w-full items-center gap-3 rounded-xl border px-2.5 py-2 text-left transition ${
                               selected
                                 ? "border-blue-400/50 bg-blue-500/15"
                                 : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"
@@ -5399,151 +6363,201 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setShowExplorePanel(true)}
-                className="absolute top-[88px] left-3 sm:left-4 z-20 flex h-10 items-center gap-2 rounded-full border border-white/10 bg-[#07182a]/90 px-3.5 text-[11px] font-black text-white shadow-xl backdrop-blur-xl transition hover:bg-[#0b223b]"
-                title="Hiện khám phá"
-                aria-label="Hiện khám phá"
-              >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-sm">🧭</span>
-                <span>Hiện khám phá</span>
-              </button>
+              <div className="fixed bottom-[92px] left-3 sm:bottom-24 sm:left-4 z-40 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowMapCheckpoints((value) => !value)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/95 text-base text-white shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                  title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
+                  aria-label={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
+                >
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-base ${showMapCheckpoints ? "bg-blue-500/15" : "bg-white/10"}`}>📍</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowExplorePanel(true)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-[#07182a]/95 text-base text-white shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                  title="Hiện khám phá"
+                  aria-label="Hiện khám phá"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-base">🧭</span>
+                </button>
+              </div>
             )}
 
             {/* SELECTED CHECKPOINT */}
 
-            {selectedCheckpoint && (
-              <div className="absolute bottom-24 left-3 right-3 z-30 pointer-events-none">
-
-                <div className="pointer-events-auto max-w-xl mx-auto bg-[#07182a]/95 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-2xl">
-
-                  <div className="flex items-start gap-4">
-
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-3xl shrink-0">
-                      {selectedCheckpoint.icon ??
-                        "📍"}
-                    </div>
-
-                    <div className="flex-1">
-
-                      <div className="flex items-start justify-between gap-3">
-
-                        <div>
-
-                          <h2 className="font-bold text-lg">
-                            {
-                              selectedCheckpoint.name
-                            }
-                          </h2>
-
-                          <p className="text-sm text-white/55 mt-1">
-                            {
-                              selectedCheckpoint.description
-                            }
-                          </p>
-
-                        </div>
-
-                        <button
-                          onClick={() => {
-                            setSelectedCheckpoint(
-                              null
-                            );
-
-                            selectedCheckpointRef.current =
-                              null;
-
-                            setDistance(
-                              null
-                            );
-
-                            setMessage("");
-                          }}
-                          className="text-white/40 hover:text-white"
-                        >
-                          ✕
-                        </button>
-
-                      </div>
-
-                      {distance !== null && (
-                        <div
-                          className={`mt-4 px-3 py-2 rounded-xl text-sm ${
-                            canCheckIn
-                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/20"
-                              : "bg-orange-500/10 text-orange-300 border border-orange-400/20"
-                          }`}
-                        >
-                          {canCheckIn
-                            ? `✅ Bạn đang ở cách checkpoint ${distance}m`
-                            : `📍 Bạn đang cách checkpoint ${distance}m`}
-                        </div>
-                      )}
-
-                      <button
-                        onClick={openCheckpointDetail}
-                        className="w-full mt-4 py-3 rounded-xl bg-blue-500/15 hover:bg-blue-500/25 border border-blue-400/20 text-blue-200 font-semibold transition"
-                      >
-                        📖 Xem chi tiết checkpoint
-                      </button>
-
-                      <button
-                        onClick={
-                          updateLocation
-                        }
-                        disabled={
-                          locationLoading
-                        }
-                        className="w-full mt-4 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 font-semibold transition"
-                      >
-                        {locationLoading
-                          ? "📡 Đang lấy vị trí..."
-                          : "📍 Kiểm tra vị trí của tôi"}
-                      </button>
-
-                      <button
-                        onClick={
-                          handleCheckIn
-                        }
-                        disabled={
-                          checkingIn ||
-                          isCheckedIn(
-                            selectedCheckpoint.id
-                          )
-                        }
-                        className={`w-full mt-2 py-3 rounded-xl font-bold transition ${
-                          isCheckedIn(
-                            selectedCheckpoint.id
-                          )
-                            ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/20"
-                            : "bg-blue-500 hover:bg-blue-400 text-white"
-                        }`}
-                      >
-                        {checkingIn
-                          ? "📡 Đang xác nhận GPS..."
-                          : isCheckedIn(
-                              selectedCheckpoint.id
-                            )
-                          ? "✓ Đã check-in"
-                          : "📍 Check-in tại đây"}
-                      </button>
-
-                      {message && (
-                        <p className="text-center text-xs text-white/60 mt-3 leading-relaxed">
-                          {message}
-                        </p>
-                      )}
-
-                    </div>
-
-                  </div>
-
+            {selectedCheckpoint && !showCheckpointCard && (
+              <div className="absolute inset-0 z-40 pointer-events-none flex items-end justify-end px-3 pb-[calc(92px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
+                <div
+                  className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-[#07182a]/85 px-2 py-2 shadow-[0_12px_35px_rgba(0,0,0,.3)] backdrop-blur-xl touch-pan-y select-none"
+                  onPointerDown={(event) => {
+                    checkpointRevealSwipeRef.current = {
+                      startX: event.clientX,
+                      startY: event.clientY,
+                    };
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                  }}
+                  onPointerUp={(event) => {
+                    const start = checkpointRevealSwipeRef.current;
+                    checkpointRevealSwipeRef.current = null;
+                    if (!start) return;
+                    const dx = event.clientX - start.startX;
+                    const dy = event.clientY - start.startY;
+                    if (dx > 55 && Math.abs(dx) > Math.abs(dy)) {
+                      setShowCheckpointCard(true);
+                    }
+                    try {
+                      event.currentTarget.releasePointerCapture(event.pointerId);
+                    } catch {
+                      // Ignore pointer capture cleanup errors.
+                    }
+                  }}
+                  aria-label="Vuốt sang phải để hiện checkpoint"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/65 text-lg">→</span>
+                  <span className="pr-2 text-[10px] font-bold text-white/50">Vuốt sang</span>
                 </div>
-
               </div>
             )}
 
+            {selectedCheckpoint && showCheckpointCard && (
+              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none flex justify-center px-3 pb-[calc(82px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
+                <div
+                  className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-white/15 bg-[#07182a]/90 shadow-[0_12px_35px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-none select-none"
+                  style={{ transform: `translate3d(${checkpointCardOffset.x}px, ${checkpointCardOffset.y}px, 0)` }}
+                  onPointerDown={handleCheckpointCardPointerDown}
+                  onPointerMove={handleCheckpointCardPointerMove}
+                  onPointerUp={handleCheckpointCardPointerUp}
+                  onPointerCancel={handleCheckpointCardPointerUp}
+                >
+                  <div className="flex items-center gap-2.5 px-2.5 py-2.5">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#10243b]">
+                      {selectedCheckpoint.name === "Miếu ông Trường (con)" ? (
+                        <img
+                          src="/checkpoints/mieu-ong-truong-con.webp"
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xl">
+                          {selectedCheckpoint.icon ?? "📍"}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <h2 className="truncate text-[13px] font-black leading-tight text-white">
+                          {selectedCheckpoint.name}
+                        </h2>
+                        {isCheckedIn(selectedCheckpoint.id) && (
+                          <span className="shrink-0 text-[8px] font-bold text-emerald-300">✓</span>
+                        )}
+                      </div>
+                      <p className="mt-0.5 truncate text-[9px] text-white/40">
+                        {distance !== null
+                          ? canCheckIn
+                            ? "Bạn đang ở đây"
+                            : `${distance}m từ vị trí hiện tại`
+                          : "Chưa xác định khoảng cách"}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        const marker = document.querySelector(
+                          `[data-travelquest-checkpoint-id="${selectedCheckpoint.id}"]`
+                        ) as HTMLElement | null;
+                        marker?.click();
+                      }}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-300/20 bg-blue-500/15 text-base text-blue-200 transition hover:bg-blue-500/25"
+                      title="Chỉ đường trên bản đồ"
+                      aria-label="Chỉ đường trên bản đồ"
+                    >
+                      🧭
+                    </button>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={openCheckpointDetail}
+                      className="h-9 w-9 shrink-0 rounded-full bg-white/5 text-sm text-white/55 transition hover:bg-white/10 hover:text-white"
+                      title="Xem chi tiết"
+                      aria-label="Xem chi tiết"
+                    >
+                      ›
+                    </button>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => {
+                        setSelectedCheckpoint(null);
+                        selectedCheckpointRef.current = null;
+                        setDistance(null);
+                        setMessage("");
+                      }}
+                      className="h-9 w-9 shrink-0 rounded-full bg-white/5 text-xs text-white/35 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Đóng checkpoint"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 border-t border-white/5 px-2.5 py-1.5">
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={handleCheckIn}
+                      disabled={checkingIn || isCheckedIn(selectedCheckpoint.id)}
+                      className={`min-h-8 flex-1 rounded-xl px-3 text-[10px] font-black transition ${
+                        isCheckedIn(selectedCheckpoint.id)
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : canCheckIn
+                          ? "bg-blue-500 text-white"
+                          : "bg-white/8 text-white/70"
+                      }`}
+                    >
+                      {checkingIn
+                        ? "📡..."
+                        : isCheckedIn(selectedCheckpoint.id)
+                        ? "✓ Đã check-in"
+                        : canCheckIn
+                        ? "📍 Check-in"
+                        : "📍 Kiểm tra"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/35 transition hover:bg-white/5 hover:text-white/70"
+                    >
+                      {savedCheckpoints.some((item) => item.id === selectedCheckpoint.id) ? "🔖 Đã lưu" : "🔖 Lưu"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onPointerDown={(event) => event.stopPropagation()}
+                      onClick={() => setShowCheckpointCard(false)}
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/30 transition hover:bg-white/5 hover:text-white/60"
+                    >
+                      Ẩn
+                    </button>
+                  </div>
+
+                  {message && (
+                    <div className="px-3 pb-2 text-[9px] leading-relaxed text-white/45">
+                      {message}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </section>
         )}
 
@@ -6428,93 +7442,25 @@ export default function Home() {
             </div>
 
             {/* ================= ACHIEVEMENTS ================= */}
-
             <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
-
               <div className="flex items-center justify-between mb-4">
-
                 <div>
-                  <p className="text-xs text-blue-300 font-semibold">
-                    ACHIEVEMENTS
-                  </p>
-
-                  <h3 className="text-xl font-black mt-1">
-                    Thành tựu hành trình
-                  </h3>
+                  <p className="text-xs text-blue-300 font-semibold">ACHIEVEMENTS</p>
+                  <h3 className="text-xl font-black mt-1">Thành tựu hành trình</h3>
                 </div>
-
-                <div className="text-right">
-                  <p className="text-lg font-black">
-                    {unlockedAchievementCount}/{achievements.length}
-                  </p>
-
-                  <p className="text-[10px] text-white/35">
-                    đã mở khóa
-                  </p>
-                </div>
-
+                <p className="text-lg font-black">{unlockedAchievementCount}/{achievements.length}</p>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-                {achievements.map(
-                  (achievement) => (
-                    <div
-                      key={
-                        achievement.id
-                      }
-                      className={`flex items-center gap-3 rounded-2xl border p-4 transition ${
-                        achievement.unlocked
-                          ? "bg-blue-500/10 border-blue-400/20"
-                          : "bg-black/10 border-white/5 opacity-45"
-                      }`}
-                    >
-
-                      <div
-                        className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center text-2xl ${
-                          achievement.unlocked
-                            ? "bg-blue-500/15"
-                            : "bg-black/20 grayscale"
-                        }`}
-                      >
-                        {achievement.unlocked
-                          ? achievement.icon
-                          : "🔒"}
-                      </div>
-
-                      <div className="min-w-0">
-
-                        <p className="font-bold text-sm">
-                          {achievement.name}
-                        </p>
-
-                        <p className="text-xs text-white/40 mt-1 leading-relaxed">
-                          {achievement.description}
-                        </p>
-
-                        <p
-                          className={`text-[10px] mt-2 font-semibold ${
-                            achievement.unlocked
-                              ? "text-blue-300"
-                              : "text-white/25"
-                          }`}
-                        >
-                          {achievement.unlocked
-                            ? "✓ Đã mở khóa"
-                            : "Chưa mở khóa"}
-                        </p>
-
-                      </div>
-
-                    </div>
-                  )
-                )}
-
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {achievements.slice(0, 8).map((achievement) => (
+                  <div key={achievement.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
+                    <p className="text-2xl">{achievement.unlocked ? achievement.icon : "🔒"}</p>
+                    <p className="mt-2 text-sm font-bold">{achievement.name}</p>
+                    <p className="mt-1 text-[10px] text-white/40">{achievement.unlocked ? "Đã mở khóa" : "Chưa mở khóa"}</p>
+                  </div>
+                ))}
               </div>
-
             </div>
 
-            {/* ================= REGIONAL BADGES ================= */}
             <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -6525,16 +7471,15 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {regionalBadges.map((badge) => (
-                  <div key={badge.id} className={`rounded-2xl border p-4 ${badge.unlocked ? "bg-purple-500/10 border-purple-400/20" : "bg-black/10 border-white/5 opacity-45"}`}>
+                  <div key={badge.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{badge.unlocked ? badge.icon : "🔒"}</p>
-                    <p className="text-sm font-bold mt-2">{badge.name}</p>
-                    <p className="text-[10px] text-white/40 mt-1">{badge.description}</p>
+                    <p className="mt-2 text-sm font-bold">{badge.name}</p>
+                    <p className="mt-1 text-[10px] text-white/40">{badge.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* ================= ADVANCED ACHIEVEMENTS ================= */}
             <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -6545,765 +7490,475 @@ export default function Home() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {advancedAchievements.map((item) => (
-                  <div key={item.id} className={`rounded-2xl border p-4 ${item.unlocked ? "bg-orange-500/10 border-orange-400/20" : "bg-black/10 border-white/5 opacity-45"}`}>
+                  <div key={item.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{item.unlocked ? item.icon : "🔒"}</p>
-                    <p className="text-sm font-bold mt-2">{item.name}</p>
-                    <p className="text-[10px] text-white/40 mt-1">{item.description}</p>
+                    <p className="mt-2 text-sm font-bold">{item.name}</p>
+                    <p className="mt-1 text-[10px] text-white/40">{item.description}</p>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 rounded-xl bg-blue-500/10 border border-blue-400/15 p-3">
-                <p className="text-xs text-blue-200">💡 Bạn còn thiếu: {missingAchievements.length ? missingAchievements.slice(0, 3).map((item) => item.name).join(", ") : "không còn huy hiệu cơ bản nào."}</p>
-              </div>
             </div>
 
-            {loading ? (
-              <div className="text-center py-10 text-white/50">
-                Đang tải huy hiệu...
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-
-                {checkpoints.map(
-                  (checkpoint) => {
-                    const unlocked =
-                      isCheckedIn(
-                        checkpoint.id
-                      );
-
-                    return (
-                      <div
-                        key={
-                          checkpoint.id
-                        }
-                        className={`rounded-3xl border p-5 text-center transition ${
-                          unlocked
-                            ? "bg-white/10 border-white/15"
-                            : "bg-white/[0.03] border-white/5 opacity-50"
-                        }`}
-                      >
-
-                        <div
-                          className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl ${
-                            unlocked
-                              ? "bg-white/10"
-                              : "bg-black/20 grayscale"
-                          }`}
-                        >
-                          {unlocked
-                            ? checkpoint.icon ??
-                              "🏆"
-                            : "🔒"}
-                        </div>
-
-                        <h3 className="font-bold text-sm mt-4">
-                          {checkpoint.badge ??
-                            checkpoint.name}
-                        </h3>
-
-                        <p className="text-xs text-white/40 mt-1">
-                          {unlocked
-                            ? "Đã mở khóa"
-                            : "Chưa mở khóa"}
-                        </p>
-
-                      </div>
-                    );
-                  }
-                )}
-
-              </div>
-            )}
-
-            <button
-              onClick={
-                resetProgress
-              }
-              className="mt-8 text-xs text-red-300/60 hover:text-red-300 transition"
-            >
+            <button type="button" onClick={resetProgress} className="mt-2 text-xs text-red-300/60 hover:text-red-300 transition">
               Reset dữ liệu demo
             </button>
 
+            </section>
+          )}
+
+            {/* ================= FRIENDS ================= */}
+        {activeTab === "friends" && (
+          <section className="fixed inset-0 z-40 overflow-y-auto bg-[#06111f] px-4 pb-28 pt-8 text-white">
+            <div className="mx-auto w-full max-w-lg">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black tracking-[0.2em] text-blue-300">TRAVELQUEST</p>
+                  <h1 className="mt-1 text-3xl font-black">👥 Bạn bè</h1>
+                  <p className="mt-1 text-xs text-white/45">{friendProfiles.length} Traveller đang theo dõi</p>
+                </div>
+                <button type="button" onClick={() => void loadFriendProfiles()} className="h-10 w-10 rounded-full bg-white/5 border border-white/10">↻</button>
+              </div>
+
+              <button type="button" onClick={openSearch} className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left">
+                <span>🔎</span>
+                <span className="text-sm text-white/40">Tìm Traveller mới...</span>
+              </button>
+
+              <div className="mt-5 space-y-3">
+                {friendsLoading ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-white/45">Đang tải bạn bè...</div>
+                ) : friendProfiles.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-center">
+                    <div className="text-4xl">🧭</div>
+                    <p className="mt-3 font-bold">Chưa có bạn bè</p>
+                    <p className="mt-1 text-xs text-white/40">Tìm Traveller và nhấn Theo dõi để bắt đầu.</p>
+                    <button type="button" onClick={openSearch} className="mt-4 rounded-xl bg-blue-500 px-4 py-2 text-xs font-bold">Tìm bạn</button>
+                  </div>
+                ) : (
+                  friendProfiles.map((friend) => (
+                    <div key={friend.user_id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-xl">🧭</div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-bold">{friend.display_name}</p>
+                        <p className="mt-1 text-[11px] text-white/40">Level {friend.level} · {friend.xp} XP · {friend.checkpoint_count} checkpoint</p>
+                      </div>
+                      <button type="button" onClick={() => openChatWithFriend(friend)} className="rounded-xl bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-200">💬 Chat</button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </section>
         )}
 
-        {/* ================= UGC ================= */}
-
+        {/* ================= UGC / CAMERA FIRST ================= */}
         {activeTab === "ugc" && (
-          <section className="pt-28 px-5 max-w-5xl mx-auto">
-
-            <div className="mb-8">
-
-              <p className="text-blue-300 text-sm font-semibold">
-                TRAVEL COMMUNITY
-              </p>
-
-              <h2 className="text-3xl font-black mt-1">
-                UGC
-              </h2>
-
-              <p className="text-white/50 mt-2">
-                Chia sẻ những khoảnh khắc trong hành trình.
-              </p>
-
+          <section className="fixed inset-0 z-40 bg-black text-white">
+            <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2">
+              <button type="button" onClick={() => { setFriendsOpen(true); void loadFriendProfiles(); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/35 shadow-lg backdrop-blur-md transition active:scale-95" aria-label="Mở bạn bè">👥</button>
+            </div>
+            <div className="absolute right-4 top-4 z-30">
+              <button type="button" onClick={() => { setChatOpen(true); setSelectedChatFriend(null); setChatInput(""); if (!friendProfiles.length) void loadFriendProfiles(); }} className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-black/35 text-lg shadow-lg backdrop-blur-md transition active:scale-95" aria-label="Mở chat">💬</button>
             </div>
 
-            {/* ================= CREATE POST ================= */}
-
-            <div className="mb-6 bg-white/5 border border-white/10 rounded-3xl p-5">
-
-              <div className="flex items-center gap-3 mb-4">
-
-                <div className="w-11 h-11 rounded-full bg-blue-500/15 flex items-center justify-center text-xl">
-                  🧭
-                </div>
-
-                <div>
-
-                  <p className="font-bold">
-                    Chia sẻ hành trình
-                  </p>
-
-                  <p className="text-xs text-white/40">
-                    Bài viết sẽ được lưu vào TravelQuest
-                  </p>
-
-                </div>
-
-              </div>
-
-              <textarea
-                value={postContent}
-                onChange={(event) =>
-                  setPostContent(
-                    event.target.value
-                  )
-                }
-                maxLength={1000}
-                placeholder="Bạn vừa khám phá điều gì? ✨"
-                className="w-full min-h-32 resize-none rounded-2xl bg-black/20 border border-white/10 p-4 text-sm text-white placeholder:text-white/30 outline-none focus:border-blue-400/50 transition"
-              />
-
-              <div className="flex justify-between items-center mt-2">
-
-                <span className="text-[11px] text-white/30">
-                  {postContent.length}/1000
-                </span>
-
-                <span className="text-[11px] text-white/30">
-                  Chia sẻ trải nghiệm của bạn
-                </span>
-
-              </div>
-
-              {/* CHECKPOINT SELECT */}
-
-              <div className="mt-4">
-
-                <p className="text-xs text-white/50 mb-2">
-                  Gắn checkpoint
-                </p>
-
-                <select
-                  value={
-                    selectedPostCheckpoint ??
-                    ""
-                  }
-                  onChange={(event) => {
-                    const value =
-                      event.target.value;
-
-                    setSelectedPostCheckpoint(
-                      value
-                        ? Number(value)
-                        : null
-                    );
-                  }}
-                  className="w-full rounded-xl bg-[#07182a] border border-white/10 px-4 py-3 text-sm text-white outline-none"
-                >
-
-                  <option value="">
-                    📍 Không gắn checkpoint
-                  </option>
-
-                  {checkpoints.map(
-                    (checkpoint) => (
-                      <option
-                        key={
-                          checkpoint.id
-                        }
-                        value={
-                          checkpoint.id
-                        }
-                      >
-                        {checkpoint.icon ??
-                          "📍"}{" "}
-                        {
-                          checkpoint.name
-                        }
-                      </option>
-                    )
-                  )}
-
-                </select>
-
-              </div>
-
-              {/* ================= IMAGE UPLOAD ================= */}
-
-              <div className="mt-4">
-
-                <p className="text-xs text-white/50 mb-2">
-                  Thêm ảnh
-                </p>
-
-                {!imagePreview ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      imageInputRef.current?.click()
-                    }
-                    className="w-full rounded-2xl border border-dashed border-white/15 bg-black/20 hover:bg-white/5 py-8 transition"
-                  >
-
-                    <div className="text-4xl">
-                      📸
-                    </div>
-
-                    <p className="text-sm font-semibold mt-2">
-                      Chọn ảnh chuyến đi
-                    </p>
-
-                    <p className="text-[11px] text-white/30 mt-1">
-                      JPG, PNG, WEBP hoặc GIF • tối đa 5MB
-                    </p>
-
-                  </button>
-                ) : (
-                  <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/20">
-
-                    <img
-                      src={imagePreview}
-                      alt="Preview ảnh bài viết"
-                      className="w-full max-h-80 object-cover"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={
-                        handleRemoveImage
-                      }
-                      className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/70 backdrop-blur-sm text-white hover:bg-black/90 transition"
-                      title="Xóa ảnh"
-                    >
-                      ✕
-                    </button>
-
+            {friendsOpen && (
+              <div className="absolute inset-x-3 top-16 z-50 mx-auto max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a]/95 p-3 shadow-2xl backdrop-blur-xl">
+                <div className="flex items-center justify-between px-2 py-1">
+                  <div>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-blue-300">TRAVELQUEST</p>
+                    <p className="text-base font-black">Bạn bè</p>
                   </div>
-                )}
-
-                <input
-                  ref={
-                    imageInputRef
-                  }
-                  type="file"
-                  accept="image/*"
-                  onChange={
-                    handleSelectImage
-                  }
-                  className="hidden"
-                />
-
-              </div>
-
-              {postMessage && (
-                <p className="mt-3 text-sm text-blue-300">
-                  {postMessage}
-                </p>
-              )}
-
-              <button
-                onClick={
-                  handleCreatePost
-                }
-                disabled={posting}
-                className="w-full mt-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 font-bold transition"
-              >
-                {posting
-                  ? "📡 Đang đăng..."
-                  : "Đăng bài ✨"}
-              </button>
-
-            </div>
-
-            {/* ================= FEED FILTER ================= */}
-
-            <div className="mb-5 flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-1">
-
-              <button
-                type="button"
-                onClick={() =>
-                  setFeedMode("all")
-                }
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
-                  feedMode === "all"
-                    ? "bg-blue-500 text-white"
-                    : "text-white/45 hover:text-white"
-                }`}
-              >
-                🌍 Tất cả
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (!user?.id) {
-                    setAuthOpen(true);
-                    setAuthMode("login");
-                    setAuthMessage(
-                      "🔐 Hãy đăng nhập để xem bài từ người bạn theo dõi."
-                    );
-                    return;
-                  }
-
-                  setFeedMode("following");
-                }}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition ${
-                  feedMode === "following"
-                    ? "bg-blue-500 text-white"
-                    : "text-white/45 hover:text-white"
-                }`}
-              >
-                👥 Đang theo dõi
-                {user?.id && (
-                  <span className="ml-1 text-[9px] opacity-60">
-                    {followingUserIds.length}
-                  </span>
-                )}
-              </button>
-
-            </div>
-
-            {/* ================= REAL POSTS ================= */}
-
-            {postsLoading ? (
-              <div className="py-10 text-center text-white/50">
-                Đang tải bài viết...
-              </div>
-            ) : visiblePosts.length ===
-              0 ? (
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-8 text-center">
-
-                <div className="text-5xl">
-                  📸
+                  <button type="button" onClick={() => setFriendsOpen(false)} className="h-9 w-9 rounded-full bg-white/5 text-white/70">✕</button>
                 </div>
-
-                <h3 className="font-bold mt-4">
-                  {feedMode === "following"
-                    ? "Chưa có bài từ người bạn theo dõi"
-                    : "Chưa có bài viết nào"}
-                </h3>
-
-                <p className="text-sm text-white/40 mt-2">
-                  {feedMode === "following"
-                    ? "Hãy Follow thêm Traveller để xây dựng feed của riêng bạn."
-                    : "Hãy trở thành người đầu tiên chia sẻ hành trình!"}
-                </p>
-
+                <div className="mt-3 flex gap-4 overflow-x-auto px-2 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <button type="button" onClick={() => selectUgcTraveller(null)} className="flex min-w-[68px] shrink-0 flex-col items-center gap-2 rounded-2xl p-2 text-center transition hover:bg-white/10 active:scale-[0.99]">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-white/10 text-xl">
+                      {"🧭"}
+                    </div>
+                    <div className="w-full min-w-0"><p className="truncate text-[11px] font-bold">{profileName}</p></div>
+                  </button>
+                  {friendProfiles.map((friend) => (
+                    <button key={friend.user_id} type="button" onClick={() => selectUgcTraveller(friend.user_id)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-blue-500/15 text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
+                      <div className="w-full min-w-0"><p className="truncate text-[11px] font-bold">{friend.display_name}</p></div>
+                      
+                    </button>
+                  ))}
+                  {!friendsLoading && friendProfiles.length === 0 && <p className="px-3 py-5 text-center text-xs text-white/40">Chưa có bạn bè. Hãy theo dõi Traveller để xem moment của họ.</p>}
+                </div>
               </div>
-            ) : (
-              <div className="grid md:grid-cols-3 gap-4">
-
-                {visiblePosts.map(
-                  (post) => (
-                    <article
-                      key={
-                        post.id
-                      }
-                      className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden"
-                    >
-
-                      {/* ================= REAL IMAGE ================= */}
-
-                      {post.image_url ? (
-                        <div className="aspect-[4/3] bg-black/20 overflow-hidden">
-
-                          <img
-                            src={
-                              post.image_url
-                            }
-                            alt="Ảnh bài viết TravelQuest"
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-
-                        </div>
-                      ) : (
-                        <div className="aspect-[4/3] bg-gradient-to-br from-blue-900/60 via-slate-800 to-indigo-950 flex items-center justify-center text-6xl">
-                          📸
-                        </div>
-                      )}
-
-                      <div className="p-5">
-
-                        <div className="flex items-center justify-between">
-
-                          <div className="flex items-center gap-2">
-
-                            <div className="w-8 h-8 rounded-full bg-blue-500/15 flex items-center justify-center text-sm">
-                              🧭
-                            </div>
-
-                            <div>
-
-                              <p className="font-bold text-sm">
-                                {post.user_id ===
-                                user?.id
-                                  ? profileName
-                                  : "Traveller"}
-                              </p>
-
-                              <p className="text-[10px] text-white/30">
-                                {formatPostTime(
-                                  post.created_at
-                                )}
-                              </p>
-
-                            </div>
-
-                          </div>
-
-                          <button
-                            onClick={() =>
-                              handleLike(
-                                post
-                              )
-                            }
-                            disabled={
-                              likeLoading[
-                                post.id
-                              ]
-                            }
-                            className={`text-xs transition ${
-                              likedPostIds.includes(
-                                post.id
-                              )
-                                ? "text-red-300"
-                                : "text-white/50 hover:text-white"
-                            } disabled:opacity-50`}
-                          >
-                            {likedPostIds.includes(
-                              post.id
-                            )
-                              ? "❤️"
-                              : "♡"}{" "}
-                            {
-                              post.likes
-                            }
-                          </button>
-
-                          {post.user_id === user?.id && (
-                            <>
-                              <button type="button" onClick={() => startEditPost(post)} className="text-[10px] text-white/30 hover:text-white transition">Sửa</button>
-                              <button type="button" onClick={() => void deletePost(post.id)} className="text-[10px] text-white/30 hover:text-red-300 transition">Xóa</button>
-                            </>
-                          )}
-
-                          <button type="button" onClick={() => savePost(post.id)} className={`text-[10px] transition ${savedPostIds.includes(post.id) ? "text-yellow-300" : "text-white/30 hover:text-white"}`}>
-                            {savedPostIds.includes(post.id) ? "🔖 Đã lưu" : "☆ Lưu"}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openReport(
-                                "post",
-                                post.id,
-                                "bài viết này"
-                              )
-                            }
-                            className="text-[11px] text-white/25 hover:text-red-300 transition"
-                            aria-label="Báo cáo bài viết"
-                            title="Báo cáo bài viết"
-                          >
-                            ⋯
-                          </button>
-
-                        </div>
-
-                        {/* CHECKPOINT */}
-
-                        {post.checkpoint && (
-                          <button
-                            onClick={() => {
-                              if (
-                                post.checkpoint
-                              ) {
-                                selectCheckpoint(
-                                  post.checkpoint
-                                );
-
-                                setActiveTab(
-                                  "map"
-                                );
-                              }
-                            }}
-                            className="w-full mt-4 text-left bg-blue-500/5 border border-blue-400/10 rounded-xl p-3 hover:bg-blue-500/10 transition"
-                          >
-
-                            <p className="text-[10px] text-blue-300 font-semibold">
-                              CHECKPOINT
-                            </p>
-
-                            <p className="text-xs font-semibold mt-1">
-                              {post.checkpoint.icon ??
-                                "📍"}{" "}
-                              {
-                                post
-                                  .checkpoint
-                                  .name
-                              }
-                            </p>
-
-                          </button>
-                        )}
-
-                        {/* CONTENT */}
-
-                        <p className="text-sm text-white/75 mt-4 leading-relaxed whitespace-pre-wrap">
-                          {
-                            post.content
-                          }
-                        </p>
-
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
-
-                          <span className="text-xs text-white/30">
-                            TravelQuest Community
-                          </span>
-
-                          <button
-                            onClick={() =>
-                              handleLike(
-                                post
-                              )
-                            }
-                            disabled={
-                              likeLoading[
-                                post.id
-                              ]
-                            }
-                            className={`text-xs transition ${
-                              likedPostIds.includes(
-                                post.id
-                              )
-                                ? "text-red-300"
-                                : "text-white/40 hover:text-white"
-                            } disabled:opacity-50`}
-                          >
-                            {likedPostIds.includes(
-                              post.id
-                            )
-                              ? "❤️ Đã thích"
-                              : "♡ Thích"}
-                          </button>
-
-                        </div>
-
-                        {/* COMMENTS */}
-
-                        <div className="mt-4">
-
-                          <div className="flex items-center justify-between mb-3">
-                            <p className="text-xs font-bold text-white/55">
-                              💬 Bình luận ({comments.filter((comment) => comment.post_id === post.id).length})
-                            </p>
-                          </div>
-
-                          <div className="space-y-2 max-h-40 overflow-y-auto">
-
-                            {comments
-                              .filter((comment) => comment.post_id === post.id)
-                              .map((comment) => (
-                                <div
-                                  key={comment.id}
-                                  className="rounded-xl bg-black/10 border border-white/5 px-3 py-2"
-                                >
-
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p className="text-[11px] font-bold truncate">
-                                      {comment.user_id === user?.id
-                                        ? profileName
-                                        : "Traveller"}
-                                    </p>
-
-                                    <p className="text-[9px] text-white/25 shrink-0">
-                                      {formatPostTime(comment.created_at)}
-                                    </p>
-                                  </div>
-
-                                  <div className="flex items-end justify-between gap-2">
-                                    <p className="text-xs text-white/65 mt-1 whitespace-pre-wrap break-words min-w-0 flex-1">
-                                      {comment.content}
-                                    </p>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        openReport(
-                                          "comment",
-                                          comment.id,
-                                          "bình luận này"
-                                        )
-                                      }
-                                      className="text-[10px] text-white/20 hover:text-red-300 transition shrink-0"
-                                      title="Báo cáo bình luận"
-                                    >
-                                      Báo cáo
-                                    </button>
-                                  </div>
-
-                                </div>
-                              ))}
-
-                          </div>
-
-                          <div className="flex gap-2 mt-3">
-
-                            <input
-                              type="text"
-                              value={commentInputs[post.id] ?? ""}
-                              maxLength={300}
-                              onChange={(event) =>
-                                setCommentInputs((current) => ({
-                                  ...current,
-                                  [post.id]: event.target.value,
-                                }))
-                              }
-                              onKeyDown={(event) => {
-                                if (event.key === "Enter") {
-                                  event.preventDefault();
-                                  handleCreateComment(post.id);
-                                }
-                              }}
-                              placeholder={
-                                user
-                                  ? "Viết bình luận..."
-                                  : "Đăng nhập để bình luận"
-                              }
-                              className="min-w-0 flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none focus:border-blue-400/40 transition"
-                            />
-
-                            <button
-                              onClick={() =>
-                                handleCreateComment(post.id)
-                              }
-                              disabled={
-                                commentLoading[post.id] ||
-                                !(commentInputs[post.id] ?? "").trim()
-                              }
-                              className="shrink-0 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold transition disabled:opacity-40"
-                            >
-                              {commentLoading[post.id]
-                                ? "..."
-                                : "Gửi"}
-                            </button>
-
-                          </div>
-
-                        </div>
-
-                      </div>
-
-                    </article>
-                  )
-                )}
-
+            )}
+            {visiblePosts.length > 0 && (
+              <div className="pointer-events-none absolute left-4 right-4 top-4 z-40 flex items-center gap-1">
+                {Array.from({ length: visiblePosts.length + 1 }).map((_, index) => (
+                  <span
+                    key={index}
+                    className={`h-1 flex-1 rounded-full ${ugcFeedIndex === index ? "bg-white" : "bg-white/25"} transition-all`}
+                  />
+                ))}
               </div>
             )}
 
+            <div
+              className="h-full w-full overflow-y-auto snap-y snap-mandatory overscroll-y-contain touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              onScroll={(event) => {
+                const container = event.currentTarget;
+                const cameraThreshold = Math.max(1, window.innerHeight * 0.35);
+                const isCameraPage = container.scrollTop < cameraThreshold;
+                const nextIndex = Math.max(0, Math.min(visiblePosts.length, Math.round(container.scrollTop / Math.max(1, window.innerHeight))));
+                setUgcFeedIndex(nextIndex);
+
+                if (isCameraPage) {
+                  if (user?.id && !cameraOpen && !cameraPreviewOpen) {
+                    void openCamera();
+                  }
+                } else if (cameraOpen) {
+                  closeCamera();
+                }
+              }}
+            >
+              {!ugcSelectedUserId && (
+              <article className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black">
+                {ugcSelectedUserId ? (
+                  <div className="relative h-full w-full bg-black">
+                    <div className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-5 pb-20 pt-6">
+                      <button type="button" onClick={() => selectUgcTraveller(null)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-xl font-bold backdrop-blur" aria-label="Quay lại camera">←</button>
+                      <p className="mt-3 text-lg font-black">{friendProfiles.find((friend) => friend.user_id === ugcSelectedUserId)?.display_name ?? "Traveller"}</p>
+                    </div>
+                    {visiblePosts[0]?.image_url ? <img src={visiblePosts[0].image_url} alt="Moment TravelQuest" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-8 text-center"><div><div className="text-5xl">📸</div><p className="mt-4 text-lg font-black">Chưa có moment</p><p className="mt-2 text-xs text-white/40">Traveller này chưa đăng moment nào.</p></div></div>}
+                  </div>
+                ) : cameraOpen ? (
+                  <div className="relative h-full w-full">
+                    <video
+                      ref={cameraVideoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`}
+                    />
+                    <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/65 to-transparent px-5 pb-16 pt-7">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-[10px] font-black tracking-[0.24em] text-white/55">TRAVELQUEST</p>
+                          <p className="mt-1 text-sm font-bold text-white">Moment của bạn</p>
+                        </div>
+                        <span className="rounded-full bg-black/30 px-3 py-1.5 text-[10px] font-semibold text-white/65 backdrop-blur">LIVE CAMERA</span>
+                      </div>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-5 pb-28 pt-28">
+                      <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl backdrop-blur transition active:scale-90"
+                          aria-label="Chọn ảnh từ máy"
+                        >
+                          🖼️
+                        </button>
+                        <button
+                          type="button"
+                          onClick={captureCameraPhoto}
+                          className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2 shadow-2xl transition active:scale-90"
+                          aria-label="Chụp ảnh"
+                        >
+                          <span className="block h-full w-full rounded-full bg-white" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void switchCamera()}
+                          className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl backdrop-blur transition active:scale-90"
+                          aria-label="Đổi camera"
+                        >
+                          🔄
+                        </button>
+                      </div>
+                      <p className="mt-4 text-center text-[11px] font-semibold text-white/55">Vuốt lên để xem moment tiếp theo</p>
+                    </div>
+                    {cameraError && (
+                      <div className="absolute left-4 right-4 top-24 rounded-2xl border border-white/10 bg-black/70 p-3 text-center text-xs backdrop-blur">
+                        {cameraError}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-[#101010] px-6 text-center">
+                    <div className="w-full max-w-sm">
+                      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10 text-4xl">{cameraError ? "📷" : "📸"}</div>
+                      <p className="mt-5 text-lg font-black">{cameraError ? "Không mở được camera" : "Camera"}</p>
+                      <p className="mt-2 text-xs leading-5 text-white/45">{cameraError || "Kéo/vuốt lên để quay lại camera."}</p>
+                      {cameraError && (
+                        <div className="mt-5 flex justify-center gap-2">
+                          <button type="button" onClick={() => void retryCamera()} className="rounded-full bg-white px-5 py-3 text-xs font-black text-black transition active:scale-95">Thử lại camera</button>
+                          <button type="button" onClick={() => imageInputRef.current?.click()} className="rounded-full border border-white/15 bg-white/10 px-5 py-3 text-xs font-bold text-white transition active:scale-95">Chọn ảnh</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </article>
+
+              )}
+
+              {ugcSelectedUserId && (
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-30 bg-gradient-to-b from-black/75 to-transparent px-5 pb-20 pt-6">
+                  <div className="pointer-events-auto flex items-center gap-3">
+                    <button type="button" onClick={() => selectUgcTraveller(null)} className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/35 text-xl font-bold backdrop-blur" aria-label="Quay lại camera">←</button>
+                    <p className="text-lg font-black">{friendProfiles.find((friend) => friend.user_id === ugcSelectedUserId)?.display_name ?? "Traveller"}</p>
+                  </div>
+                </div>
+              )}
+
+              {visiblePosts.map((post) => {
+                const friend = friendProfiles.find((item) => item.user_id === post.user_id);
+                const authorName = post.user_id === user?.id ? profileName : friend?.display_name ?? "Traveller";
+                const authorAvatar = post.user_id === user?.id ? avatarImageUrl : friend?.avatar_url ?? null;
+                const isOwnPost = post.user_id === user?.id;
+                return (
+                  <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black touch-manipulation" onPointerUp={() => handleUgcTap(post)}>
+                    {post.image_url ? (
+                      <img src={post.image_url} alt="Khoảnh khắc TravelQuest" className="h-full w-full object-cover select-none" draggable={false} />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-7xl">📸</div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/35 to-transparent p-5 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-28">
+                      <div className="flex items-end justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/10 text-base shadow-lg">
+                              {authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" draggable={false} /> : "🧭"}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-black">{authorName}</p>
+                              <p className="text-[10px] text-white/45">{formatPostTime(post.created_at)}</p>
+                            </div>
+                          </div>
+                          {post.content && <p className="mt-3 text-sm leading-5 text-white/85">{post.content}</p>}
+                        </div>
+                        <div className="flex shrink-0 flex-col items-center gap-3 pb-1">
+                          <button type="button" onPointerUp={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); void handleLike(post); }} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                            <span className="text-3xl drop-shadow-lg">{likedPostIds.includes(post.id) ? "❤️" : "🤍"}</span>
+                            <span className="text-[11px] font-bold">{post.likes}</span>
+                          </button>
+                          <button type="button" onPointerUp={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); setCommentOpenPostId(post.id); }} className="flex flex-col items-center gap-1 active:scale-90 transition">
+                            <span className="text-3xl drop-shadow-lg">💬</span>
+                            <span className="text-[11px] font-bold">{comments.filter((comment) => comment.post_id === post.id).length}</span>
+                          </button>
+                          
+                                  <button type="button" onPointerUp={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); setUgcMorePostId(post.id); }} className="flex flex-col items-center gap-1 active:scale-90 transition" aria-label="Thêm tùy chọn cho moment"><span className="text-3xl font-black leading-none tracking-[0.12em] drop-shadow-lg">···</span><span className="text-[11px] font-bold">Thêm</span></button>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            {ugcMorePostId !== null && (() => {
+              const morePost = posts.find((item) => item.id === ugcMorePostId);
+              if (!morePost) return null;
+              const ownPost = morePost.user_id === user?.id;
+              return (
+                <div className="fixed inset-0 z-[220] bg-black/55 backdrop-blur-[2px]" onClick={() => setUgcMorePostId(null)}>
+                  <div
+                    className="absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-[2rem] border border-white/10 bg-[#07182a] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-2xl"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+                    <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
+                      <div className="h-11 w-11 overflow-hidden rounded-full bg-white/10">
+                        {morePost.image_url ? <img src={morePost.image_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-xl">📸</span>}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-black">Moment</p>
+                        <p className="truncate text-[11px] text-white/40">{morePost.content}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      <button type="button" onClick={() => savePost(morePost.id) || setUgcMorePostId(null)} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">{savedPostIds.includes(morePost.id) ? "🔖" : "🔖"}</span>
+                        <span>Lưu</span>
+                      </button>
+                      <button type="button" onClick={() => void shareUgcPost(morePost)} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">↗️</span>
+                        <span>Chia sẻ</span>
+                      </button>
+                      <button type="button" onClick={() => hideUgcPost(morePost.id)} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">👋</span>
+                        <span>Không thích</span>
+                      </button>
+                      <button type="button" onClick={() => { void navigator.clipboard?.writeText(typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}#moment-${morePost.id}` : ""); setUgcMorePostId(null); setPostMessage("🔗 Đã sao chép liên kết."); }} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                        <span className="text-xl">🔗</span>
+                        <span>Liên kết</span>
+                      </button>
+                    </div>
+
+                    <div className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+                      {ownPost && (
+                        <>
+                          <button type="button" onClick={() => { setUgcMorePostId(null); startEditPost(morePost); }} className="flex w-full items-center gap-3 border-b border-white/10 px-4 py-4 text-left text-sm font-semibold active:bg-white/5">
+                            <span className="text-xl">✏️</span><span>Sửa moment</span>
+                          </button>
+                          <button type="button" onClick={() => void deletePost(morePost.id)} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-semibold text-red-300 active:bg-red-500/10">
+                            <span className="text-xl">🗑️</span><span>Xóa moment</span>
+                          </button>
+                        </>
+                      )}
+                      {!ownPost && (
+                        <button type="button" onClick={() => { setUgcMorePostId(null); openReport("post", morePost.id, "moment"); }} className="flex w-full items-center gap-3 px-4 py-4 text-left text-sm font-semibold text-red-300 active:bg-red-500/10">
+                          <span className="text-xl">🚩</span><span>Báo cáo</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <button type="button" onClick={() => setUgcMorePostId(null)} className="mt-2 w-full rounded-2xl bg-white/10 py-3 text-sm font-bold active:scale-[0.99] transition">
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {commentOpenPostId !== null && (
+              <div className="fixed inset-0 z-[200] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
+                <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#07182a] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                  <div className="flex shrink-0 items-center justify-center py-2">
+                    <div className="h-1 w-10 rounded-full bg-white/20" />
+                  </div>
+                  <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+                    <p className="text-sm font-black">Bình luận</p>
+                    <button type="button" onClick={() => setCommentOpenPostId(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-white/60">✕</button>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
+                    {comments.filter((comment) => comment.post_id === commentOpenPostId).map((comment) => (
+                      <div key={comment.id} className="flex gap-3 border-b border-white/5 py-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-sm">🧭</div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-bold text-white/45">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
+                          <p className="mt-1 text-sm leading-5 text-white/90">{comment.content}</p>
+                          <div className="mt-1.5 flex items-center gap-3 text-[10px] text-white/35">
+                            <span>{formatPostTime(comment.created_at)}</span>
+                            <button type="button" className="font-semibold hover:text-white/70">Trả lời</button>
+                          </div>
+                        </div>
+                        <button type="button" className="self-start pt-1 text-xs text-white/30">♡</button>
+                      </div>
+                    ))}
+                    {!comments.some((comment) => comment.post_id === commentOpenPostId) && (
+                      <div className="flex h-full min-h-40 items-center justify-center text-center text-sm text-white/40">
+                        Chưa có bình luận nào
+                      </div>
+                    )}
+                  </div>
+                  <div className="shrink-0 border-t border-white/10 bg-[#07182a] px-3 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-sm">🧭</div>
+                      <input
+                        value={commentInputs[commentOpenPostId] ?? ""}
+                        onChange={(event) => setCommentInputs((current) => ({ ...current, [commentOpenPostId]: event.target.value }))}
+                        onKeyDown={(event) => { if (event.key === "Enter") void submitComment(commentOpenPostId); }}
+                        placeholder="Thêm bình luận..."
+                        className="min-w-0 flex-1 rounded-full bg-white/10 px-4 py-2.5 text-sm outline-none placeholder:text-white/35"
+                      />
+                      <button type="button" onClick={() => void submitComment(commentOpenPostId)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-black font-black">↑</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
+
+            {cameraPreviewOpen && imagePreview && (
+              <div className="fixed inset-0 z-[120] bg-black">
+                <img src={imagePreview} alt="Ảnh moment vừa chụp" className="h-full w-full object-cover" />
+                <div className="absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent p-5">
+                  <button type="button" onClick={handleRemoveImage} className="h-10 w-10 rounded-full bg-black/50 text-xl">×</button>
+                  <span className="rounded-full bg-black/50 px-3 py-2 text-[10px] font-bold">PREVIEW</span>
+                  <span className="h-10 w-10" />
+                </div>
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/90 to-transparent p-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-28">
+                  <textarea
+                    value={postContent}
+                    onChange={(event) => setPostContent(event.target.value)}
+                    placeholder="Thêm chú thích... (tuỳ chọn)"
+                    maxLength={1000}
+                    className="w-full resize-none rounded-2xl border border-white/10 bg-white/10 p-3 text-sm outline-none placeholder:text-white/40"
+                    rows={2}
+                  />
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" onClick={() => void handleRetakePhoto()} disabled={posting} className="h-11 w-11 shrink-0 rounded-2xl border border-white/15 bg-white/10 text-lg transition active:scale-95" aria-label="Chụp lại">↻</button>
+                    <select
+                      value={selectedPostCheckpoint ?? ""}
+                      onChange={(event) => setSelectedPostCheckpoint(event.target.value ? Number(event.target.value) : null)}
+                      className="min-w-0 flex-1 rounded-2xl bg-black/60 px-3 py-3 text-xs outline-none"
+                      aria-label="Chọn địa điểm"
+                    >
+                      <option value="">📍 Không gắn địa điểm</option>
+                      {checkpoints.map((checkpoint) => (
+                        <option key={checkpoint.id} value={checkpoint.id}>
+                          {checkpoint.icon ?? "📍"} {checkpoint.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" onClick={() => void handleCreatePost()} disabled={posting} className="min-w-[92px] rounded-2xl bg-white px-5 py-3 text-xs font-black text-black transition active:scale-95 disabled:opacity-50">
+                      {posting ? "Đang đăng…" : "Chia sẻ"}
+                    </button>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="text-[10px] text-white/35">Ảnh sẽ được chia sẻ vào Moment.</p>
+                    <span className="text-[10px] text-white/30">{postContent.length}/1000</span>
+                  </div>
+                  {postMessage && <p className="mt-2 text-xs text-blue-300">{postMessage}</p>}
+                </div>
+              </div>
+            )}
+             </div>
           </section>
         )}
 
-      </div>
+             </div>
 
-      {/* ================= BOTTOM NAV ================= */}
+       {/* ================= BOTTOM NAV ================= */}
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#06111f]/92 backdrop-blur-2xl border-t border-white/10 pb-[env(safe-area-inset-bottom)]">
+      <nav className={`fixed bottom-2 left-1/2 z-50 w-[min(94vw,520px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null || ugcMorePostId !== null || (activeTab === "ugc" && (cameraOpen || cameraPreviewOpen)) ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+        <div className="rounded-[1.7rem] border border-white/15 bg-[#07182a]/72 p-1.5 shadow-[0_14px_45px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
+          <div className="flex h-[64px] items-center justify-around gap-1 px-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("map")}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "map" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
+            >
+              <span className="text-xl">🗺️</span>
+              <span className="text-[11px] font-semibold">Bản đồ</span>
+            </button>
 
-        <div className="max-w-lg mx-auto h-[72px] flex items-center justify-around px-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab("badges")}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "badges" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
+            >
+              <span className="text-xl">🏆</span>
+              <span className="text-[11px] font-semibold">Huy hiệu</span>
+            </button>
 
-          <button
-            onClick={() =>
-              setActiveTab(
-                "map"
-              )
-            }
-            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
-              activeTab === "map"
-                ? "text-white bg-white/10"
-                : "text-white/40 hover:text-white"
-            }`}
-          >
+            <button
+              type="button"
+              onClick={() => void openFriends()}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 text-white/45 hover:text-white transition"
+            >
+              <span className="text-xl">👥</span>
+              <span className="text-[11px] font-semibold">Bạn bè</span>
+            </button>
 
-            <span className="text-xl">
-              🗺️
-            </span>
-
-            <span className="text-[11px] font-semibold">
-              Map
-            </span>
-
-          </button>
-
-          <button
-            onClick={() =>
-              setActiveTab(
-                "badges"
-              )
-            }
-            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
-              activeTab === "badges"
-                ? "text-white bg-white/10"
-                : "text-white/40 hover:text-white"
-            }`}
-          >
-
-            <span className="text-xl">
-              🏆
-            </span>
-
-            <span className="text-[11px] font-semibold">
-              Huy hiệu
-            </span>
-
-          </button>
-
-          <button
-            onClick={() =>
-              setActiveTab(
-                "ugc"
-              )
-            }
-            className={`flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition ${
-              activeTab === "ugc"
-                ? "text-white bg-white/10"
-                : "text-white/40 hover:text-white"
-            }`}
-          >
-
-            <span className="text-xl">
-              📸
-            </span>
-
-            <span className="text-[11px] font-semibold">
-              UGC
-            </span>
-
-          </button>
-
+            <button
+              type="button"
+              onClick={() => setActiveTab("ugc")}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "ugc" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
+            >
+              <span className="text-xl">📸</span>
+              <span className="text-[11px] font-semibold">UGC</span>
+            </button>
+          </div>
         </div>
-
       </nav>
 
       {/* ============================================
@@ -7406,16 +8061,30 @@ export default function Home() {
       ============================================ */}
 
       {searchOpen && (
-        <div className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20">
+        <div className="fixed inset-0 z-[225] flex items-start justify-center px-4 pt-20 pointer-events-none">
 
           <button
             type="button"
             aria-label="Đóng tìm kiếm"
-            onClick={closeSearch}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              dismissSearchOverlay();
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              dismissSearchOverlay();
+            }}
+            className="pointer-events-auto absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
 
-          <div className="relative w-full max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl">
+          <div
+            data-traveller-search-panel
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
+            className="pointer-events-auto relative w-full max-w-lg max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.75rem] border border-white/10 bg-[#07182a] shadow-2xl"
+          >
 
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <div>
@@ -8261,11 +8930,56 @@ export default function Home() {
       )}
 
       {chatOpen && (
-        <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md max-h-[90dvh] flex flex-col rounded-3xl bg-[#07182a] border border-white/10 p-5">
-            <div className="flex items-center justify-between"><div><p className="text-xs text-purple-300 font-bold">COMMUNITY</p><h3 className="text-xl font-black">💬 Traveller Chat</h3></div><button onClick={() => setChatOpen(false)}>✕</button></div>
-            <div className="flex-1 min-h-64 max-h-80 overflow-y-auto space-y-2 mt-4">{chatMessages.length === 0 ? <p className="text-sm text-white/40 text-center py-10">Chưa có tin nhắn. Bắt đầu trò chuyện!</p> : chatMessages.map((message) => <div key={message.id} className="rounded-xl bg-white/5 border border-white/5 p-3"><p className="text-[10px] text-white/40">{message.sender}</p><p className="text-sm mt-1">{message.text}</p></div>)}</div>
-            <div className="flex gap-2 mt-3"><input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendChatMessage(); }} placeholder="Nhắn tin..." className="flex-1 rounded-xl bg-black/20 border border-white/10 px-3 py-3 text-sm outline-none" /><button onClick={sendChatMessage} className="rounded-xl bg-blue-500 px-4 font-bold">Gửi</button></div>
+        <div className="fixed inset-0 z-[250] bg-black/80 backdrop-blur-md">
+          <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[88dvh] max-w-md flex-col rounded-t-[2rem] border border-white/10 bg-[#07182a] shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+              <button type="button" onClick={() => selectedChatFriend ? setSelectedChatFriend(null) : setChatOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-lg" aria-label={selectedChatFriend ? "Quay lại danh sách bạn bè" : "Đóng tin nhắn"}>
+                {selectedChatFriend ? "←" : "✕"}
+              </button>
+              <div className="flex-1"><p className="text-[10px] font-black tracking-[0.2em] text-purple-300">MESSAGES</p><h3 className="text-lg font-black">{selectedChatFriend?.display_name ?? "Bạn bè"}</h3></div>
+              {!selectedChatFriend && <span className="text-[11px] text-white/35">{friendProfiles.length} người</span>}
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {!selectedChatFriend ? (
+                <div className="space-y-1">
+                  <p className="px-2 pb-2 text-[11px] font-semibold text-white/35">Chọn người cậu muốn nhắn</p>
+                  {friendProfiles.map((friend) => {
+                    const friendMessages = chatMessages.filter(
+                      (message) =>
+                        (message.senderId === user?.id && message.recipientId === friend.user_id) ||
+                        (message.senderId === friend.user_id && message.recipientId === user?.id)
+                    );
+                    const latestMessage = friendMessages[friendMessages.length - 1];
+                    return (
+                      <button key={friend.user_id} type="button" onClick={() => { setSelectedChatFriend(friend); setChatInput(""); }} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/5 active:scale-[0.99]">
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white/10">
+                          {friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-xl">🧭</span>}
+                          {latestMessage && <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#07182a] bg-emerald-400" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2"><p className="truncate font-bold">{friend.display_name}</p>{latestMessage && <span className="ml-auto shrink-0 text-[10px] text-white/30">{formatPostTime(latestMessage.createdAt)}</span>}</div>
+                          <p className="mt-0.5 truncate text-xs text-white/40">{latestMessage ? `${latestMessage.senderId === user?.id ? "Bạn: " : ""}${latestMessage.text}` : "Nhấn để nhắn tin"}</p>
+                        </div>
+                        <span className="text-white/20">›</span>
+                      </button>
+                    );
+                  })}
+                  {!friendProfiles.length && <p className="py-10 text-center text-sm text-white/40">Chưa có bạn bè.</p>}
+                </div>
+              ) : (
+                <div className="flex h-full flex-col">
+                  <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
+                    <div className="h-10 w-10 overflow-hidden rounded-full bg-white/10">{selectedChatFriend.avatar_url ? <img src={selectedChatFriend.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center">🧭</span>}</div>
+                    <div><p className="font-bold">{selectedChatFriend.display_name}</p><p className="text-xs text-white/40">Bạn bè</p></div>
+                  </div>
+                  <div className="flex-1 space-y-2 overflow-y-auto">
+                    {chatMessages.filter((message) => (message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id)).map((message) => <div key={message.id} className={`max-w-[78%] rounded-2xl px-3 py-2 ${message.senderId === user?.id ? "ml-auto bg-blue-500" : "bg-white/10"}`}><p className="text-sm">{message.text}</p></div>)}
+                    {!chatMessages.some((message) => (message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id)) && <p className="py-10 text-center text-sm text-white/40">Chưa có tin nhắn. Bắt đầu trò chuyện!</p>}
+                  </div>
+                  <div className="mt-3 flex gap-2"><input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") sendChatMessage(); }} placeholder="Nhắn tin..." className="flex-1 rounded-full bg-black/20 border border-white/10 px-4 py-3 text-sm outline-none" /><button type="button" onClick={sendChatMessage} className="h-11 w-11 shrink-0 rounded-full bg-blue-500 font-bold">↑</button></div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

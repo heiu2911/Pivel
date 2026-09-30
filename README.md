@@ -14,6 +14,15 @@
 2. Điền ba biến môi trường từ Mapbox và Supabase.
 3. Cài dependencies với `npm install`.
 4. Chạy ứng dụng với `npm run dev` và mở `http://localhost:3000`.
+5. Trên máy tính, tìm địa chỉ IPv4 trong mạng LAN (Windows: `ipconfig`). Ví dụ `192.168.1.10`.
+6. Nếu chỉ cần truy cập giao diện qua LAN, điện thoại cùng Wi-Fi có thể mở `http://192.168.1.10:3000` (thay bằng IPv4 thực tế của máy tính).
+7. Để test GPS trên điện thoại, cách khuyến nghị là chạy `npm run dev` trên máy tính rồi mở một **HTTPS tunnel** tới cổng `3000`.
+8. Cài `cloudflared` trên Windows, sau đó mở terminal thứ nhất và chạy `npm run dev`.
+9. Mở terminal thứ hai và chạy `npm run tunnel`. Cloudflare Quick Tunnel sẽ tạo một URL `https://<ngẫu-nhiên>.trycloudflare.com` trỏ về `http://localhost:3000`. Quick Tunnels dành cho development/testing và không cần tài khoản Cloudflare. citeturn0search0turn0search1
+10. Mở **URL HTTPS mà `cloudflared` in ra** trên điện thoại. Không dùng `http://192.168.0.103:3000` để test GPS.
+11. `next.config.ts` đã cho phép `*.trycloudflare.com` trong `allowedDevOrigins`, nên hostname tunnel ngẫu nhiên vẫn có thể tải tài nguyên dev của Next.js. Next.js hỗ trợ wildcard trong `allowedDevOrigins`. citeturn1search0
+
+Lưu ý: Quick Tunnel là URL tạm thời và thay đổi khi chạy lại. Không commit token, credentials hoặc file chứng chỉ vào Git.
 
 Không đưa `.env.local` lên Git hoặc chia sẻ private/service-role key. Ứng dụng chỉ dùng Supabase anon key ở trình duyệt.
 

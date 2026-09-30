@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -19,11 +19,24 @@ type Checkpoint = {
   latitude: number;
 };
 
+type FriendLocation = {
+  user_id: string;
+  latitude: number;
+  longitude: number;
+  display_name: string;
+  level: number;
+  xp: number;
+  avatar_url?: string | null;
+};
+
 type MapProps = {
   userLocation?: UserLocation | null;
   checkpoints?: Checkpoint[];
   avatarUrl?: string | null;
   avatarEmoji?: string;
+  friendLocations?: FriendLocation[];
+  showCheckpoints?: boolean;
+  onFriendMarkerClick?: (userId: string) => void;
 };
 
 type CityDefinition = {
@@ -39,6 +52,22 @@ type CityGroup = CityDefinition & {
 
 const CHECKIN_RADIUS = 150;
 const CITY_ZOOM_LIMIT = 10.5;
+
+const CITY_IMAGE_QUERIES: Record<string, string> = {
+  "ha-noi": "Hanoi Vietnam",
+  "ha-long": "Ha Long Vietnam",
+  "ninh-binh": "Ninh Binh Vietnam",
+  "hue": "Hue Vietnam",
+  "da-nang": "Da Nang Vietnam",
+  "phong-nha": "Phong Nha Vietnam",
+  "cao-bang": "Cao Bang Vietnam",
+  "sapa": "Sapa Vietnam",
+  "nha-trang": "Nha Trang Vietnam",
+  "ho-chi-minh": "Ho Chi Minh City Vietnam",
+  "tay-ninh": "Tay Ninh Vietnam",
+  "can-tho": "Can Tho Vietnam",
+  "da-lat": "Da Lat Vietnam",
+};
 
 type CheckpointDetails = {
   category: string;
@@ -56,6 +85,9 @@ const CHECKPOINT_LOCAL_IMAGES: Record<string, string[]> = {
     "/checkpoints/hoang-thanh-thang-long-1.jpg",
     "/checkpoints/hoang-thanh-thang-long-2.jpg",
     "/checkpoints/hoang-thanh-thang-long-3.jpg",
+  ],
+  "Miếu ông Trường (con)": [
+    "/checkpoints/mieu-ong-truong-con.webp",
   ],
 };
 
@@ -82,6 +114,7 @@ const CHECKPOINT_IMAGE_QUERIES: Record<string, string> = {
   "Núi Bà Đen": "Ba Den Mountain Vietnam",
   "Chợ nổi Cái Răng": "Cai Rang Floating Market Vietnam",
   "Thác Datanla": "Datanla Waterfall Da Lat Vietnam",
+  "Miếu ông Trường (con)": "Miếu ông Trường con Hải Phòng Vietnam",
 };
 
 const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
@@ -243,6 +276,11 @@ const CHECKPOINT_DETAILS: Record<string, CheckpointDetails> = {
     phone: "+84 981 166 088",
     website: "dalat.vn",
     price: "Khoảng 30.000đ; dịch vụ vui chơi có giá riêng",
+  },
+  "Miếu ông Trường (con)": {
+    category: "Miếu / Điểm tín ngưỡng địa phương",
+    address: "Miếu ông Trường (con), Hải Phòng",
+    hours: "Mở cửa theo thời gian sinh hoạt tại địa phương",
   },
 };
 
@@ -895,6 +933,8 @@ function createCheckpointDetailsModal({
     const routeLayerId = "travelquest-route-line";
     const routeSourceId = "travelquest-route-source";
 
+    if (!mapInstance || !mapInstance.isStyleLoaded()) return;
+
     if (mapInstance.getLayer(routeLayerId)) {
       mapInstance.removeLayer(routeLayerId);
     }
@@ -1038,6 +1078,7 @@ function createCheckpointDetailsModal({
       routeRequestId += 1;
       stopNavigationTracking();
       removeNavigationControl();
+      removeNavigationHud();
       panel.remove();
       clearRouteFromMap();
     };
@@ -1085,6 +1126,303 @@ function createCheckpointDetailsModal({
     let latestOrigin: UserLocation | null = null;
     let isInitialRoute = true;
     let navigationControl: HTMLDivElement | null = null;
+    let navigationHud: HTMLDivElement | null = null;
+    let navigationHudInstruction = "";
+
+
+    const getNavigationInstruction = (route: {
+      legs?: Array<{
+        steps?: Array<{
+          name?: string;
+          maneuver?: { instruction?: string };
+        }>;
+      }>;
+    }) => {
+      const firstStep = route.legs?.[0]?.steps?.find(
+        (step) => step.maneuver?.instruction || step.name
+      );
+      return (
+        firstStep?.maneuver?.instruction ||
+        (firstStep?.name
+          ? "Đi theo " + firstStep.name
+          : "Tiếp tục theo tuyến đường")
+      );
+    };
+
+    const getArrivalTime = (seconds: number) => {
+      const arrival = new Date(Date.now() + Math.max(0, seconds) * 1000);
+      return arrival.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+
+    const removeNavigationHud = () => {
+      navigationHud?.remove();
+      navigationHud = null;
+      navigationHudInstruction = "";
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+
+    const showNavigationHud = (
+      route: {
+        distance: number;
+        duration: number;
+        legs?: Array<{
+          steps?: Array<{
+            name?: string;
+            maneuver?: { instruction?: string };
+          }>;
+        }>;
+      },
+      mode: (typeof modeConfig)[number]
+    ) => {
+      const instruction = getNavigationInstruction(route);
+      navigationHudInstruction = instruction;
+
+      if (navigationHud) {
+        const topInstruction = navigationHud.querySelector(
+          "[data-tq-nav-instruction]"
+        ) as HTMLElement | null;
+        const modeLabel = navigationHud.querySelector(
+          "[data-tq-nav-mode]"
+        ) as HTMLElement | null;
+        const summary = navigationHud.querySelector(
+          "[data-tq-nav-summary]"
+        ) as HTMLElement | null;
+        const eta = navigationHud.querySelector(
+          "[data-tq-nav-eta]"
+        ) as HTMLElement | null;
+
+        if (topInstruction) topInstruction.textContent = instruction;
+        if (modeLabel) modeLabel.textContent = mode.label + " · đang chỉ đường";
+        if (summary) {
+          summary.textContent =
+            formatRouteDuration(route.duration) +
+            " · " +
+            formatRouteDistance(route.distance);
+        }
+        if (eta) {
+          eta.textContent = "Dự kiến đến " + getArrivalTime(route.duration);
+        }
+        return;
+      }
+
+      const hud = document.createElement("div");
+      hud.dataset.travelquestNavigationHud = "true";
+      hud.style.position = "fixed";
+      hud.style.inset = "0";
+      hud.style.zIndex = "10002";
+      hud.style.pointerEvents = "none";
+      hud.style.fontFamily =
+        "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+
+      const top = document.createElement("div");
+      top.style.position = "absolute";
+      top.style.top = "max(18px, env(safe-area-inset-top))";
+      top.style.left = "12px";
+      top.style.right = "12px";
+      top.style.padding = "14px 16px";
+      top.style.borderRadius = "18px";
+      top.style.background = "linear-gradient(135deg,#0b6b57,#087f67)";
+      top.style.border = "3px solid rgba(255,255,255,.96)";
+      top.style.boxShadow = "0 12px 32px rgba(0,0,0,.35)";
+      top.style.color = "#fff";
+      top.style.pointerEvents = "auto";
+
+      const modeLabel = document.createElement("div");
+      modeLabel.dataset.tqNavMode = "true";
+      modeLabel.textContent = mode.label + " · đang chỉ đường";
+      modeLabel.style.fontSize = "11px";
+      modeLabel.style.fontWeight = "800";
+      modeLabel.style.opacity = ".88";
+      modeLabel.style.marginBottom = "4px";
+
+      const instructionRow = document.createElement("div");
+      instructionRow.style.display = "flex";
+      instructionRow.style.alignItems = "center";
+      instructionRow.style.gap = "10px";
+
+      const arrow = document.createElement("div");
+      arrow.textContent = "↑";
+      arrow.style.fontSize = "32px";
+      arrow.style.fontWeight = "900";
+      arrow.style.lineHeight = "1";
+
+      const instructionText = document.createElement("div");
+      instructionText.dataset.tqNavInstruction = "true";
+      instructionText.textContent = instruction;
+      instructionText.style.fontSize = "20px";
+      instructionText.style.fontWeight = "900";
+      instructionText.style.lineHeight = "1.15";
+      instructionText.style.flex = "1";
+
+      instructionRow.appendChild(arrow);
+      instructionRow.appendChild(instructionText);
+
+      const after = document.createElement("div");
+      after.textContent = "Tiếp tục theo tuyến đường";
+      after.style.marginTop = "8px";
+      after.style.padding = "7px 10px";
+      after.style.width = "fit-content";
+      after.style.borderRadius = "10px";
+      after.style.background = "rgba(0,0,0,.18)";
+      after.style.fontSize = "12px";
+      after.style.fontWeight = "800";
+
+      top.appendChild(modeLabel);
+      top.appendChild(instructionRow);
+      top.appendChild(after);
+
+      const speaker = document.createElement("button");
+      speaker.type = "button";
+      speaker.textContent = "🔊";
+      speaker.title = "Đọc hướng dẫn";
+      speaker.setAttribute("aria-label", "Đọc hướng dẫn");
+      speaker.style.position = "absolute";
+      speaker.style.right = "18px";
+      speaker.style.top = "132px";
+      speaker.style.width = "48px";
+      speaker.style.height = "48px";
+      speaker.style.border = "1px solid rgba(255,255,255,.65)";
+      speaker.style.borderRadius = "50%";
+      speaker.style.background = "rgba(15,23,42,.78)";
+      speaker.style.color = "#fff";
+      speaker.style.fontSize = "20px";
+      speaker.style.cursor = "pointer";
+      speaker.style.pointerEvents = "auto";
+      speaker.onclick = () => {
+        if (!("speechSynthesis" in window)) return;
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(
+          navigationHudInstruction
+        );
+        utterance.lang = "vi-VN";
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      };
+
+      const modeButton = document.createElement("button");
+      modeButton.type = "button";
+      modeButton.textContent = "⚙️";
+      modeButton.title = "Đổi phương tiện";
+      modeButton.setAttribute("aria-label", "Đổi phương tiện");
+      modeButton.style.position = "absolute";
+      modeButton.style.right = "18px";
+      modeButton.style.top = "188px";
+      modeButton.style.width = "48px";
+      modeButton.style.height = "48px";
+      modeButton.style.border = "1px solid rgba(255,255,255,.65)";
+      modeButton.style.borderRadius = "50%";
+      modeButton.style.background = "rgba(15,23,42,.78)";
+      modeButton.style.color = "#fff";
+      modeButton.style.fontSize = "18px";
+      modeButton.style.cursor = "pointer";
+      modeButton.style.pointerEvents = "auto";
+      modeButton.onclick = () => {
+        panel.style.display = "flex";
+      };
+
+      const recenter = document.createElement("button");
+      recenter.type = "button";
+      recenter.textContent = "⌾  Về giữa";
+      recenter.style.position = "absolute";
+      recenter.style.left = "16px";
+      recenter.style.bottom = "112px";
+      recenter.style.padding = "11px 14px";
+      recenter.style.border = "1px solid rgba(255,255,255,.28)";
+      recenter.style.borderRadius = "999px";
+      recenter.style.background = "rgba(15,23,42,.82)";
+      recenter.style.color = "#fff";
+      recenter.style.fontWeight = "800";
+      recenter.style.fontSize = "12px";
+      recenter.style.cursor = "pointer";
+      recenter.style.pointerEvents = "auto";
+      recenter.onclick = () => {
+        const origin = latestOrigin ?? getLatestUserLocation?.() ?? userLocation;
+        if (!origin) return;
+        mapInstance.flyTo({
+          center: [origin.longitude, origin.latitude],
+          zoom: 16,
+          duration: 700,
+          essential: true,
+        });
+      };
+
+      const bottom = document.createElement("div");
+      bottom.style.position = "absolute";
+      bottom.style.left = "12px";
+      bottom.style.right = "12px";
+      bottom.style.bottom = "max(12px, env(safe-area-inset-bottom))";
+      bottom.style.padding = "16px";
+      bottom.style.borderRadius = "22px";
+      bottom.style.background = "rgba(255,255,255,.96)";
+      bottom.style.boxShadow = "0 14px 40px rgba(0,0,0,.35)";
+      bottom.style.display = "flex";
+      bottom.style.alignItems = "center";
+      bottom.style.gap = "12px";
+      bottom.style.pointerEvents = "auto";
+
+      const stats = document.createElement("div");
+      stats.style.minWidth = "0";
+      stats.style.flex = "1";
+
+      const big = document.createElement("div");
+      big.dataset.tqNavSummary = "true";
+      big.textContent =
+        formatRouteDuration(route.duration) +
+        " · " +
+        formatRouteDistance(route.distance);
+      big.style.fontSize = "22px";
+      big.style.fontWeight = "900";
+      big.style.color = "#111827";
+
+      const eta = document.createElement("div");
+      eta.dataset.tqNavEta = "true";
+      eta.textContent = "Dự kiến đến " + getArrivalTime(route.duration);
+      eta.style.marginTop = "4px";
+      eta.style.fontSize = "13px";
+      eta.style.color = "#667085";
+
+      stats.appendChild(big);
+      stats.appendChild(eta);
+
+      const stop = document.createElement("button");
+      stop.type = "button";
+      stop.textContent = "STOP";
+      stop.style.width = "64px";
+      stop.style.height = "64px";
+      stop.style.flex = "0 0 64px";
+      stop.style.border = "4px solid rgba(255,255,255,.72)";
+      stop.style.borderRadius = "50%";
+      stop.style.background = "#ef4444";
+      stop.style.color = "#fff";
+      stop.style.fontSize = "13px";
+      stop.style.fontWeight = "950";
+      stop.style.cursor = "pointer";
+      stop.style.boxShadow = "0 5px 14px rgba(239,68,68,.4)";
+      stop.onclick = () => {
+        routeRequestId += 1;
+        stopNavigationTracking();
+        removeNavigationControl();
+        removeNavigationHud();
+        clearRouteFromMap();
+        panel.remove();
+      };
+
+      bottom.appendChild(stats);
+      bottom.appendChild(stop);
+
+      hud.appendChild(top);
+      hud.appendChild(speaker);
+      hud.appendChild(modeButton);
+      hud.appendChild(recenter);
+      hud.appendChild(bottom);
+      document.body.appendChild(hud);
+      navigationHud = hud;
+    };
 
     const stopNavigationTracking = () => {
       if (navigationWatchId !== null && navigator.geolocation) {
@@ -1147,6 +1485,7 @@ function createCheckpointDetailsModal({
         routeRequestId += 1;
         clearRouteFromMap();
         removeNavigationControl();
+        removeNavigationHud();
       });
 
       control.appendChild(status);
@@ -1181,6 +1520,9 @@ function createCheckpointDetailsModal({
 
       clearRouteFromMap();
 
+      showNavigationHud(route, mode);
+      panel.style.display = "none";
+
       mapInstance.addSource("travelquest-route-source", {
         type: "geojson",
         data: {
@@ -1199,7 +1541,7 @@ function createCheckpointDetailsModal({
           "line-join": "round",
         },
         paint: {
-          "line-color": "#00897b",
+          "line-color": "#1da1f2",
           "line-width": 7,
           "line-opacity": 0.92,
         },
@@ -1599,6 +1941,7 @@ function createCheckpointDetailsModal({
       routeRequestId += 1;
       stopNavigationTracking();
       removeNavigationControl();
+      removeNavigationHud();
       document.removeEventListener("keydown", onRouteKeyDown);
       panel.remove();
       clearRouteFromMap();
@@ -1728,6 +2071,7 @@ function createCheckpointDetailsModal({
 
   const actionButtons = [
     makeAction("➤", "Đường đi", () => {
+      overlay.remove();
       openDirectionsPanel();
     }),
     saveButton,
@@ -1798,12 +2142,18 @@ export default function Map({
   checkpoints = [],
   avatarUrl = null,
   avatarEmoji = "🧭",
+  friendLocations = [],
+  showCheckpoints = true,
+  onFriendMarkerClick,
 }: MapProps) {
   const mapContainer =
     useRef<HTMLDivElement | null>(null);
 
   const map =
     useRef<mapboxgl.Map | null>(null);
+
+  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   const userMarker =
     useRef<mapboxgl.Marker | null>(null);
@@ -1818,7 +2168,7 @@ export default function Map({
     useRef<mapboxgl.Marker[]>([]);
 
   const currentMapMode =
-    useRef<"cities" | "checkpoints" | null>(null);
+    useRef<"cities" | "checkpoints" | "hidden" | null>(null);
 
   const checkpointZonesAdded =
     useRef(false);
@@ -1836,10 +2186,18 @@ export default function Map({
       process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
     if (!token) {
-      console.error(
-        "Thiếu NEXT_PUBLIC_MAPBOX_TOKEN trong .env.local"
-      );
+      const errorMessage =
+        "Thiếu NEXT_PUBLIC_MAPBOX_TOKEN. Hãy kiểm tra .env.local trên máy chạy TravelQuest.";
+      console.error(errorMessage);
+      setMapError(errorMessage);
+      return;
+    }
 
+    if (!mapboxgl.supported()) {
+      const errorMessage =
+        "Thiết bị/trình duyệt không hỗ trợ WebGL nên Mapbox không thể hiển thị bản đồ.";
+      console.error(errorMessage);
+      setMapError(errorMessage);
       return;
     }
 
@@ -1849,24 +2207,42 @@ export default function Map({
       return;
     }
 
-    const mapInstance =
-      new mapboxgl.Map({
-        container:
-          mapContainer.current,
+    let mapInstance: mapboxgl.Map;
 
-        style:
-          "mapbox://styles/mapbox/streets-v12",
-
-        center: [
-          105.852,
-          21.0285,
-        ],
-
+    try {
+      mapInstance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [105.852, 21.0285],
         zoom: 13,
       });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Không thể khởi tạo Mapbox trên thiết bị này.";
+      console.error("TravelQuest Mapbox init error:", error);
+      setMapError(errorMessage);
+      return;
+    }
 
-    map.current =
-      mapInstance;
+    mapInstance.on("error", (event) => {
+      const message =
+        event.error instanceof Error
+          ? event.error.message
+          : "Mapbox không tải được dữ liệu bản đồ.";
+      console.error("TravelQuest Mapbox error:", event.error);
+      setMapError(
+        message.includes("Unauthorized") ||
+          message.includes("401") ||
+          message.includes("403")
+          ? "Mapbox từ chối token trên địa chỉ điện thoại này. Hãy kiểm tra URL restrictions của Mapbox token."
+          : message
+      );
+    });
+
+    map.current = mapInstance;
+    setMapReady(true);
 
     mapInstance.addControl(
       new mapboxgl.NavigationControl(),
@@ -1899,6 +2275,7 @@ export default function Map({
       mapInstance.remove();
 
       map.current = null;
+      setMapReady(false);
 
       checkpointZonesAdded.current =
         false;
@@ -2016,7 +2393,31 @@ export default function Map({
       icon.style.fontSize = "28px";
       icon.style.boxShadow = "0 6px 22px rgba(0,0,0,0.5)";
       icon.style.transition = "transform 0.15s ease";
-      icon.textContent = "🌳";
+      icon.style.overflow = "hidden";
+      const cityImage = document.createElement("img");
+      cityImage.alt = city.name;
+      cityImage.style.width = "100%";
+      cityImage.style.height = "100%";
+      cityImage.style.objectFit = "cover";
+      cityImage.style.display = "none";
+      const cityFallback = document.createElement("span");
+      cityFallback.textContent = "🏙️";
+      icon.appendChild(cityImage);
+      icon.appendChild(cityFallback);
+      void (async () => {
+        try {
+          const query = encodeURIComponent(CITY_IMAGE_QUERIES[city.key] ?? (city.name + " Vietnam"));
+          const response = await fetch("https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=" + query + "&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=300&format=json&origin=*");
+          if (!response.ok) return;
+          const data = await response.json() as { query?: { pages?: Record<string, { imageinfo?: Array<{ thumburl?: string; url?: string }> }> } };
+          const page = data.query?.pages ? Object.values(data.query.pages)[0] : undefined;
+          const imageUrl = page?.imageinfo?.[0]?.thumburl ?? page?.imageinfo?.[0]?.url;
+          if (imageUrl) {
+            cityImage.src = imageUrl;
+            cityImage.onload = () => { cityImage.style.display = "block"; cityFallback.style.display = "none"; };
+          }
+        } catch {}
+      })();
 
       markerElement.appendChild(icon);
 
@@ -2114,11 +2515,26 @@ export default function Map({
         "0 5px 20px rgba(0,0,0,0.45)";
       markerIcon.style.transition =
         "transform 0.15s ease";
-      markerIcon.textContent =
-        checkpoint.icon?.trim() || "📍";
+      markerIcon.style.overflow = "hidden";
+
+      const checkpointImage = CHECKPOINT_LOCAL_IMAGES[checkpoint.name]?.[0];
+      if (checkpointImage) {
+        const image = document.createElement("img");
+        image.src = checkpointImage;
+        image.alt = checkpoint.name;
+        image.style.width = "100%";
+        image.style.height = "100%";
+        image.style.objectFit = "cover";
+        image.style.display = "block";
+        markerIcon.appendChild(image);
+      } else {
+        markerIcon.textContent =
+          checkpoint.icon?.trim() || "📍";
+      }
 
       markerElement.appendChild(markerIcon);
       markerElement.title = checkpoint.name;
+      markerElement.dataset.travelquestCheckpointId = String(checkpoint.id);
 
       markerElement.addEventListener("mouseenter", () => {
         markerIcon.style.transform = "scale(1.12)";
@@ -2188,6 +2604,13 @@ export default function Map({
     };
 
     const renderMode = () => {
+      if (!showCheckpoints) {
+        clearCityMarkers();
+        clearCheckpointMarkers();
+        currentMapMode.current = "hidden";
+        return;
+      }
+
       const showCities =
         mapInstance.getZoom() <= CITY_ZOOM_LIMIT;
 
@@ -2258,129 +2681,110 @@ export default function Map({
       clearCheckpointMarkers();
       currentMapMode.current = null;
     };
-  }, [checkpoints]);
+  }, [checkpoints, showCheckpoints]);
 
   // ========================================
-  // VÙNG CHECK-IN
+  // FRIEND LOCATIONS
   // ========================================
 
   useEffect(() => {
     const mapInstance = map.current;
+    if (!mapInstance) return;
 
-    if (!mapInstance) {
-      return;
-    }
+    const markers: mapboxgl.Marker[] = [];
 
-    const updateZones = () => {
-      const sourceId =
-        "checkpoint-zones";
+    const renderFriendMarkers = () => {
+      markers.forEach((marker) => marker.remove());
+      markers.length = 0;
 
-      const layerId =
-        "checkpoint-zone-fill";
-
-      const sourceData = {
-        type:
-          "FeatureCollection" as const,
-
-        features:
-          checkpoints
-            .filter(
-              (checkpoint) =>
-                isValidCoordinate(
-                  checkpoint.latitude,
-                  checkpoint.longitude
-                )
-            )
-            .map(
-              (checkpoint) => ({
-                type:
-                  "Feature" as const,
-
-                properties: {
-                  name:
-                    checkpoint.name,
-                },
-
-                geometry: {
-                  type:
-                    "Point" as const,
-
-                  coordinates: [
-                    checkpoint.longitude,
-                    checkpoint.latitude,
-                  ],
-                },
-              })
-            ),
-      };
-
-      const existingSource =
-        mapInstance.getSource(
-          sourceId
-        ) as mapboxgl.GeoJSONSource | undefined;
-
-      if (existingSource) {
-        existingSource.setData(
-          sourceData
-        );
-      } else {
-        mapInstance.addSource(
-          sourceId,
-          {
-            type: "geojson",
-            data: sourceData,
-          }
-        );
-      }
-
-      if (
-        !mapInstance.getLayer(
-          layerId
+      friendLocations
+        .filter((friend) =>
+          isValidCoordinate(friend.latitude, friend.longitude)
         )
-      ) {
-        mapInstance.addLayer({
-          id: layerId,
+        .forEach((friend) => {
+          const wrapper = document.createElement("div");
+          wrapper.style.width = "48px";
+          wrapper.style.height = "56px";
+          wrapper.style.cursor = "pointer";
+          wrapper.style.display = "flex";
+          wrapper.style.flexDirection = "column";
+          wrapper.style.alignItems = "center";
+          wrapper.title = friend.display_name;
 
-          type: "circle",
+          const avatar = document.createElement("div");
+          avatar.style.width = "42px";
+          avatar.style.height = "42px";
+          avatar.style.borderRadius = "50%";
+          avatar.style.border = "3px solid #fff";
+          avatar.style.background = "#172554";
+          avatar.style.display = "flex";
+          avatar.style.alignItems = "center";
+          avatar.style.justifyContent = "center";
+          avatar.style.overflow = "hidden";
+          avatar.style.boxShadow = "0 4px 16px rgba(0,0,0,.35), 0 0 0 2px #60a5fa";
+          avatar.style.fontSize = "19px";
 
-          source: sourceId,
+          if (friend.avatar_url?.startsWith("data:image/")) {
+            const avatarImage = document.createElement("img");
+            avatarImage.src = friend.avatar_url;
+            avatarImage.alt = friend.display_name;
+            avatarImage.draggable = false;
+            avatarImage.style.width = "100%";
+            avatarImage.style.height = "100%";
+            avatarImage.style.objectFit = "cover";
+            avatar.appendChild(avatarImage);
+          } else {
+            avatar.textContent = "👤";
+          }
 
-          paint: {
-            "circle-radius": 35,
+          const name = document.createElement("div");
+          name.style.marginTop = "-1px";
+          name.style.maxWidth = "120px";
+          name.style.padding = "2px 7px";
+          name.style.borderRadius = "999px";
+          name.style.background = "rgba(7,24,42,.92)";
+          name.style.color = "#fff";
+          name.style.font = "700 10px system-ui, sans-serif";
+          name.style.whiteSpace = "nowrap";
+          name.style.overflow = "hidden";
+          name.style.textOverflow = "ellipsis";
+          name.textContent = friend.display_name;
 
-            "circle-color":
-              "#2563eb",
+          wrapper.appendChild(avatar);
+          wrapper.appendChild(name);
 
-            "circle-opacity":
-              0.12,
+          wrapper.addEventListener("click", () => {
+            onFriendMarkerClick?.(friend.user_id);
+          });
 
-            "circle-stroke-color":
-              "#60a5fa",
-
-            "circle-stroke-width":
-              2,
-
-            "circle-stroke-opacity":
-              0.5,
-          },
+          markers.push(
+            new mapboxgl.Marker({
+              element: wrapper,
+              anchor: "bottom",
+            })
+              .setLngLat([friend.longitude, friend.latitude])
+              .addTo(mapInstance)
+          );
         });
-      }
-
-      checkpointZonesAdded.current =
-        true;
     };
 
-    if (
-      mapInstance.isStyleLoaded()
-    ) {
-      updateZones();
+    if (mapInstance.isStyleLoaded()) {
+      renderFriendMarkers();
     } else {
-      mapInstance.once(
-        "load",
-        updateZones
-      );
+      mapInstance.once("load", renderFriendMarkers);
     }
-  }, [checkpoints]);
+
+    return () => {
+      mapInstance.off("load", renderFriendMarkers);
+      markers.forEach((marker) => marker.remove());
+    };
+  }, [friendLocations, onFriendMarkerClick]);
+
+  // ========================================
+  // CHECK-IN ZONES
+  // Ẩn hoàn toàn vùng tròn màu xanh trên map.
+  // Khi zoom xa chỉ hiển thị marker ảnh đại diện thành phố.
+  // ========================================
 
   // ========================================
   // GPS MARKER
@@ -2630,12 +3034,26 @@ export default function Map({
     checkpoints,
     avatarUrl,
     avatarEmoji,
+    mapReady,
   ]);
 
   return (
     <div
       ref={mapContainer}
-      className="w-full h-full"
-    />
+      className="relative w-full h-full min-h-[320px] bg-[#0b1220]"
+    >
+      {mapError ? (
+        <div className="absolute inset-0 z-[1000] flex items-center justify-center p-6 text-center">
+          <div className="max-w-sm rounded-2xl border border-white/10 bg-slate-950/95 p-5 text-white shadow-2xl">
+            <div className="text-3xl">🗺️</div>
+            <h2 className="mt-3 text-base font-extrabold">Không tải được bản đồ</h2>
+            <p className="mt-2 text-xs leading-5 text-slate-300">{mapError}</p>
+            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+              Nếu bạn đang mở bằng địa chỉ IP của máy tính, hãy kiểm tra Mapbox token có cho phép địa chỉ đó.
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
