@@ -8,7 +8,7 @@ export type GPSLocation = {
 
 // Laptop thường định vị bằng Wi‑Fi/network nên có thể cần lâu hơn
 // và độ chính xác thấp hơn GPS trên điện thoại.
-const GPS_REQUEST_TIMEOUT = 10000;
+const GPS_REQUEST_TIMEOUT = 15000;
 const GPS_MAX_ACCEPTABLE_ACCURACY = 10000;
 const GPS_PREFERRED_ACCURACY = 500;
 const GPS_FIRST_FIX_WAIT = 3500;
@@ -148,6 +148,19 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       // bestLocation ở cuối timeout tổng.
     };
 
+    // Dùng getCurrentPosition song song với watchPosition.
+    // Một số bản Chrome/Edge trên Windows không phát fix qua watch ngay,
+    // nhưng lại trả về được qua request một lần.
+    navigator.geolocation.getCurrentPosition(
+      handlePosition,
+      handleError,
+      {
+        enableHighAccuracy: false,
+        timeout: GPS_REQUEST_TIMEOUT,
+        maximumAge: 10000,
+      }
+    );
+
     watchId = navigator.geolocation.watchPosition(
       handlePosition,
       handleError,
@@ -168,7 +181,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 
       finishReject(
         new Error(
-          "Chrome/Edge chưa trả về tọa độ. Hãy bật Location Services trong Windows, cho phép Location cho Chrome/Edge và tải lại TravelQuest."
+          "Chrome/Edge không trả về tọa độ dù quyền Vị trí đã được cấp. Hãy kiểm tra Windows Location Services, quyền vị trí của trình duyệt và thử tải lại trang."
         )
       );
     }, GPS_REQUEST_TIMEOUT);
