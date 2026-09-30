@@ -80,11 +80,16 @@ function isUsableGPSLocation(
 export function getCurrentLocation(): Promise<GPSLocation> {
   ensureBrowser();
 
-  return new Promise((resolve, reject) => {
+  return new Promise<GPSLocation>((resolve, reject) => {
     let finished = false;
     let watchId: number | null = null;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let lastError: GeolocationPositionError | null = null;
+    const requestOptions: PositionOptions = {
+      enableHighAccuracy: false,
+      timeout: GPS_REQUEST_TIMEOUT,
+      maximumAge: 30000,
+    };
 
     const cleanup = () => {
       if (watchId !== null) {
@@ -127,25 +132,16 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       lastError = error;
     };
 
-    const options: PositionOptions = {
-      // Laptop Windows thường định vị qua Wi-Fi/network.
-      // Không ép high accuracy để tránh timeout và lỗi scope/fallback
-      // khi Chrome/Edge chưa có GPS hardware.
-      enableHighAccuracy: false,
-      timeout: GPS_REQUEST_TIMEOUT,
-      maximumAge: 30000,
-    };
-
     navigator.geolocation.getCurrentPosition(
       handlePosition,
       handleError,
-      options
+      requestOptions
     );
 
     watchId = navigator.geolocation.watchPosition(
       handlePosition,
       handleError,
-      options
+      requestOptions
     );
 
     timeoutId = setTimeout(() => {
