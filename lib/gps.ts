@@ -8,9 +8,10 @@ export type GPSLocation = {
 
 // Laptop thường định vị bằng Wi‑Fi/network nên có thể cần lâu hơn
 // và độ chính xác thấp hơn GPS trên điện thoại.
-const GPS_REQUEST_TIMEOUT = 15000;
+const GPS_REQUEST_TIMEOUT = 45000;
+const GPS_WATCH_TIMEOUT = 60000;
+const GPS_CACHED_LOCATION_MAX_AGE = 120000;
 const GPS_MAX_ACCEPTABLE_ACCURACY = 10000;
-const GPS_PREFERRED_ACCURACY = 500;
 
 function ensureBrowser(): void {
   if (
@@ -31,11 +32,11 @@ function mapGeolocationError(
       );
     case error.POSITION_UNAVAILABLE:
       return new Error(
-        "Windows/Chrome chưa cung cấp được vị trí. Hãy bật Location Services của Windows và thử lại."
+        "Chrome/Edge hiện chưa nhận được tọa độ từ Windows. TravelQuest sẽ tiếp tục thử lại thay vì dừng ngay."
       );
     case error.TIMEOUT:
       return new Error(
-        "Trình duyệt mất quá lâu để xác định vị trí. TravelQuest sẽ thử lại khi có vị trí mới."
+        "Chrome/Edge mất quá lâu để xác định vị trí. Hãy thử lại sau vài giây."
       );
     default:
       return new Error("Không thể lấy vị trí hiện tại.");
@@ -72,10 +73,13 @@ function isUsableGPSLocation(
 /**
  * Lấy vị trí hiện tại.
  *
- * Trên laptop không ép Precise Location/high accuracy.
- * Chỉ cần trình duyệt trả về tọa độ hợp lệ là TravelQuest
- * có thể đặt marker; accuracy vẫn được giữ lại để các logic
- * khác quyết định mức độ tin cậy.
+ * Trên laptop, Windows/Chrome thường cần thời gian để suy ra vị trí
+ * từ Wi-Fi/network. Vì vậy:
+ * 1. Cho phép dùng tọa độ cache gần đây để phản hồi nhanh.
+ * 2. Thử getCurrentPosition trước.
+ * 3. Nếu request đầu tiên timeout/unavailable, chuyển sang watchPosition
+ *    thay vì chạy hai request song song.
+ * 4. Chỉ thất bại sau tổng thời gian đủ dài cho laptop.
  */
 export function getCurrentLocation(): Promise<GPSLocation> {
   ensureBrowser();
@@ -83,22 +87,19 @@ export function getCurrentLocation(): Promise<GPSLocation> {
   return new Promise<GPSLocation>((resolve, reject) => {
     let finished = false;
     let watchId: number | null = null;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let totalTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let fallbackStarted = false;
     let lastError: GeolocationPositionError | null = null;
-    const requestOptions: PositionOptions = {
-      enableHighAccuracy: false,
-      timeout: GPS_REQUEST_TIMEOUT,
-      maximumAge: 30000,
-    };
 
     const cleanup = () => {
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
         watchId = null;
       }
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
+
+      if (totalTimeoutId !== null) {
+        clearTimeout(totalTimeoutId);
+        totalTimeoutId = null;
       }
     };
 
@@ -118,7 +119,9 @@ export function getCurrentLocation(): Promise<GPSLocation> {
 
     const handlePosition = (position: GeolocationPosition) => {
       if (finished) return;
+
       const location = toGPSLocation(position);
+
       if (isUsableGPSLocation(location)) {
         finishResolve(location);
       }
@@ -127,34 +130,65 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     const handleError = (error: GeolocationPositionError) => {
       if (finished) return;
 
-      // Giữ lỗi cuối cùng để chỉ reject sau khi đã cho cả
-      // getCurrentPosition và watchPosition cơ hội lấy tọa độ.
       lastError = error;
+
+      if (error.code === error.PERMISSION_DENIED) {
+        finishReject(mapGeolocationError(error));
+        return;
+      }
+
+      if (!fallbackStarted) {
+        startWatchFallback();
+      }
     };
 
+    const startWatchFallback = () => {
+      if (finished || fallbackStarted) return;
+
+      fallbackStarted = true;
+
+      watchId = navigator.geolocation.watchPosition(
+        handlePosition,
+        handleError,
+        {
+          enableHighAccuracy: false,
+          timeout: GPS_WATCH_TIMEOUT,
+          maximumAge: GPS_CACHED_LOCATION_MAX_AGE,
+        }
+      );
+    };
+
+    // Cho phép Chrome trả về vị trí cache gần đây nếu đã có.
+    // Nếu cache không có/không dùng được, browser sẽ tiếp tục lấy vị trí mới.
     navigator.geolocation.getCurrentPosition(
       handlePosition,
       handleError,
-      requestOptions
+      {
+        enableHighAccuracy: false,
+        timeout: GPS_REQUEST_TIMEOUT,
+        maximumAge: GPS_CACHED_LOCATION_MAX_AGE,
+      }
     );
 
-    watchId = navigator.geolocation.watchPosition(
-      handlePosition,
-      handleError,
-      requestOptions
-    );
-
-    timeoutId = setTimeout(() => {
+    totalTimeoutId = setTimeout(() => {
       if (finished) return;
 
       finishReject(
         lastError
           ? mapGeolocationError(lastError)
           : new Error(
-              "Chrome/Edge không trả về tọa độ. Hãy kiểm tra Location Services của Windows và quyền Location của trang TravelQuest."
+              "Chrome/Edge chưa trả về tọa độ sau 45 giây. TravelQuest đã thử cả vị trí cache và cơ chế theo dõi vị trí của trình duyệt."
             )
       );
     }, GPS_REQUEST_TIMEOUT);
+
+    // Nếu browser không gọi error callback khi request đầu tiên bị treo,
+    // vẫn chuyển sang watchPosition trước khi tổng timeout kết thúc.
+    setTimeout(() => {
+      if (!finished && !fallbackStarted) {
+        startWatchFallback();
+      }
+    }, 12000);
   });
 }
 
