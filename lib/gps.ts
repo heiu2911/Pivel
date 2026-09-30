@@ -11,7 +11,6 @@ export type GPSLocation = {
 const GPS_REQUEST_TIMEOUT = 15000;
 const GPS_MAX_ACCEPTABLE_ACCURACY = 10000;
 const GPS_PREFERRED_ACCURACY = 500;
-const GPS_FIRST_FIX_WAIT = 3500;
 
 function ensureBrowser(): void {
   if (
@@ -85,6 +84,7 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     let finished = false;
     let watchId: number | null = null;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let lastError: GeolocationPositionError | null = null;
 
     const cleanup = () => {
       if (watchId !== null) {
@@ -122,12 +122,9 @@ export function getCurrentLocation(): Promise<GPSLocation> {
     const handleError = (error: GeolocationPositionError) => {
       if (finished) return;
 
-      // Không hiển thị lỗi permission ngay. Một số bản Chrome/Edge trên
-      // Windows có thể trả lỗi tạm thời trước khi Windows Location phản hồi.
-      if (error.code === error.PERMISSION_DENIED) {
-        // Cho request còn lại cơ hội trả về tọa độ.
-        return;
-      }
+      // Giữ lỗi cuối cùng để chỉ reject sau khi đã cho cả
+      // getCurrentPosition và watchPosition cơ hội lấy tọa độ.
+      lastError = error;
     };
 
     const options: PositionOptions = {
@@ -152,9 +149,11 @@ export function getCurrentLocation(): Promise<GPSLocation> {
       if (finished) return;
 
       finishReject(
-        new Error(
-          "Chrome/Edge không trả về tọa độ. Hãy kiểm tra Location Services của Windows và quyền Location của trang TravelQuest."
-        )
+        lastError
+          ? mapGeolocationError(lastError)
+          : new Error(
+              "Chrome/Edge không trả về tọa độ. Hãy kiểm tra Location Services của Windows và quyền Location của trang TravelQuest."
+            )
       );
     }, 30000);
   });
