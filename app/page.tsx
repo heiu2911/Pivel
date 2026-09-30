@@ -6422,14 +6422,10 @@ export default function Home() {
             )}
 
             {selectedCheckpoint && showCheckpointCard && (
-              <div className="absolute inset-x-0 bottom-0 z-40 pointer-events-none flex justify-center px-3 pb-[calc(82px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
+              <div className="fixed inset-x-0 bottom-0 z-[200] pointer-events-none flex justify-center px-3 pb-[calc(82px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
                 <div
-                  className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-white/15 bg-[#07182a]/90 shadow-[0_12px_35px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-none select-none"
+                  className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-white/15 bg-[#07182a]/95 shadow-[0_12px_35px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-manipulation select-none"
                   style={{ transform: `translate3d(${checkpointCardOffset.x}px, ${checkpointCardOffset.y}px, 0)` }}
-                  onPointerDown={handleCheckpointCardPointerDown}
-                  onPointerMove={handleCheckpointCardPointerMove}
-                  onPointerUp={handleCheckpointCardPointerUp}
-                  onPointerCancel={handleCheckpointCardPointerUp}
                 >
                   <div className="flex items-center gap-2.5 px-2.5 py-2.5">
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-[#10243b]">
@@ -6474,7 +6470,7 @@ export default function Home() {
                         ) as HTMLElement | null;
                         marker?.click();
                       }}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-blue-300/20 bg-blue-500/15 text-base text-blue-200 transition hover:bg-blue-500/25"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-blue-300/20 bg-blue-500/15 text-base text-blue-200 transition hover:bg-blue-500/25 active:scale-95"
                       title="Chỉ đường trên bản đồ"
                       aria-label="Chỉ đường trên bản đồ"
                     >
@@ -6485,7 +6481,7 @@ export default function Home() {
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={openCheckpointDetail}
-                      className="h-9 w-9 shrink-0 rounded-full bg-white/5 text-sm text-white/55 transition hover:bg-white/10 hover:text-white"
+                      className="h-11 w-11 shrink-0 rounded-full bg-white/5 text-sm text-white/55 transition hover:bg-white/10 hover:text-white active:scale-95"
                       title="Xem chi tiết"
                       aria-label="Xem chi tiết"
                     >
@@ -6501,7 +6497,7 @@ export default function Home() {
                         setDistance(null);
                         setMessage("");
                       }}
-                      className="h-9 w-9 shrink-0 rounded-full bg-white/5 text-xs text-white/35 transition hover:bg-white/10 hover:text-white"
+                      className="h-11 w-11 shrink-0 rounded-full bg-white/5 text-xs text-white/35 transition hover:bg-white/10 hover:text-white active:scale-95"
                       aria-label="Đóng checkpoint"
                     >
                       ✕
