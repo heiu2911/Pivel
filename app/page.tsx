@@ -7773,7 +7773,7 @@ export default function Home() {
                     </div>
 
                     <div className="grid grid-cols-4 gap-2">
-                      <button type="button" onClick={() => savePost(morePost.id) || setUgcMorePostId(null)} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
+                      <button type="button" onClick={() => { savePost(morePost.id); setUgcMorePostId(null); }} className="flex flex-col items-center gap-1 rounded-2xl bg-white/5 py-3 text-xs font-bold active:scale-95 transition">
                         <span className="text-xl">{savedPostIds.includes(morePost.id) ? "🔖" : "🔖"}</span>
                         <span>Lưu</span>
                       </button>
