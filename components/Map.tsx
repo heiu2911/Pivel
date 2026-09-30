@@ -2153,6 +2153,7 @@ export default function Map({
     useRef<mapboxgl.Map | null>(null);
 
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   const userMarker =
     useRef<mapboxgl.Marker | null>(null);
@@ -2185,10 +2186,18 @@ export default function Map({
       process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
     if (!token) {
-      console.error(
-        "Thiếu NEXT_PUBLIC_MAPBOX_TOKEN trong .env.local"
-      );
+      const errorMessage =
+        "Thiếu NEXT_PUBLIC_MAPBOX_TOKEN. Hãy kiểm tra .env.local trên máy chạy TravelQuest.";
+      console.error(errorMessage);
+      setMapError(errorMessage);
+      return;
+    }
 
+    if (!mapboxgl.supported()) {
+      const errorMessage =
+        "Thiết bị/trình duyệt không hỗ trợ WebGL nên Mapbox không thể hiển thị bản đồ.";
+      console.error(errorMessage);
+      setMapError(errorMessage);
       return;
     }
 
@@ -2198,25 +2207,41 @@ export default function Map({
       return;
     }
 
-    const mapInstance =
-      new mapboxgl.Map({
-        container:
-          mapContainer.current,
+    let mapInstance: mapboxgl.Map;
 
-        style:
-          "mapbox://styles/mapbox/streets-v12",
-
-        center: [
-          105.852,
-          21.0285,
-        ],
-
+    try {
+      mapInstance = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: [105.852, 21.0285],
         zoom: 13,
       });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Không thể khởi tạo Mapbox trên thiết bị này.";
+      console.error("TravelQuest Mapbox init error:", error);
+      setMapError(errorMessage);
+      return;
+    }
 
-    map.current =
-      mapInstance;
+    mapInstance.on("error", (event) => {
+      const message =
+        event.error instanceof Error
+          ? event.error.message
+          : "Mapbox không tải được dữ liệu bản đồ.";
+      console.error("TravelQuest Mapbox error:", event.error);
+      setMapError(
+        message.includes("Unauthorized") ||
+          message.includes("401") ||
+          message.includes("403")
+          ? "Mapbox từ chối token trên địa chỉ điện thoại này. Hãy kiểm tra URL restrictions của Mapbox token."
+          : message
+      );
+    });
 
+    map.current = mapInstance;
     setMapReady(true);
 
     mapInstance.addControl(
@@ -3015,7 +3040,20 @@ export default function Map({
   return (
     <div
       ref={mapContainer}
-      className="w-full h-full"
-    />
+      className="relative w-full h-full min-h-[320px] bg-[#0b1220]"
+    >
+      {mapError ? (
+        <div className="absolute inset-0 z-[1000] flex items-center justify-center p-6 text-center">
+          <div className="max-w-sm rounded-2xl border border-white/10 bg-slate-950/95 p-5 text-white shadow-2xl">
+            <div className="text-3xl">🗺️</div>
+            <h2 className="mt-3 text-base font-extrabold">Không tải được bản đồ</h2>
+            <p className="mt-2 text-xs leading-5 text-slate-300">{mapError}</p>
+            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+              Nếu bạn đang mở bằng địa chỉ IP của máy tính, hãy kiểm tra Mapbox token có cho phép địa chỉ đó.
+            </p>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
