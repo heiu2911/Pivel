@@ -13,6 +13,11 @@ type Checkpoint = {
   id: number;
   name: string;
   description: string | null;
+  history?: string | null;
+  architecture?: string | null;
+  distinctive_feature?: string | null;
+  fun_fact?: string | null;
+  slogan?: string | null;
   icon: string | null;
   badge: string | null;
   longitude: number;
@@ -1953,6 +1958,18 @@ function createCheckpointDetailsModal({
   };
 
   const renderOverview = () => {
+    const detailCard = (icon: string, title: string, value: string) =>
+      "<article style=\"min-width:0;padding:14px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;\">" +
+        "<div style=\"font-size:13px;font-weight:800;color:#174e57;\"><span style=\"margin-right:7px;\">" + icon + "</span>" + title + "</div>" +
+        "<div style=\"margin-top:7px;font-size:13px;line-height:1.6;color:#475467;white-space:pre-line;overflow-wrap:anywhere;\">" + escapeHtml(value) + "</div>" +
+      "</article>";
+    const destinationDetails = [
+      { icon: "📜", title: "Lịch sử hình thành", value: checkpoint.history || checkpoint.description || "Thông tin lịch sử đang được cập nhật." },
+      { icon: "🏛️", title: "Kiến trúc – cảnh quan", value: checkpoint.architecture || "Thông tin kiến trúc – cảnh quan đang được cập nhật." },
+      { icon: "✨", title: "Điểm đặc trưng nhất là", value: checkpoint.distinctive_feature || "Thông tin đặc trưng đang được cập nhật." },
+      { icon: "💡", title: "Fun fact", value: checkpoint.fun_fact || "Thông tin thú vị đang được cập nhật." },
+      { icon: "💬", title: "Slogan", value: checkpoint.slogan || ("Khám phá " + checkpoint.name + " – lưu giữ dấu ấn Việt Nam.") },
+    ];
     body.innerHTML =
       "<div style=\"font-size:14px;line-height:1.65;color:#3c4043;\">" + safeDescription + "</div>" +
       "<div style=\"margin-top:14px;padding:12px 14px;border-radius:14px;background:#f0f9ff;color:#174e57;font-size:12px;font-weight:700;\">" + safeBadge + "</div>" +
@@ -1963,6 +1980,13 @@ function createCheckpointDetailsModal({
         infoRow("☎", "Điện thoại", phone) +
         infoRow("🌐", "Website", website) +
       "</div>" +
+      "<section style=\"margin-top:22px;\">" +
+        "<div style=\"font-size:18px;font-weight:800;color:#111827;\">Khám phá địa danh</div>" +
+        "<div style=\"margin-top:4px;font-size:12px;color:#667085;line-height:1.5;\">Lịch sử, cảnh quan và những điều thú vị về địa điểm này.</div>" +
+        "<div style=\"display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin-top:12px;\">" +
+          destinationDetails.map((item) => detailCard(item.icon, item.title, item.value)).join("") +
+        "</div>" +
+      "</section>" +
       "<div style=\"margin-top:14px;font-size:11px;color:#8a9199;\">Giờ mở cửa là thông tin tham khảo và có thể thay đổi theo ngày/lễ.</div>";
   };
 
