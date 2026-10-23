@@ -24,6 +24,11 @@ type Checkpoint = {
   id: number;
   name: string;
   description: string | null;
+  history?: string | null;
+  architecture?: string | null;
+  distinctive_feature?: string | null;
+  fun_fact?: string | null;
+  slogan?: string | null;
   icon: string | null;
   badge: string | null;
   longitude: number;
@@ -2565,7 +2570,7 @@ export default function Home() {
         } = await supabase
           .from("checkpoints")
           .select(
-            "id, name, description, icon, badge, longitude, latitude"
+            "id, name, description, history, architecture, distinctive_feature, fun_fact, slogan, icon, badge, longitude, latitude"
           )
           .order("id", {
             ascending: true,
@@ -6753,6 +6758,66 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
+
+                <section className="mt-6">
+                  <h3 className="text-lg font-black">Khám phá địa danh</h3>
+                  <p className="text-xs text-white/45 mt-1">
+                    Lịch sử, cảnh quan và những điều thú vị về địa điểm này.
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2 mt-3">
+                    {[
+                      {
+                        icon: "📜",
+                        title: "Lịch sử hình thành",
+                        content:
+                          selectedCheckpoint.history ||
+                          selectedCheckpoint.description ||
+                          "Thông tin lịch sử đang được cập nhật.",
+                      },
+                      {
+                        icon: "🏛️",
+                        title: "Kiến trúc – cảnh quan",
+                        content:
+                          selectedCheckpoint.architecture ||
+                          "Thông tin kiến trúc – cảnh quan đang được cập nhật.",
+                      },
+                      {
+                        icon: "✨",
+                        title: "Điểm đặc trưng nhất là",
+                        content:
+                          selectedCheckpoint.distinctive_feature ||
+                          "Thông tin đặc trưng đang được cập nhật.",
+                      },
+                      {
+                        icon: "💡",
+                        title: "Fun fact",
+                        content:
+                          selectedCheckpoint.fun_fact ||
+                          "Thông tin thú vị đang được cập nhật.",
+                      },
+                      {
+                        icon: "💬",
+                        title: "Slogan",
+                        content:
+                          selectedCheckpoint.slogan ||
+                          `Khám phá ${selectedCheckpoint.name} – lưu giữ dấu ấn Việt Nam.`,
+                      },
+                    ].map((section) => (
+                      <article
+                        key={section.title}
+                        className="rounded-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.025] border border-white/10 p-4"
+                      >
+                        <p className="text-sm font-bold text-blue-200">
+                          <span className="mr-2">{section.icon}</span>
+                          {section.title}
+                        </p>
+                        <p className="text-sm text-white/70 mt-2 leading-relaxed whitespace-pre-line">
+                          {section.content}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
 
                 <div className="grid grid-cols-2 gap-3 mt-6">
                   <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
