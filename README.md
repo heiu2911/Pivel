@@ -52,3 +52,15 @@ npm run build
 ## Development
 
 Current development branch: `feature/gps`
+
+
+## Import địa danh từ tài liệu du lịch
+
+Repository includes `supabase/seed-destinations.sql`, which adds 69 destinations and Vietnamese descriptions based on the document **“CÁC ĐIỂM DL CỦA NB VÀ QN”**.
+
+1. Open your project's **Supabase Dashboard → SQL Editor**.
+2. Open `supabase/seed-destinations.sql` from this repository and copy its contents into the SQL Editor.
+3. Review the approximate coordinates, then run the script. Existing checkpoint rows are preserved and destination names already present are skipped.
+4. Refresh TravelQuest. The app loads the `checkpoints` table from Supabase, so the new locations can appear on the map and use the existing checkpoint detail/check-in flow.
+
+**Important:** map coordinates are approximate. Verify each location in Mapbox/Supabase before relying on the 150 m GPS check-in radius. This seed adds rows to the existing table; it does not create the schema or change RLS policies.
