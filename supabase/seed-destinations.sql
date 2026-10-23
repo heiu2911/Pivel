@@ -120,7 +120,4 @@ SET
     NULLIF(btrim(c.slogan), ''),
     'Khám phá ' || c.name || ' – lưu giữ dấu ấn Việt Nam.'
   )
-WHERE EXISTS (
-  SELECT 1 FROM destinations d
-  WHERE lower(trim(d.name)) = lower(trim(c.name))
-);
+;
