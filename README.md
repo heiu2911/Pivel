@@ -59,8 +59,9 @@ Current development branch: `feature/gps`
 Repository includes `supabase/seed-destinations.sql`, which adds 69 destinations and Vietnamese descriptions based on the document **“CÁC ĐIỂM DL CỦA NB VÀ QN”**.
 
 1. Open your project's **Supabase Dashboard → SQL Editor**.
-2. Open `supabase/seed-destinations.sql` from this repository and copy its contents into the SQL Editor.
-3. Review the approximate coordinates, then run the script. Existing checkpoint rows are preserved and destination names already present are skipped.
-4. Refresh TravelQuest. The app loads the `checkpoints` table from Supabase, so the new locations can appear on the map and use the existing checkpoint detail/check-in flow.
+2. Run `supabase/add-destination-details.sql` first. It adds the five detail columns used by the destination detail modal and backfills details that can be safely extracted from existing descriptions.
+3. Open `supabase/seed-destinations.sql` and copy its contents into SQL Editor if you have not imported the destinations yet.
+4. Review the approximate coordinates, then run the seed script. Existing checkpoint rows are preserved and destination names already present are skipped.
+5. Refresh TravelQuest. Select a destination and press **“Xem chi tiết”** to see **Lịch sử hình thành**, **Kiến trúc – cảnh quan**, **Điểm đặc trưng nhất là**, **Fun fact**, and **Slogan**.
 
-**Important:** map coordinates are approximate. Verify each location in Mapbox/Supabase before relying on the 150 m GPS check-in radius. This seed adds rows to the existing table; it does not create the schema or change RLS policies.
+**Important:** run the migration before using this version of the app, because it selects the five new columns. The migration does not change RLS policies. Some legacy descriptions may not contain all five labeled sections; those fields remain blank and the UI displays an “đang được cập nhật” message rather than inventing facts. Review approximate coordinates before relying on the 150 m GPS check-in radius.
