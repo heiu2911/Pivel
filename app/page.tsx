@@ -7285,11 +7285,11 @@ export default function Home() {
         {/* ================= BADGES ================= */}
 
         {activeTab === "badges" && (
-          <section className="pt-28 px-5 max-w-5xl mx-auto">
+          <section className="pt-28 px-5 max-w-5xl mx-auto text-[#203c2d]">
 
             <div className="mb-8">
 
-              <p className="text-blue-300 text-sm font-semibold">
+              <p className="text-[#527a55] text-sm font-semibold">
                 YOUR COLLECTION
               </p>
 
@@ -7297,17 +7297,17 @@ export default function Home() {
                 Bộ sưu tập huy hiệu
               </h2>
 
-              <p className="text-white/50 mt-2">
+              <p className="text-[#718071] mt-2">
                 Hoàn thành checkpoint để mở khóa huy hiệu.
               </p>
 
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between mb-3">
 
-                <span className="text-sm text-white/60">
+                <span className="text-sm text-[#718071]">
                   Tiến độ hành trình
                 </span>
 
@@ -7318,10 +7318,10 @@ export default function Home() {
 
               </div>
 
-              <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-3 bg-[#e8eddf] rounded-full overflow-hidden">
 
                 <div
-                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  className="h-full bg-[#416c4b] rounded-full transition-all duration-500"
                   style={{
                     width: `${progress}%`,
                   }}
@@ -7329,7 +7329,7 @@ export default function Home() {
 
               </div>
 
-              <p className="text-xs text-white/40 mt-3">
+              <p className="text-xs text-[#718071] mt-3">
                 {progress === 100
                   ? "🎉 Bạn đã hoàn thành tất cả checkpoint!"
                   : `Còn ${
@@ -7342,12 +7342,12 @@ export default function Home() {
 
             {/* ================= XP & LEVEL ================= */}
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between mb-3">
 
                 <div>
-                  <p className="text-xs text-blue-300 font-semibold">
+                  <p className="text-xs text-[#527a55] font-semibold">
                     LEVEL {currentLevel}
                   </p>
 
@@ -7362,10 +7362,10 @@ export default function Home() {
 
               </div>
 
-              <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+              <div className="h-3 bg-[#e8eddf] rounded-full overflow-hidden">
 
                 <div
-                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                  className="h-full bg-[#416c4b] rounded-full transition-all duration-500"
                   style={{
                     width: `${levelProgress}%`,
                   }}
@@ -7375,31 +7375,69 @@ export default function Home() {
 
               <div className="flex items-center justify-between mt-2">
 
-                <p className="text-xs text-white/40">
+                <p className="text-xs text-[#718071]">
                   {currentLevelXP}/{XP_PER_LEVEL} XP
                 </p>
 
-                <p className="text-xs text-white/40">
+                <p className="text-xs text-[#718071]">
                   Còn {nextLevelXP} XP → Level {currentLevel + 1}
                 </p>
 
               </div>
 
-              <p className="text-xs text-white/40 mt-3">
+              <p className="text-xs text-[#718071] mt-3">
                 🏆 Mỗi checkpoint đã chinh phục nhận +{XP_PER_CHECKPOINT} XP.
               </p>
 
             </div>
 
+            {/* ================= DAILY MISSIONS ================= */}
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-xs font-semibold text-[#b8793d]">DAILY QUESTS</p>
+                  <h3 className="text-xl font-black mt-1">Nhiệm vụ hôm nay</h3>
+                  <p className="text-sm text-[#718071] mt-1">Hoàn thành nhiệm vụ để nhận XP thưởng.</p>
+                </div>
+                <div className="text-3xl">🎁</div>
+              </div>
+              <div className="space-y-3">
+                {dailyMissions.map((mission) => {
+                  const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
+                  const readyToClaim = mission.done && !claimed;
+                  return (
+                    <div key={mission.id} className="flex items-center gap-3 rounded-2xl border border-[#e1e7d9] bg-[#f8f8f0] p-3 sm:p-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e8eddf] text-xl">
+                        {claimed ? "✅" : mission.icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-sm">{mission.title}</p>
+                        <p className="mt-1 text-xs text-[#718071]">{mission.description}</p>
+                        <p className="mt-2 text-xs font-bold text-[#527a55]">+{mission.reward} XP</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)}
+                        disabled={!readyToClaim}
+                        className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition ${claimed ? "bg-[#e8eddf] text-[#718071]" : readyToClaim ? "bg-[#416c4b] text-white hover:bg-[#34583c]" : "bg-[#eceee6] text-[#8a9586]"} disabled:cursor-not-allowed`}
+                      >
+                        {claimed ? "Đã nhận" : mission.done ? "Nhận XP" : "Chưa xong"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* ================= STREAK ================= */}
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between">
 
                 <div>
 
-                  <p className="text-xs text-orange-300 font-semibold">
+                  <p className="text-xs text-[#b8793d] font-semibold">
                     TRAVEL STREAK
                   </p>
 
@@ -7407,7 +7445,7 @@ export default function Home() {
                     Chuỗi chinh phục
                   </h3>
 
-                  <p className="text-xs text-white/40 mt-2">
+                  <p className="text-xs text-[#718071] mt-2">
                     Chinh phục checkpoint mỗi ngày để giữ lửa hành trình.
                   </p>
 
@@ -7421,9 +7459,9 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3 mt-5">
 
-                <div className="bg-black/10 border border-white/5 rounded-2xl p-4">
+                <div className="bg-[#f5f4e9] border border-[#e1e7d9] rounded-2xl p-4">
 
-                  <p className="text-xs text-white/40">
+                  <p className="text-xs text-[#718071]">
                     Chuỗi hiện tại
                   </p>
 
@@ -7431,15 +7469,15 @@ export default function Home() {
                     {currentStreak}
                   </p>
 
-                  <p className="text-[10px] text-white/30 mt-1">
+                  <p className="text-[10px] text-[#8a9586] mt-1">
                     ngày liên tiếp
                   </p>
 
                 </div>
 
-                <div className="bg-black/10 border border-white/5 rounded-2xl p-4">
+                <div className="bg-[#f5f4e9] border border-[#e1e7d9] rounded-2xl p-4">
 
-                  <p className="text-xs text-white/40">
+                  <p className="text-xs text-[#718071]">
                     Kỷ lục
                   </p>
 
@@ -7447,7 +7485,7 @@ export default function Home() {
                     {bestStreak}
                   </p>
 
-                  <p className="text-[10px] text-white/30 mt-1">
+                  <p className="text-[10px] text-[#8a9586] mt-1">
                     ngày liên tiếp
                   </p>
 
@@ -7455,9 +7493,9 @@ export default function Home() {
 
               </div>
 
-              <div className="mt-4 rounded-2xl bg-blue-500/10 border border-blue-400/15 p-4">
+              <div className="mt-4 rounded-2xl bg-[#edf3e8] border border-[#d7e4d1] p-4">
 
-                <p className="text-xs text-blue-200">
+                <p className="text-xs text-[#416c4b]">
                   {currentStreak > 0
                     ? `🔥 Bạn đang giữ chuỗi ${currentStreak} ngày.`
                     : "🧭 Chinh phục một checkpoint hôm nay để bắt đầu chuỗi."}
@@ -7469,13 +7507,13 @@ export default function Home() {
 
             {/* ================= LEADERBOARD ================= */}
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between mb-4">
 
                 <div>
 
-                  <p className="text-xs text-yellow-300 font-semibold">
+                  <p className="text-xs text-[#b8793d] font-semibold">
                     TRAVELQUEST RANKING
                   </p>
 
@@ -7483,7 +7521,7 @@ export default function Home() {
                     Bảng xếp hạng
                   </h3>
 
-                  <p className="text-xs text-white/40 mt-2">
+                  <p className="text-xs text-[#718071] mt-2">
                     Xếp hạng theo XP từ checkpoint đã chinh phục.
                   </p>
 
@@ -7496,15 +7534,15 @@ export default function Home() {
               </div>
 
               {leaderboardLoading ? (
-                <div className="py-8 text-center text-sm text-white/40">
+                <div className="py-8 text-center text-sm text-[#718071]">
                   📡 Đang tải bảng xếp hạng...
                 </div>
               ) : leaderboardMessage ? (
-                <div className="py-6 text-center text-sm text-white/40">
+                <div className="py-6 text-center text-sm text-[#718071]">
                   {leaderboardMessage}
                 </div>
               ) : leaderboard.length === 0 ? (
-                <div className="py-8 text-center text-sm text-white/40">
+                <div className="py-8 text-center text-sm text-[#718071]">
                   Chưa có dữ liệu xếp hạng.
                 </div>
               ) : (
@@ -7532,8 +7570,8 @@ export default function Home() {
                           key={entry.user_id}
                           className={`flex items-center gap-3 rounded-2xl border p-3 transition ${
                             isCurrentUser
-                              ? "bg-blue-500/10 border-blue-400/20"
-                              : "bg-black/10 border-white/5"
+                              ? "bg-[#edf3e8] border-[#b9cfb3]"
+                              : "bg-[#f8f8f0] border-[#e6e9df]"
                           }`}
                         >
 
@@ -7541,7 +7579,7 @@ export default function Home() {
                             {rankIcon}
                           </div>
 
-                          <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/15 border border-blue-400/15 flex items-center justify-center">
+                          <div className="w-10 h-10 shrink-0 rounded-full bg-[#e6eee0] border border-[#d7e4d1] flex items-center justify-center">
                             👤
                           </div>
 
@@ -7562,14 +7600,14 @@ export default function Home() {
                               </p>
 
                               {isCurrentUser && (
-                                <span className="shrink-0 text-[9px] font-bold text-blue-300 bg-blue-500/10 border border-blue-400/15 rounded-full px-2 py-1">
+                                <span className="shrink-0 text-[9px] font-bold text-[#527a55] bg-blue-500/10 border border-blue-400/15 rounded-full px-2 py-1">
                                   BẠN
                                 </span>
                               )}
 
                             </div>
 
-                            <p className="text-[10px] text-white/35 mt-1">
+                            <p className="text-[10px] text-[#8a9586] mt-1">
                               {entry.checkpoint_count} checkpoint
                               {" · "}
                               Level {entry.level}
@@ -7583,7 +7621,7 @@ export default function Home() {
                               {entry.xp} XP
                             </p>
 
-                            <p className="text-[9px] text-white/30 mt-1">
+                            <p className="text-[9px] text-[#8a9586] mt-1">
                               Level {entry.level}
                             </p>
 
@@ -7600,7 +7638,7 @@ export default function Home() {
               <button
                 onClick={loadLeaderboard}
                 disabled={leaderboardLoading}
-                className="w-full mt-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-bold transition disabled:opacity-50"
+                className="w-full mt-4 py-3 rounded-xl bg-[#416c4b] hover:bg-[#34583c] border border-[#416c4b] text-white text-sm font-bold transition disabled:opacity-50"
               >
                 {leaderboardLoading
                   ? "📡 Đang cập nhật..."
@@ -7610,10 +7648,10 @@ export default function Home() {
             </div>
 
             {/* ================= ACHIEVEMENTS ================= */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-blue-300 font-semibold">ACHIEVEMENTS</p>
+                  <p className="text-xs text-[#527a55] font-semibold">ACHIEVEMENTS</p>
                   <h3 className="text-xl font-black mt-1">Thành tựu hành trình</h3>
                 </div>
                 <p className="text-lg font-black">{unlockedAchievementCount}/{achievements.length}</p>
@@ -7623,51 +7661,51 @@ export default function Home() {
                   <div key={achievement.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{achievement.unlocked ? achievement.icon : "🔒"}</p>
                     <p className="mt-2 text-sm font-bold">{achievement.name}</p>
-                    <p className="mt-1 text-[10px] text-white/40">{achievement.unlocked ? "Đã mở khóa" : "Chưa mở khóa"}</p>
+                    <p className="mt-1 text-[10px] text-[#718071]">{achievement.unlocked ? "Đã mở khóa" : "Chưa mở khóa"}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-purple-300 font-semibold">REGIONAL BADGES</p>
+                  <p className="text-xs text-[#527a55] font-semibold">REGIONAL BADGES</p>
                   <h3 className="text-xl font-black mt-1">🏙️ Huy hiệu theo khu vực</h3>
                 </div>
-                <span className="text-xs text-white/35">{regionalBadges.filter((item) => item.unlocked).length}/{regionalBadges.length}</span>
+                <span className="text-xs text-[#8a9586]">{regionalBadges.filter((item) => item.unlocked).length}/{regionalBadges.length}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {regionalBadges.map((badge) => (
                   <div key={badge.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{badge.unlocked ? badge.icon : "🔒"}</p>
                     <p className="mt-2 text-sm font-bold">{badge.name}</p>
-                    <p className="mt-1 text-[10px] text-white/40">{badge.description}</p>
+                    <p className="mt-1 text-[10px] text-[#718071]">{badge.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-orange-300 font-semibold">ADVANCED ACHIEVEMENTS</p>
+                  <p className="text-xs text-[#b8793d] font-semibold">ADVANCED ACHIEVEMENTS</p>
                   <h3 className="text-xl font-black mt-1">🚀 Thành tựu nâng cao</h3>
                 </div>
-                <span className="text-xs text-white/35">{advancedAchievements.filter((item) => item.unlocked).length}/{advancedAchievements.length}</span>
+                <span className="text-xs text-[#8a9586]">{advancedAchievements.filter((item) => item.unlocked).length}/{advancedAchievements.length}</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {advancedAchievements.map((item) => (
                   <div key={item.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{item.unlocked ? item.icon : "🔒"}</p>
                     <p className="mt-2 text-sm font-bold">{item.name}</p>
-                    <p className="mt-1 text-[10px] text-white/40">{item.description}</p>
+                    <p className="mt-1 text-[10px] text-[#718071]">{item.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <button type="button" onClick={resetProgress} className="mt-2 text-xs text-red-300/60 hover:text-red-300 transition">
+            <button type="button" onClick={resetProgress} className="mt-2 text-xs text-[#b8793d] hover:text-[#8c4c2b] transition">
               Reset dữ liệu demo
             </button>
 
