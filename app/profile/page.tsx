@@ -52,7 +52,14 @@ export default function PersonalProfilePage() {
       ]);
       if (!alive) return;
       if (profileResult.data?.display_name) { setDisplayName(profileResult.data.display_name); setNameDraft(profileResult.data.display_name); }
-      if (avatarResult.data?.avatar_url) setAvatarUrl(avatarResult.data.avatar_url);
+      // Use the locally cached avatar as a fallback when the avatar table is unavailable.
+      let cachedAvatar: string | null = null;
+      try { cachedAvatar = window.localStorage.getItem("travelquest-avatar-image:" + currentUser.id); } catch {}
+      if (avatarResult.data?.avatar_url) {
+        setAvatarUrl(avatarResult.data.avatar_url);
+      } else if (cachedAvatar) {
+        setAvatarUrl(cachedAvatar);
+      }
       if (!postsResult.error) setPosts((postsResult.data ?? []) as ProfilePost[]);
       if (!checkinsResult.error) setCheckinCount(checkinsResult.count ?? 0);
       if (postsResult.error) setMessage("Chưa tải được bài đăng. Hãy thử tải lại trang.");
