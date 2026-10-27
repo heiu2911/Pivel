@@ -5992,12 +5992,12 @@ export default function Home() {
 
               <div className="mt-5 flex items-center justify-between">
                 <div><h2 className="text-base font-black">Khoảnh khắc quanh bạn</h2><p className="mt-0.5 text-xs text-[#7d8b7d]">Chia sẻ những nơi đáng nhớ</p></div>
-                <button type="button" onClick={() => setActiveTab("ugc")} className="text-xs font-extrabold text-[#c87532]">+ Tạo bài mới</button>
+                <button type="button" onClick={() => { if (!user) { openAuth("login"); return; } setActiveTab("ugc"); }} className="text-xs font-extrabold text-[#c87532]">＋ Chia sẻ ảnh</button>
               </div>
               <div className="mt-3 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none]">
-                <button type="button" onClick={() => setActiveTab("ugc")} className="w-[68px] shrink-0 text-center">
+                <button type="button" onClick={() => { if (!user) { openAuth("login"); return; } setActiveTab("ugc"); }} className="w-[68px] shrink-0 text-center">
                   <span className="mx-auto flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-dashed border-[#9caf9b] bg-[#e8eddf] text-2xl text-[#245b43]">＋</span>
-                  <span className="mt-1.5 block truncate text-[10px] font-bold">Tạo bài mới</span>
+                  <span className="mt-1.5 block truncate text-[10px] font-bold">Đăng ảnh</span>
                 </button>
                 {friendProfiles.slice(0, 12).map((friend) => (
                   <button key={friend.user_id} type="button" onClick={() => { setActiveTab("ugc"); selectUgcTraveller(friend.user_id); }} className="w-[68px] shrink-0 text-center">
@@ -6041,7 +6041,7 @@ export default function Home() {
                 {visiblePosts.length === 0 && (
                   <div className="rounded-[1.6rem] border border-[#e2e5d9] bg-white px-5 py-10 text-center">
                     <span className="text-4xl">🧭</span><h3 className="mt-3 font-black">Hành trình mới bắt đầu từ đây</h3><p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#849184]">Chưa có bài đăng phù hợp. Hãy tạo khoảnh khắc đầu tiên hoặc xem bản đồ để tìm điểm đến thú vị.</p>
-                    <div className="mt-4 flex justify-center gap-2"><button type="button" onClick={() => setActiveTab("ugc")} className="rounded-full bg-[#245b43] px-4 py-2.5 text-xs font-extrabold text-white">Tạo bài mới</button><button type="button" onClick={() => setActiveTab("map")} className="rounded-full border border-[#dce3d2] px-4 py-2.5 text-xs font-extrabold text-[#245b43]">Khám phá bản đồ</button></div>
+                    <div className="mt-4 flex justify-center gap-2"><button type="button" onClick={() => { if (!user) { openAuth("login"); return; } setActiveTab("ugc"); }} className="rounded-full bg-[#245b43] px-4 py-2.5 text-xs font-extrabold text-white">Chia sẻ ảnh</button><button type="button" onClick={() => setActiveTab("map")} className="rounded-full border border-[#dce3d2] px-4 py-2.5 text-xs font-extrabold text-[#245b43]">Khám phá bản đồ</button></div>
                   </div>
                 )}
               </div>
