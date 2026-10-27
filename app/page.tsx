@@ -8165,11 +8165,19 @@ export default function Home() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("ugc")}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "ugc" ? "bg-white text-[#173a9a] shadow-lg" : "text-white/45 hover:text-white"}`}
+              onClick={() => {
+                if (!user) {
+                  setAuthOpen(true);
+                  setAuthMode("login");
+                  return;
+                }
+                setAuthOpen(true);
+                setProfileNameInput(profileName);
+              }}
+              className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition text-white/45 hover:text-white"
             >
-              <span className="text-xl">📸</span>
-              <span className="text-[11px] font-semibold">UGC</span>
+              <span className="text-xl">👤</span>
+              <span className="text-[11px] font-semibold">Trang cá nhân</span>
             </button>
           </div>
         </div>
