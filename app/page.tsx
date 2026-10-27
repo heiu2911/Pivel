@@ -6230,7 +6230,7 @@ export default function Home() {
                 </button>
               )}
               {authReady && (
-                <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-white/40 bg-[#f1f4eb] shadow-lg backdrop-blur-xl transition hover:scale-[1.03]" title={user ? "Tài khoản" : "Đăng nhập"}>
+                <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#b8d5a5] bg-[#f1f4eb] shadow-lg backdrop-blur-xl transition hover:scale-[1.03]" title={user ? "Tài khoản" : "Đăng nhập"}>
                   {user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-base">{user ? avatarEmoji : "🔐"}</span>}
                 </button>
               )}
@@ -6268,7 +6268,7 @@ export default function Home() {
                     updateLocation();
                     startWatchingGPS();
                   }}
-                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-slate-900 transition hover:bg-slate-100"
+                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-[#183d32] transition hover:bg-[#f1f4eb]"
                   title="Định vị tôi"
                 >
                   <span>⌖</span>
@@ -6277,9 +6277,9 @@ export default function Home() {
               </div>
 
               {(mapSearchQuery.trim() || mapFilter !== "none") && (
-                <div className="fixed right-3 top-[104px] z-[90] w-[min(320px,calc(100vw-24px))] max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-1.5 text-slate-900 shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:top-[68px] sm:right-4">
+                <div className="fixed right-3 top-[104px] z-[90] w-[min(320px,calc(100vw-24px))] max-h-72 overflow-y-auto rounded-2xl border border-[#dce3d2] bg-white p-1.5 text-[#183d32] shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:top-[68px] sm:right-4">
                   {mapSearchResults.length === 0 ? (
-                    <div className="px-4 py-5 text-center text-xs text-slate-500">
+                    <div className="px-4 py-5 text-center text-xs text-[#71816e]">
                       Chưa tìm thấy checkpoint phù hợp.
                     </div>
                   ) : (
@@ -6293,18 +6293,18 @@ export default function Home() {
                           setMapSearchQuery("");
                           setMapFilter("none");
                         }}
-                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100"
+                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-[#f1f4eb]"
                       >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xl">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f4eb] text-xl">
                           {checkpoint.icon ?? "📍"}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-bold text-slate-800">{checkpoint.name}</span>
-                          <span className="mt-0.5 block truncate text-[11px] text-slate-500">
+                          <span className="block truncate text-sm font-bold text-[#183d32]">{checkpoint.name}</span>
+                          <span className="mt-0.5 block truncate text-[11px] text-[#71816e]">
                             {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
                           </span>
                         </span>
-                        <span className="text-slate-400 transition group-hover:translate-x-0.5">›</span>
+                        <span className="text-[#9aa69a] transition group-hover:translate-x-0.5">›</span>
                       </button>
                     ))
                   )}
@@ -6348,9 +6348,9 @@ export default function Home() {
 
                 {headerMenuOpen && (
                   <div className="absolute right-0 top-12 z-[90] w-48 rounded-2xl border border-[#e4e9dd] bg-[#fffdf6]/98 p-2 shadow-2xl backdrop-blur-xl">
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-white/8">📍 Cập nhật GPS</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-white/8">✨ Smart Travel</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-white/8">💬 Traveller Chat</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-[#f1f4eb]">📍 Cập nhật GPS</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-[#f1f4eb]">✨ Smart Travel</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-[#f1f4eb]">💬 Traveller Chat</button>
                   </div>
                 )}
               </div>
@@ -6619,7 +6619,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setShowMapCheckpoints((value) => !value)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/98 text-base text-[#183d32] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/98 text-base text-[#183d32] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#edf5e7]"
                   title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
                   aria-label={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
                 >
@@ -6628,7 +6628,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setShowExplorePanel(true)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/98 text-base text-[#183d32] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#0b223b]"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/98 text-base text-[#183d32] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#edf5e7]"
                   title="Hiện khám phá"
                   aria-label="Hiện khám phá"
                 >
@@ -6764,10 +6764,10 @@ export default function Home() {
                       disabled={checkingIn || isCheckedIn(selectedCheckpoint.id)}
                       className={`min-h-8 flex-1 rounded-xl px-3 text-[10px] font-black transition ${
                         isCheckedIn(selectedCheckpoint.id)
-                          ? "bg-emerald-500/15 text-[#43875b]"
+                          ? "bg-[#edf5e7] text-[#43875b]"
                           : canCheckIn
                           ? "bg-[#43875b] text-[#183d32]"
-                          : "bg-white/8 text-[#183d32]/70"
+                          : "bg-[#f1f4eb] text-[#183d32]/70"
                       }`}
                     >
                       {checkingIn
@@ -6900,7 +6900,7 @@ export default function Home() {
                               {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
                             </span>
                           </span>
-                          <span className={`w-7 h-7 rounded-full flex items-center justify-center border text-xs ${selected ? "bg-[#43875b] border-blue-400" : "bg-white border-[#e4e9dd]"}`}>
+                          <span className={`w-7 h-7 rounded-full flex items-center justify-center border text-xs ${selected ? "bg-[#43875b] border-[#43875b]" : "bg-white border-[#e4e9dd]"}`}>
                             {selected ? "✓" : ""}
                           </span>
                         </button>
@@ -6911,7 +6911,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-2 mt-6">
                   <div className="flex gap-2 mt-3">
-                    <button type="button" onClick={() => setRoutePlannerOpen(true)} className="flex-1 rounded-xl bg-emerald-500/10 border border-emerald-400/15 px-3 py-2 text-xs font-bold">🗺️ Route planner</button>
+                    <button type="button" onClick={() => setRoutePlannerOpen(true)} className="flex-1 rounded-xl bg-[#f1f4eb] border border-[#dce3d2] px-3 py-2 text-xs font-bold">🗺️ Route planner</button>
                     {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="flex-1 rounded-xl bg-white border border-[#e4e9dd] px-3 py-2 text-xs font-bold text-center">📍 Google Maps</a>}
                   </div>
 
@@ -6935,7 +6935,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={finishJourney}
-                      className="py-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/20 text-emerald-300 text-xs font-bold transition"
+                      className="py-3 rounded-xl bg-[#edf5e7] hover:bg-[#dcebd2] border border-[#b8d5a5] text-[#43875b] text-xs font-bold transition"
                     >
                       🏁 Kết thúc chuyến đi
                     </button>
