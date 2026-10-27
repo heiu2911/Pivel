@@ -450,6 +450,7 @@ function createCheckpointDetailsModal({
   overlay.style.backdropFilter = "blur(3px)";
 
   const card = document.createElement("div");
+  card.className = "tq-checkpoint-modal";
   card.style.width = "min(720px, calc(100vw - 32px))";
   card.style.maxHeight = "min(820px, calc(100vh - 48px))";
   card.style.overflow = "hidden";
@@ -921,8 +922,20 @@ function createCheckpointDetailsModal({
   tabs.style.flexShrink = "0";
 
   const body = document.createElement("div");
+  body.className = "tq-checkpoint-modal-body";
   body.style.overflowY = "auto";
   body.style.padding = "18px 20px 22px";
+
+  const modalContrastStyle = document.createElement("style");
+  modalContrastStyle.textContent = `
+    .tq-checkpoint-modal, .tq-checkpoint-modal * { color: #183d32 !important; }
+    .tq-checkpoint-modal [data-action="close"] { color: #315b45 !important; }
+    .tq-checkpoint-modal-body { background: #fffdf6 !important; }
+    .tq-checkpoint-modal-body article { background: #ffffff !important; border-color: #e4e9dd !important; }
+    .tq-checkpoint-modal-body article > div:first-child { color: #315b45 !important; }
+    .tq-checkpoint-modal-body article > div:last-child { color: #526b56 !important; }
+  `;
+  card.appendChild(modalContrastStyle);
 
   const tabNames = ["Tổng quan", "Vé", "Bài đánh giá", "Giới thiệu"];
   const tabButtons: HTMLButtonElement[] = [];
