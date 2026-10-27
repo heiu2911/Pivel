@@ -1675,6 +1675,55 @@ export default function Home() {
   };
 
   // ============================================
+  // AUTH - PASSWORD RESET / GOOGLE OAUTH
+  // ============================================
+
+  const handleForgotPassword = async () => {
+    const email = authEmail.trim();
+    if (!email) {
+      setAuthMessage("Hãy nhập email trước để nhận liên kết đặt lại mật khẩu.");
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthMessage("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (error) {
+        setAuthMessage(`Không thể gửi email đặt lại mật khẩu: ${error.message}`);
+      } else {
+        setAuthMessage("Nếu email này đã đăng ký, liên kết đặt lại mật khẩu sẽ được gửi tới hộp thư của bạn.");
+      }
+    } catch (error) {
+      console.error("Lỗi đặt lại mật khẩu:", error);
+      setAuthMessage("Không thể gửi email lúc này. Vui lòng thử lại sau.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setAuthLoading(true);
+    setAuthMessage("");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) {
+        setAuthMessage(`Không thể đăng nhập bằng Google: ${error.message}`);
+        setAuthLoading(false);
+      }
+    } catch (error) {
+      console.error("Lỗi đăng nhập Google:", error);
+      setAuthMessage("Không thể kết nối Google lúc này. Vui lòng thử lại.");
+      setAuthLoading(false);
+    }
+  };
+
+  // ============================================
   // AUTH - LOGOUT
   // ============================================
 
@@ -5694,10 +5743,11 @@ export default function Home() {
       ============================================ */}
 
       {authOpen && !user && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center px-5">
-
-          <div
-            className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+        <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-[#f7f4e9] p-3 text-[#183d32] sm:p-6">
+          <button
+            type="button"
+            aria-label="Đóng cửa sổ đăng nhập"
+            className="absolute inset-0 cursor-default bg-[#183d32]/35 backdrop-blur-sm"
             onClick={() => {
               if (!authLoading) {
                 setAuthOpen(false);
@@ -5706,162 +5756,133 @@ export default function Home() {
             }}
           />
 
-          <div className="relative w-full max-w-sm">
-
-            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a] p-6 shadow-2xl">
-
-              <div className="flex items-start justify-between">
-
-                <div>
-
-                  <p className="text-blue-300 text-xs font-bold tracking-[0.2em]">
-                    TRAVELQUEST
-                  </p>
-
-                  <h2 className="text-2xl font-black mt-2">
-                    {authMode === "login"
-                      ? "Đăng nhập"
-                      : "Tạo tài khoản"}
-                  </h2>
-
-                  <p className="text-sm text-white/45 mt-1">
-                    {authMode === "login"
-                      ? "Tiếp tục hành trình của bạn."
-                      : "Tham gia cộng đồng TravelQuest."}
-                  </p>
-
-                </div>
-
-                <button
-                  onClick={() => {
-                    if (!authLoading) {
-                      setAuthOpen(false);
-                      setAuthMessage("");
-                    }
-                  }}
-                  className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white hover:bg-white/10 transition"
-                >
-                  ✕
-                </button>
-
+          <section className="relative my-auto grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-[#e7e1d2] bg-[#fffdf7] shadow-[0_30px_100px_rgba(24,61,50,0.24)] md:min-h-[620px] md:grid-cols-[1.02fr_0.98fr]">
+            <div className="relative hidden min-h-[620px] overflow-hidden bg-[#234d3d] md:block">
+              <img
+                src="/checkpoints/hoang-thanh-thang-long-1.jpg"
+                alt="Khám phá những điểm đến cùng TravelQuest"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#102f26]/95 via-[#153b2d]/45 to-[#153b2d]/10" />
+              <div className="absolute left-8 top-8 flex items-center gap-3 text-white">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3a65a] text-2xl shadow-lg">✦</span>
+                <span className="text-xl font-black tracking-tight">TravelQuest</span>
               </div>
-
-              <div className="mt-6">
-
-                <label className="block text-xs text-white/50 mb-2">
-                  Email
-                </label>
-
-                <input
-                  type="email"
-                  value={authEmail}
-                  onChange={(event) =>
-                    setAuthEmail(
-                      event.target.value
-                    )
-                  }
-                  onKeyDown={(event) => {
-                    if (
-                      event.key ===
-                      "Enter"
-                    ) {
-                      handleAuth();
-                    }
-                  }}
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
-                />
-
+              <div className="absolute bottom-10 left-8 right-8 text-white">
+                <p className="mb-4 inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-bold tracking-[0.18em] backdrop-blur">YOUR NEXT CHAPTER</p>
+                <h2 className="max-w-md text-4xl font-black leading-[1.08] xl:text-5xl">Mỗi chuyến đi, một câu chuyện đáng nhớ.</h2>
+                <p className="mt-4 max-w-sm text-sm leading-6 text-white/80">Lưu dấu những nơi đã đến, khám phá điểm đến mới và viết nên hành trình của riêng bạn.</p>
+                <div className="mt-7 flex items-center gap-2 text-sm font-semibold text-white/90"><span className="h-2 w-2 rounded-full bg-[#f3a65a]" /> Khám phá · Check-in · Chia sẻ</div>
               </div>
-
-              <div className="mt-4">
-
-                <label className="block text-xs text-white/50 mb-2">
-                  Mật khẩu
-                </label>
-
-                <input
-                  type="password"
-                  value={authPassword}
-                  onChange={(event) =>
-                    setAuthPassword(
-                      event.target.value
-                    )
-                  }
-                  onKeyDown={(event) => {
-                    if (
-                      event.key ===
-                      "Enter"
-                    ) {
-                      handleAuth();
-                    }
-                  }}
-                  placeholder="Ít nhất 6 ký tự"
-                  autoComplete={
-                    authMode === "login"
-                      ? "current-password"
-                      : "new-password"
-                  }
-                  className="w-full rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
-                />
-
-              </div>
-
-              {authMessage && (
-                <div className="mt-4 rounded-xl bg-blue-500/10 border border-blue-400/10 px-4 py-3">
-
-                  <p className="text-sm text-blue-300 leading-relaxed">
-                    {authMessage}
-                  </p>
-
-                </div>
-              )}
-
-              <button
-                onClick={
-                  handleAuth
-                }
-                disabled={
-                  authLoading
-                }
-                className="w-full mt-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 font-bold transition"
-              >
-                {authLoading
-                  ? "📡 Đang xử lý..."
-                  : authMode ===
-                    "login"
-                  ? "Đăng nhập 🔑"
-                  : "Tạo tài khoản ✨"}
-              </button>
-
-              <button
-                onClick={() => {
-                  setAuthMode(
-                    authMode ===
-                      "login"
-                      ? "signup"
-                      : "login"
-                  );
-
-                  setAuthMessage("");
-                  setAuthPassword("");
-                }}
-                disabled={
-                  authLoading
-                }
-                className="w-full mt-3 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-sm font-semibold transition"
-              >
-                {authMode ===
-                "login"
-                  ? "Chưa có tài khoản? Đăng ký"
-                  : "Đã có tài khoản? Đăng nhập"}
-              </button>
-
             </div>
 
-          </div>
+            <div className="relative flex items-center px-5 py-7 sm:px-9 sm:py-10 lg:px-12">
+              <button
+                type="button"
+                aria-label="Đóng"
+                onClick={() => {
+                  if (!authLoading) {
+                    setAuthOpen(false);
+                    setAuthMessage("");
+                  }
+                }}
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-[#648075] transition hover:bg-[#edf1e8] hover:text-[#183d32] sm:right-6 sm:top-6"
+              >×</button>
 
+              <div className="mx-auto w-full max-w-md">
+                <div className="mb-7 md:hidden">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3a65a] text-2xl text-[#183d32]">✦</span>
+                    <span className="text-xl font-black tracking-tight text-[#183d32]">TravelQuest</span>
+                  </div>
+                </div>
+
+                <p className="text-xs font-extrabold tracking-[0.22em] text-[#d77b35]">CHÀO MỪNG TRỞ LẠI</p>
+                <h2 className="mt-3 text-3xl font-black tracking-tight text-[#183d32] sm:text-4xl">
+                  {authMode === "login" ? "Bắt đầu hành trình" : "Tạo tài khoản"}
+                </h2>
+                <p className="mt-3 max-w-sm text-sm leading-6 text-[#718176]">
+                  {authMode === "login" ? "Đăng nhập để tiếp tục khám phá thế giới theo cách của bạn." : "Tham gia cộng đồng và lưu lại những hành trình đáng nhớ."}
+                </p>
+
+                <div className="mt-7 space-y-4">
+                  <div>
+                    <label htmlFor="travelquest-email" className="mb-2 block text-sm font-bold text-[#284c3e]">Email</label>
+                    <input
+                      id="travelquest-email"
+                      type="email"
+                      value={authEmail}
+                      onChange={(event) => setAuthEmail(event.target.value)}
+                      onKeyDown={(event) => { if (event.key === "Enter") void handleAuth(); }}
+                      placeholder="ban@example.com"
+                      autoComplete="email"
+                      className="w-full rounded-2xl border border-[#dce4d8] bg-white px-4 py-3.5 text-sm text-[#183d32] outline-none transition placeholder:text-[#a3afa5] focus:border-[#4f8068] focus:ring-4 focus:ring-[#4f8068]/10"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <label htmlFor="travelquest-password" className="block text-sm font-bold text-[#284c3e]">Mật khẩu</label>
+                      {authMode === "login" && (
+                        <button type="button" onClick={() => void handleForgotPassword()} disabled={authLoading} className="text-xs font-bold text-[#c87532] transition hover:text-[#a95b20] disabled:opacity-50">Quên mật khẩu?</button>
+                      )}
+                    </div>
+                    <input
+                      id="travelquest-password"
+                      type="password"
+                      value={authPassword}
+                      onChange={(event) => setAuthPassword(event.target.value)}
+                      onKeyDown={(event) => { if (event.key === "Enter") void handleAuth(); }}
+                      placeholder={authMode === "login" ? "Nhập mật khẩu của bạn" : "Ít nhất 6 ký tự"}
+                      autoComplete={authMode === "login" ? "current-password" : "new-password"}
+                      className="w-full rounded-2xl border border-[#dce4d8] bg-white px-4 py-3.5 text-sm text-[#183d32] outline-none transition placeholder:text-[#a3afa5] focus:border-[#4f8068] focus:ring-4 focus:ring-[#4f8068]/10"
+                    />
+                  </div>
+                </div>
+
+                {authMessage && (
+                  <div role="status" aria-live="polite" className="mt-4 rounded-2xl border border-[#dce7d8] bg-[#f0f5ec] px-4 py-3">
+                    <p className="text-sm leading-5 text-[#315b45]">{authMessage}</p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => void handleAuth()}
+                  disabled={authLoading}
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#285b43] px-4 py-3.5 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(40,91,67,0.18)] transition hover:bg-[#1d4935] focus:outline-none focus:ring-4 focus:ring-[#4f8068]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {authLoading ? "Đang xử lý..." : authMode === "login" ? "Đăng nhập  →" : "Tạo tài khoản  →"}
+                </button>
+
+                {authMode === "login" && (
+                  <>
+                    <div className="my-5 flex items-center gap-3"><span className="h-px flex-1 bg-[#e5e9df]" /><span className="text-xs font-medium text-[#98a397]">hoặc tiếp tục với</span><span className="h-px flex-1 bg-[#e5e9df]" /></div>
+                    <button
+                      type="button"
+                      onClick={() => void handleGoogleAuth()}
+                      disabled={authLoading}
+                      className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[#dce4d8] bg-white px-4 py-3.5 text-sm font-bold text-[#29483a] transition hover:border-[#9fb8a4] hover:bg-[#f8faf5] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" xmlns="http://www.w3.org/2000/svg"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.09-1.92 3.27-4.75 3.27-8.1Z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.65l-3.57-2.77c-.99.66-2.25 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.15v2.84A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.84 14.11A6.6 6.6 0 0 1 5.5 12c0-.73.13-1.44.34-2.11V7.05H2.15A11 11 0 0 0 1 12c0 1.78.43 3.46 1.15 4.95l3.69-2.84Z"/><path fill="#EA4335" d="M12 5.36c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 1.99 14.97 1 12 1a11 11 0 0 0-9.85 6.05l3.69 2.84c.87-2.6 3.3-4.53 6.16-4.53Z"/></svg>
+                      Đăng nhập bằng Google
+                    </button>
+                  </>
+                )}
+
+                <p className="mt-6 text-center text-sm text-[#718176]">
+                  {authMode === "login" ? "Chưa có tài khoản?" : "Đã có tài khoản?"}{" "}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthMessage(""); setAuthPassword(""); }}
+                    disabled={authLoading}
+                    className="font-extrabold text-[#285b43] underline decoration-[#9db8a3] underline-offset-4 transition hover:text-[#d77b35] disabled:opacity-50"
+                  >{authMode === "login" ? "Đăng ký ngay" : "Đăng nhập"}</button>
+                </p>
+                <p className="mt-6 text-center text-[11px] leading-5 text-[#a0aa9f]">Tiếp tục đồng nghĩa với việc bạn đồng ý khám phá có trách nhiệm cùng TravelQuest.</p>
+              </div>
+            </div>
+          </section>
         </div>
       )}
 
