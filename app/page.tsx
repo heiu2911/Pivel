@@ -6963,7 +6963,7 @@ export default function Home() {
             onClick={() => setCheckpointDetailOpen(false)}
           >
             <div
-              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#fffdf6] border border-[#e4e9dd] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#fffdf6] text-[#183d32] border border-[#dce7d2] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="p-6">
@@ -7008,7 +7008,7 @@ export default function Home() {
 
                 <section className="mt-6">
                   <h3 className="text-lg font-black">Khám phá địa danh</h3>
-                  <p className="text-xs text-white/45 mt-1">
+                  <p className="text-xs text-[#71816e] mt-1">
                     Lịch sử, cảnh quan và những điều thú vị về địa điểm này.
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2 mt-3">
@@ -7052,13 +7052,13 @@ export default function Home() {
                     ].map((section) => (
                       <article
                         key={section.title}
-                        className="rounded-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.025] border border-white/10 p-4"
+                        className="rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4"
                       >
-                        <p className="text-sm font-bold text-blue-200">
+                        <p className="text-sm font-bold text-[#315b45]">
                           <span className="mr-2">{section.icon}</span>
                           {section.title}
                         </p>
-                        <p className="text-sm text-white/70 mt-2 leading-relaxed whitespace-pre-line">
+                        <p className="text-sm text-[#526b56] mt-2 leading-relaxed whitespace-pre-line">
                           {section.content}
                         </p>
                       </article>
@@ -7067,8 +7067,8 @@ export default function Home() {
                 </section>
 
                 <div className="grid grid-cols-2 gap-3 mt-6">
-                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                    <p className="text-[11px] text-white/40">Trạng thái</p>
+                  <div className="rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
+                    <p className="text-[11px] text-[#71816e]">Trạng thái</p>
                     <p className="text-sm font-bold mt-1">
                       {isCheckedIn(selectedCheckpoint.id)
                         ? "✓ Đã chinh phục"
@@ -7076,8 +7076,8 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
-                    <p className="text-[11px] text-white/40">Khoảng cách</p>
+                  <div className="rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
+                    <p className="text-[11px] text-[#71816e]">Khoảng cách</p>
                     <p className="text-sm font-bold mt-1">
                       {distance !== null
                         ? `${distance}m`
@@ -7086,17 +7086,17 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <p className="text-[11px] text-white/40">Huy hiệu nhận được</p>
+                <div className="mt-4 rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
+                  <p className="text-[11px] text-[#71816e]">Huy hiệu nhận được</p>
                   <p className="text-base font-bold mt-1">
                     {selectedCheckpoint.badge ||
                       `${selectedCheckpoint.icon ?? "🏆"} Huy hiệu ${selectedCheckpoint.name}`}
                   </p>
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
-                  <p className="text-[11px] text-white/40">Tọa độ</p>
-                  <p className="text-sm text-white/70 mt-1 font-mono">
+                <div className="mt-4 rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
+                  <p className="text-[11px] text-[#71816e]">Tọa độ</p>
+                  <p className="text-sm text-[#526b56] mt-1 font-mono">
                     {selectedCheckpoint.latitude.toFixed(5)}, {selectedCheckpoint.longitude.toFixed(5)}
                   </p>
                 </div>
