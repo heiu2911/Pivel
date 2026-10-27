@@ -6017,6 +6017,8 @@ export default function Home() {
               </div>
 
               {homeComposerOpen && (
+                <>
+                <input ref={imageInputRef} type="file" accept="image/*" onChange={handleSelectImage} className="hidden" />
                 <div className="mt-4 overflow-hidden rounded-[1.5rem] border border-[#dce3d2] bg-white shadow-sm">
                   <div className="flex items-center justify-between border-b border-[#edf0e7] px-4 py-3">
                     <div>
@@ -6049,7 +6051,56 @@ export default function Home() {
                     {postMessage && <p className="mt-3 text-xs font-semibold text-[#b45309]">{postMessage}</p>}
                   </div>
                 </div>
+                </>
               )}
+
+              {commentOpenPostId !== null && activeTab === "home" && (
+                <div className="fixed inset-0 z-[200] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
+                  <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#fdfcf6] text-[#183d32] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                    <div className="flex shrink-0 items-center justify-between border-b border-[#e4e8dc] px-4 py-3">
+                      <p className="text-sm font-black">Bình luận</p>
+                      <button type="button" onClick={() => setCommentOpenPostId(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf0e6]">✕</button>
+                    </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
+                      {comments.filter((comment) => comment.post_id === commentOpenPostId).map((comment) => (
+                        <div key={comment.id} className="flex gap-3 border-b border-[#e7e9e0] py-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eddf]">🧭</div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-bold text-[#849184]">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
+                            <p className="mt-1 text-sm leading-5">{comment.content}</p>
+                            <span className="mt-1.5 block text-[10px] text-[#849184]">{formatPostTime(comment.created_at)}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {!comments.some((comment) => comment.post_id === commentOpenPostId) && <div className="flex h-full min-h-40 items-center justify-center text-center text-sm text-[#849184]">Chưa có bình luận nào</div>}
+                    </div>
+                    <div className="shrink-0 border-t border-[#e4e8dc] px-3 py-3">
+                      <div className="flex items-center gap-2">
+                        <input value={commentInputs[commentOpenPostId] ?? ""} onChange={(event) => setCommentInputs((current) => ({ ...current, [commentOpenPostId]: event.target.value }))} onKeyDown={(event) => { if (event.key === "Enter") void submitComment(commentOpenPostId); }} placeholder="Thêm bình luận..." className="min-w-0 flex-1 rounded-full bg-[#f1f3eb] px-4 py-2.5 text-sm outline-none placeholder:text-[#849184]" />
+                        <button type="button" onClick={() => void submitComment(commentOpenPostId)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#245b43] font-black text-white">↑</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {ugcMorePostId !== null && activeTab === "home" && (() => {
+                const morePost = posts.find((item) => item.id === ugcMorePostId);
+                if (!morePost) return null;
+                return (
+                  <div className="fixed inset-0 z-[220] bg-black/45" onClick={() => setUgcMorePostId(null)}>
+                    <div className="absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-[1.5rem] border border-[#dce3d2] bg-[#fffef9] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-[#183d32] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                      <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#dce3d2]" />
+                      <p className="mb-3 text-sm font-black">Tùy chọn bài viết</p>
+                      <button type="button" onClick={() => { void shareUgcPost(morePost); setUgcMorePostId(null); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold hover:bg-[#f1f3eb]">↗️ Chia sẻ bài viết</button>
+                      <button type="button" onClick={() => { void navigator.clipboard?.writeText(typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}#moment-${morePost.id}` : ""); setUgcMorePostId(null); setPostMessage("🔗 Đã sao chép liên kết."); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold hover:bg-[#f1f3eb]">🔗 Sao chép liên kết</button>
+                      <button type="button" onClick={() => { setUgcMorePostId(null); if (morePost.user_id === user?.id) startEditPost(morePost); else openReport("post", morePost.id, "moment"); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold hover:bg-[#f1f3eb]">{morePost.user_id === user?.id ? "✏️ Sửa bài viết" : "🚩 Báo cáo bài viết"}</button>
+                      {morePost.user_id === user?.id && <button type="button" onClick={() => void deletePost(morePost.id)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold text-red-600 hover:bg-red-50">🗑️ Xóa bài viết</button>}
+                      <button type="button" onClick={() => setUgcMorePostId(null)} className="mt-2 w-full rounded-xl bg-[#edf0e6] py-3 text-sm font-bold">Đóng</button>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="mt-4 flex items-center justify-between">
                 <h2 className="text-lg font-black">Bảng tin du lịch</h2>
