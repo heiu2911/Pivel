@@ -6418,34 +6418,34 @@ export default function Home() {
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
               <div className="fixed left-1/2 top-1/2 z-[80] w-[min(380px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                <div className="pointer-events-auto max-h-[min(60vh,540px)] overflow-y-auto overscroll-contain rounded-3xl border border-white/10 bg-[#07182a]/96 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,.45)] [scrollbar-width:thin]">
+                <div className="pointer-events-auto max-h-[min(60vh,540px)] overflow-y-auto overscroll-contain rounded-3xl border border-[#dce5d6] bg-[#fffef9]/95 text-[#183d32] shadow-[0_24px_80px_rgba(24,61,50,.22)] backdrop-blur-2xl [scrollbar-width:thin]">
 
                 {/* SUMMARY */}
-                <div className="sticky top-0 z-10 border-b border-white/10 bg-[#07182a]/95 px-4 py-3 backdrop-blur-2xl">
+                <div className="sticky top-0 z-10 border-b border-[#e4e9dd] bg-[#fffef9]/95 px-4 py-3 backdrop-blur-2xl">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-blue-300">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#43875b]">
                         Khám phá Hà Nội
                       </p>
                       <div className="mt-1 flex items-center gap-2">
                         <p className="text-sm font-black">Checkpoints</p>
-                        <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-white/45">
+                        <span className="rounded-full bg-[#edf2e7] px-2 py-0.5 text-[10px] text-[#71816e]">
                           {checkins.length}/{checkpoints.length} đã chinh phục
                         </span>
                       </div>
                     </div>
                     <div className="shrink-0 text-right">
-                      <p className="text-lg font-black text-blue-300">{progress}%</p>
-                      <p className="text-[9px] text-white/35">tiến độ</p>
+                      <p className="text-lg font-black text-[#43875b]">{progress}%</p>
+                      <p className="text-[9px] text-[#71816e]">tiến độ</p>
                     </div>
                   </div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e9eddf]">
                     <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${progress}%` }} />
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowExplorePanel(false)}
-                    className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold text-white/60 transition hover:bg-white/10 hover:text-white"
+                    className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-bold text-white/60 transition hover:bg-[#e9eddf] hover:text-white"
                   >
                     Ẩn phần khám phá ↑
                   </button>
@@ -6454,13 +6454,13 @@ export default function Home() {
                 {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
                 <div className="p-2.5">
                   <div className="flex items-center justify-between gap-2 px-1 pb-1.5">
-                    <p className="text-xs font-bold text-white/70">📍 Điểm khám phá</p>
+                    <p className="text-xs font-bold text-[#315b45]">📍 Điểm khám phá</p>
                     <div className="flex items-center gap-2">
                       {checkpoints.length > 3 && (
                       <button
                         type="button"
                         onClick={() => setShowAllMapCheckpoints((value) => !value)}
-                        className="text-[10px] font-bold text-blue-300 hover:text-blue-200"
+                        className="text-[10px] font-bold text-[#43875b] hover:text-blue-200"
                       >
                         {showAllMapCheckpoints ? "Thu gọn" : `Xem tất cả (${checkpoints.length})`}
                       </button>
@@ -6488,20 +6488,20 @@ export default function Home() {
                             onClick={() => selectCheckpoint(checkpoint)}
                             className={`flex w-full items-center gap-3 rounded-xl border px-2.5 py-2 text-left transition ${
                               selected
-                                ? "border-blue-400/50 bg-blue-500/15"
-                                : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"
+                                ? "border-[#43875b]/50 bg-[#eaf2e4]"
+                                : "border-[#e4e9dd] bg-white hover:bg-[#f3f6ee]"
                             }`}
                           >
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-lg">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#e9eddf] text-lg">
                               {checkpoint.icon ?? "📍"}
                             </span>
                             <span className="min-w-0 flex-1">
                               <span className="block truncate text-xs font-bold">{checkpoint.name}</span>
-                              <span className="mt-0.5 block truncate text-[10px] text-white/35">
+                              <span className="mt-0.5 block truncate text-[10px] text-[#71816e]">
                                 {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
                               </span>
                             </span>
-                            <span className={`shrink-0 text-[10px] ${checked ? "text-emerald-300" : "text-white/25"}`}>
+                            <span className={`shrink-0 text-[10px] ${checked ? "text-[#43875b]" : "text-[#a0ad9a]"}`}>
                               {checked ? "✓" : "›"}
                             </span>
                           </button>
@@ -6512,30 +6512,30 @@ export default function Home() {
                 </div>
 
                 {/* SAVED PLACES */}
-                <div className="border-t border-white/10">
+                <div className="border-t border-[#e4e9dd]">
                   <button
                     type="button"
                     onClick={() => setShowSavedPlaces((value) => !value)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#f1f4eb]"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="text-lg">🔖</span>
                       <div className="min-w-0">
                         <p className="text-xs font-bold">Địa điểm đã lưu</p>
-                        <p className="text-[10px] text-white/35">{savedCheckpoints.length} điểm</p>
+                        <p className="text-[10px] text-[#71816e]">{savedCheckpoints.length} điểm</p>
                       </div>
                     </div>
                     <span className="text-xs text-white/35">{showSavedPlaces ? "▲" : "▼"}</span>
                   </button>
 
                   {showSavedPlaces && (
-                    <div className="border-t border-white/5 px-3 pb-3 pt-2">
+                    <div className="border-t border-[#e4e9dd] px-3 pb-3 pt-2">
                       {savedCheckpoints.length === 0 ? (
                         <p className="py-3 text-center text-[11px] text-white/35">Chưa lưu địa điểm nào.</p>
                       ) : (
                         <div className="space-y-1.5">
                           {savedCheckpoints.slice(0, 5).map((checkpoint) => (
-                            <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.035] p-2">
+                            <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl border border-[#e4e9dd] bg-white p-2">
                               <button
                                 type="button"
                                 onClick={() => { selectCheckpoint(checkpoint); setShowSavedPlaces(false); }}
@@ -6544,13 +6544,13 @@ export default function Home() {
                                 <span className="text-base">{checkpoint.icon ?? "📍"}</span>
                                 <span className="min-w-0">
                                   <span className="block truncate text-[11px] font-semibold">{checkpoint.name}</span>
-                                  <span className="block text-[9px] text-white/30">{isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span>
+                                  <span className="block text-[9px] text-[#71816e]">{isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}</span>
                                 </span>
                               </button>
-                              <button type="button" onClick={() => toggleSavedPlace(checkpoint.id)} className="h-7 w-7 shrink-0 rounded-lg bg-white/5 text-xs hover:bg-white/10" title="Bỏ lưu">🔖</button>
+                              <button type="button" onClick={() => toggleSavedPlace(checkpoint.id)} className="h-7 w-7 shrink-0 rounded-lg bg-white/5 text-xs hover:bg-[#e9eddf]" title="Bỏ lưu">🔖</button>
                             </div>
                           ))}
-                          {savedCheckpoints.length > 5 && <p className="pt-1 text-center text-[9px] text-white/25">+{savedCheckpoints.length - 5} điểm khác</p>}
+                          {savedCheckpoints.length > 5 && <p className="pt-1 text-center text-[9px] text-[#a0ad9a]">+{savedCheckpoints.length - 5} điểm khác</p>}
                         </div>
                       )}
                     </div>
@@ -6558,35 +6558,35 @@ export default function Home() {
                 </div>
 
                 {/* JOURNEY */}
-                <div className="border-t border-white/10">
+                <div className="border-t border-[#e4e9dd]">
                   <button
                     type="button"
                     onClick={() => setJourneyOpen(true)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-white/5"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#f1f4eb]"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="text-lg">🧭</span>
                       <div className="min-w-0">
                         <p className="truncate text-xs font-bold">{journeyName}</p>
-                        <p className="text-[10px] text-white/35">
+                        <p className="text-[10px] text-[#71816e]">
                           {journeyCheckpoints.length === 0 ? "Chưa có checkpoint" : `${journeyCompletedCount}/${journeyCheckpoints.length} checkpoint · ${journeyProgress}%`}
                         </p>
                       </div>
                     </div>
-                    <span className={`shrink-0 text-[9px] font-bold ${journeyStarted ? "text-emerald-300" : "text-white/30"}`}>
+                    <span className={`shrink-0 text-[9px] font-bold ${journeyStarted ? "text-[#43875b]" : "text-white/30"}`}>
                       {journeyStarted ? "● ĐANG ĐI" : "MỞ"}
                     </span>
                   </button>
                 </div>
 
                 {/* DAILY MISSIONS — COMPACT */}
-                <div className="border-t border-white/10">
+                <div className="border-t border-[#e4e9dd]">
                   <div className="flex items-center justify-between px-4 py-3">
                     <div>
-                      <p className="text-[9px] font-bold tracking-[0.12em] text-purple-300">DAILY MISSIONS</p>
+                      <p className="text-[9px] font-bold tracking-[0.12em] text-[#71816e]">DAILY MISSIONS</p>
                       <p className="text-xs font-black">Nhiệm vụ hôm nay</p>
                     </div>
-                    <button type="button" onClick={() => setShowAllDailyMissions((value) => !value)} className="text-[10px] font-bold text-blue-300">
+                    <button type="button" onClick={() => setShowAllDailyMissions((value) => !value)} className="text-[10px] font-bold text-[#43875b]">
                       {showAllDailyMissions ? "Thu gọn" : "Chi tiết"}
                     </button>
                   </div>
@@ -6598,15 +6598,15 @@ export default function Home() {
                           key={mission.id}
                           type="button"
                           onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)}
-                          className={`rounded-xl border p-2.5 text-left transition ${claimed ? "border-emerald-400/20 bg-emerald-500/10" : "border-white/5 bg-white/[0.035] hover:bg-white/[0.07]"}`}
+                          className={`rounded-xl border p-2.5 text-left transition ${claimed ? "border-[#b8d5a5] bg-[#edf5e7]" : "border-[#e4e9dd] bg-white hover:bg-[#f3f6ee]"}`}
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-sm">{mission.icon}</span>
-                            <span className="text-[9px] text-yellow-300">+{mission.reward} XP</span>
+                            <span className="text-[9px] text-[#b76a31]">+{mission.reward} XP</span>
                           </div>
                           <p className="mt-1 truncate text-[10px] font-bold">{mission.title}</p>
-                          <p className="mt-0.5 line-clamp-2 text-[9px] text-white/35">{mission.description}</p>
-                          {claimed && <p className="mt-1 text-[9px] font-bold text-emerald-300">✓ Đã nhận</p>}
+                          <p className="mt-0.5 line-clamp-2 text-[9px] text-[#71816e]">{mission.description}</p>
+                          {claimed && <p className="mt-1 text-[9px] font-bold text-[#43875b]">✓ Đã nhận</p>}
                         </button>
                       );
                     })}
@@ -6623,7 +6623,7 @@ export default function Home() {
                   title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
                   aria-label={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
                 >
-                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-base ${showMapCheckpoints ? "bg-blue-500/15" : "bg-white/10"}`}>📍</span>
+                  <span className={`flex h-7 w-7 items-center justify-center rounded-full text-base ${showMapCheckpoints ? "bg-blue-500/15" : "bg-[#e9eddf]"}`}>📍</span>
                 </button>
                 <button
                   type="button"
@@ -6632,7 +6632,7 @@ export default function Home() {
                   title="Hiện khám phá"
                   aria-label="Hiện khám phá"
                 >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-base">🧭</span>
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e9eddf] text-base">🧭</span>
                 </button>
               </div>
             )}
@@ -6667,7 +6667,7 @@ export default function Home() {
                   }}
                   aria-label="Vuốt sang phải để hiện checkpoint"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/65 text-lg">→</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e9eddf] text-white/65 text-lg">→</span>
                   <span className="pr-2 text-[10px] font-bold text-white/50">Vuốt sang</span>
                 </div>
               </div>
@@ -6700,7 +6700,7 @@ export default function Home() {
                           {selectedCheckpoint.name}
                         </h2>
                         {isCheckedIn(selectedCheckpoint.id) && (
-                          <span className="shrink-0 text-[8px] font-bold text-emerald-300">✓</span>
+                          <span className="shrink-0 text-[8px] font-bold text-[#43875b]">✓</span>
                         )}
                       </div>
                       <p className="mt-0.5 truncate text-[9px] text-white/40">
@@ -6733,7 +6733,7 @@ export default function Home() {
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={openCheckpointDetail}
-                      className="h-11 w-11 shrink-0 rounded-full bg-white/5 text-sm text-white/55 transition hover:bg-white/10 hover:text-white active:scale-95"
+                      className="h-11 w-11 shrink-0 rounded-full bg-white/5 text-sm text-white/55 transition hover:bg-[#e9eddf] hover:text-white active:scale-95"
                       title="Xem chi tiết"
                       aria-label="Xem chi tiết"
                     >
@@ -6749,14 +6749,14 @@ export default function Home() {
                         setDistance(null);
                         setMessage("");
                       }}
-                      className="h-11 w-11 shrink-0 rounded-full bg-white/5 text-xs text-white/35 transition hover:bg-white/10 hover:text-white active:scale-95"
+                      className="h-11 w-11 shrink-0 rounded-full bg-white/5 text-xs text-white/35 transition hover:bg-[#e9eddf] hover:text-white active:scale-95"
                       aria-label="Đóng checkpoint"
                     >
                       ✕
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 border-t border-white/5 px-2.5 py-1.5">
+                  <div className="flex items-center gap-2 border-t border-[#e4e9dd] px-2.5 py-1.5">
                     <button
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
@@ -6764,7 +6764,7 @@ export default function Home() {
                       disabled={checkingIn || isCheckedIn(selectedCheckpoint.id)}
                       className={`min-h-8 flex-1 rounded-xl px-3 text-[10px] font-black transition ${
                         isCheckedIn(selectedCheckpoint.id)
-                          ? "bg-emerald-500/15 text-emerald-300"
+                          ? "bg-emerald-500/15 text-[#43875b]"
                           : canCheckIn
                           ? "bg-blue-500 text-white"
                           : "bg-white/8 text-white/70"
@@ -6783,7 +6783,7 @@ export default function Home() {
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
-                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/35 transition hover:bg-white/5 hover:text-white/70"
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/35 transition hover:bg-[#f1f4eb] hover:text-white/70"
                     >
                       {savedCheckpoints.some((item) => item.id === selectedCheckpoint.id) ? "🔖 Đã lưu" : "🔖 Lưu"}
                     </button>
@@ -6792,7 +6792,7 @@ export default function Home() {
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={() => setShowCheckpointCard(false)}
-                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/30 transition hover:bg-white/5 hover:text-white/60"
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-white/30 transition hover:bg-[#f1f4eb] hover:text-white/60"
                     >
                       Ẩn
                     </button>
