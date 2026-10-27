@@ -3289,7 +3289,9 @@ export default function Home() {
     setImagePreview(preview);
     setPostMessage("");
     if (cameraOpen) closeCamera();
-    setCameraPreviewOpen(true);
+    // Chỉ mở màn hình xem trước toàn màn hình trong tab UGC.
+    // Ở trang chủ, ảnh được xem ngay trong trình soạn bài.
+    setCameraPreviewOpen(activeTab === "ugc");
   };
 
   // ============================================
@@ -4589,12 +4591,12 @@ export default function Home() {
   // ============================================
 
   const handleCreatePost =
-    async () => {
+    async (): Promise<boolean> => {
       if (!user?.id) {
         setAuthOpen(true);
         setAuthMode("login");
         setAuthMessage("🔐 Hãy đăng nhập để đăng UGC.");
-        return;
+        return false;
       }
 
       const content =
@@ -4604,7 +4606,7 @@ export default function Home() {
         setPostMessage(
           "📸 Chụp ảnh hoặc viết một moment trước khi đăng."
         );
-        return;
+        return false;
       }
 
       if (
@@ -4614,7 +4616,7 @@ export default function Home() {
         setPostMessage(
           "Bài viết cần ít nhất 3 ký tự."
         );
-        return;
+        return false;
       }
 
       if (
@@ -4624,7 +4626,7 @@ export default function Home() {
           "Bài viết tối đa 1000 ký tự."
         );
 
-        return;
+        return false;
       }
 
       setPosting(true);
@@ -4706,7 +4708,7 @@ export default function Home() {
             );
 
             setPosting(false);
-            return;
+            return false;
           }
 
           const {
@@ -4762,7 +4764,7 @@ export default function Home() {
           );
 
           setPosting(false);
-          return;
+          return false;
         }
 
         if (createdPost) {
@@ -4794,6 +4796,8 @@ export default function Home() {
         setCameraPreviewOpen(false);
 
         await loadPosts();
+        setPosting(false);
+        return true;
       } catch (error) {
         console.error(
           "Lỗi tạo bài viết:",
@@ -4803,9 +4807,9 @@ export default function Home() {
         setPostMessage(
           "Có lỗi khi đăng bài."
         );
+        setPosting(false);
+        return false;
       }
-
-      setPosting(false);
     };
 
   // ============================================
@@ -6040,7 +6044,7 @@ export default function Home() {
                           {checkpoints.map((checkpoint) => <option key={checkpoint.id} value={checkpoint.id}>{checkpoint.name}</option>)}
                         </select>
                       </label>
-                      <button type="button" onClick={() => { if (!user) { openAuth("login"); return; } void handleCreatePost().then(() => { if (!postMessage) setHomeComposerOpen(false); }); }} disabled={posting} className="ml-auto rounded-xl bg-[#245b43] px-5 py-2.5 text-xs font-black text-white disabled:opacity-50">{posting ? "Đang đăng..." : "Chia sẻ"}</button>
+                      <button type="button" onClick={async () => { if (!user) { openAuth("login"); return; } const created = await handleCreatePost(); if (created) setHomeComposerOpen(false); }} disabled={posting} className="ml-auto rounded-xl bg-[#245b43] px-5 py-2.5 text-xs font-black text-white disabled:opacity-50">{posting ? "Đang đăng..." : "Chia sẻ"}</button>
                     </div>
                     {postMessage && <p className="mt-3 text-xs font-semibold text-[#b45309]">{postMessage}</p>}
                   </div>
