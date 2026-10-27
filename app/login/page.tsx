@@ -58,7 +58,7 @@ export default function LoginPage() {
   async function googleLogin() {
     setBusy(true); setMessage("");
     try {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+      const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + "/login" } });
       if (error) setMessage("Đăng nhập Google chưa khả dụng: " + error.message);
     } catch { setMessage("Không thể kết nối Google lúc này."); }
     finally { setBusy(false); }
