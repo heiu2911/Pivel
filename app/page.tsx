@@ -347,7 +347,7 @@ async function prepareAvatarImage(file: File): Promise<string> {
 
 export default function Home() {
   const [activeTab, setActiveTab] =
-    useState("map");
+    useState("home");
 
   const [checkpoints, setCheckpoints] =
     useState<Checkpoint[]>([]);
@@ -5964,6 +5964,92 @@ export default function Home() {
         </div>
       )}
 
+
+      {/* ================= HOME / TRAVEL FEED ================= */}
+      {activeTab === "home" && (
+        <section className="fixed inset-0 z-40 overflow-y-auto bg-[#f7f4e8] text-[#183d32]">
+          <div className="mx-auto min-h-full w-full max-w-2xl pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
+            <header className="sticky top-0 z-30 border-b border-[#dce3d2] bg-[#f7f4e8]/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.8rem)] backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3">
+                <button type="button" onClick={() => setActiveTab("home")} className="flex items-center gap-2 text-left" aria-label="Pivel - Trang chủ">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#245b43] text-xl text-[#fff7df]">✈</span>
+                  <span><span className="block text-xl font-black tracking-tight text-[#1d604b]">Pivel</span><span className="block text-[9px] font-bold tracking-[0.18em] text-[#7b8977]">CÙNG NHAU KHÁM PHÁ VIỆT NAM</span></span>
+                </button>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => { setActiveTab("map"); }} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3d2] bg-white text-lg" aria-label="Tìm địa điểm">⌕</button>
+                  <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3d2] bg-white text-lg" aria-label="Thông báo">♧{notifications.some((item) => !item.is_read) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#e78328]" />}</button>
+                  <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#dce3d2] bg-[#e9eddf] text-lg" aria-label="Tài khoản">{user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span>{user ? avatarEmoji : "👤"}</span>}</button>
+                </div>
+              </div>
+            </header>
+
+            <div className="px-4 pt-4">
+              <label className="flex items-center gap-3 rounded-2xl border border-[#e1e5d8] bg-white px-4 py-3 shadow-sm">
+                <span className="text-xl text-[#688273]">⌕</span>
+                <input value={mapSearchQuery} onChange={(event) => setMapSearchQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") setActiveTab("map"); }} placeholder="Tìm kiếm điểm đến, người dùng..." className="min-w-0 flex-1 bg-transparent text-sm text-[#183d32] outline-none placeholder:text-[#9aa69a]" aria-label="Tìm điểm đến hoặc người dùng" />
+                <button type="button" onClick={() => setActiveTab("map")} className="rounded-xl bg-[#eaf0e5] px-3 py-2 text-xs font-bold text-[#245b43]">Tìm</button>
+              </label>
+
+              <div className="mt-5 flex items-center justify-between">
+                <div><h2 className="text-base font-black">Khoảnh khắc quanh bạn</h2><p className="mt-0.5 text-xs text-[#7d8b7d]">Chia sẻ những nơi đáng nhớ</p></div>
+                <button type="button" onClick={() => setActiveTab("ugc")} className="text-xs font-extrabold text-[#c87532]">+ Tạo bài mới</button>
+              </div>
+              <div className="mt-3 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none]">
+                <button type="button" onClick={() => setActiveTab("ugc")} className="w-[68px] shrink-0 text-center">
+                  <span className="mx-auto flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-dashed border-[#9caf9b] bg-[#e8eddf] text-2xl text-[#245b43]">＋</span>
+                  <span className="mt-1.5 block truncate text-[10px] font-bold">Tạo bài mới</span>
+                </button>
+                {friendProfiles.slice(0, 12).map((friend) => (
+                  <button key={friend.user_id} type="button" onClick={() => { setActiveTab("ugc"); selectUgcTraveller(friend.user_id); }} className="w-[68px] shrink-0 text-center">
+                    <span className="mx-auto flex h-[62px] w-[62px] items-center justify-center overflow-hidden rounded-full border-[3px] border-[#e78328] bg-white p-0.5">
+                      <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#e8eddf] text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</span>
+                    </span>
+                    <span className="mt-1.5 block truncate text-[10px] font-bold">{friend.display_name}</span>
+                  </button>
+                ))}
+                {friendProfiles.length === 0 && <p className="self-center py-3 text-xs text-[#849184]">Đăng nhập và kết nối bạn bè để xem thêm khoảnh khắc.</p>}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between">
+                <h2 className="text-lg font-black">Bảng tin du lịch</h2>
+                <button type="button" onClick={() => { setFeedMode((current) => current === "all" ? "following" : "all"); }} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-[11px] font-bold text-[#315b45]">{feedMode === "all" ? "Tất cả bài viết ▾" : "Đang theo dõi ▾"}</button>
+              </div>
+
+              <div className="mt-3 space-y-4">
+                {visiblePosts.map((post) => {
+                  const friend = friendProfiles.find((item) => item.user_id === post.user_id);
+                  const authorName = post.user_id === user?.id ? profileName : friend?.display_name ?? "Traveller";
+                  const authorAvatar = post.user_id === user?.id ? avatarImageUrl : friend?.avatar_url ?? null;
+                  const checkpoint = post.checkpoint ?? checkpoints.find((item) => item.id === post.checkpoint_id) ?? null;
+                  return (
+                    <article key={post.id} className="overflow-hidden rounded-[1.6rem] border border-[#e2e5d9] bg-white shadow-[0_8px_28px_rgba(36,66,46,0.06)]">
+                      <div className="flex items-center gap-3 px-4 py-3.5">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eddf] text-lg">{authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
+                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{authorName}</p><p className="mt-0.5 truncate text-[11px] text-[#849184]">{checkpoint ? `📍 ${checkpoint.name} · ` : ""}{formatPostTime(post.created_at)}</p></div>
+                        <button type="button" onClick={() => setUgcMorePostId(post.id)} className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#7d8b7d]" aria-label="Tùy chọn bài viết">···</button>
+                      </div>
+                      {post.content && <p className="px-4 pb-3 text-sm leading-6 text-[#334b3b]">{post.content}</p>}
+                      {post.image_url ? <button type="button" onClick={() => setUgcMorePostId(post.id)} className="block w-full bg-[#edf0e6]"><img src={post.image_url} alt="Ảnh trong bài đăng du lịch" loading="lazy" className="max-h-[440px] w-full object-cover" /></button> : <div className="flex min-h-40 items-center justify-center bg-gradient-to-br from-[#e8eddf] to-[#f9e8cf] text-5xl">🌿</div>}
+                      <div className="flex items-center gap-5 px-4 py-3">
+                        <button type="button" onClick={() => void handleLike(post)} className="flex items-center gap-2 text-sm font-bold text-[#315b45]"><span className="text-xl">{likedPostIds.includes(post.id) ? "❤️" : "♡"}</span>{post.likes}</button>
+                        <button type="button" onClick={() => setCommentOpenPostId(post.id)} className="flex items-center gap-2 text-sm font-bold text-[#315b45]"><span className="text-xl">▢</span>{comments.filter((comment) => comment.post_id === post.id).length} bình luận</button>
+                        <button type="button" onClick={() => setUgcMorePostId(post.id)} className="ml-auto text-xl text-[#718176]" aria-label="Chia sẻ hoặc báo cáo">↗</button>
+                      </div>
+                    </article>
+                  );
+                })}
+                {visiblePosts.length === 0 && (
+                  <div className="rounded-[1.6rem] border border-[#e2e5d9] bg-white px-5 py-10 text-center">
+                    <span className="text-4xl">🧭</span><h3 className="mt-3 font-black">Hành trình mới bắt đầu từ đây</h3><p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#849184]">Chưa có bài đăng phù hợp. Hãy tạo khoảnh khắc đầu tiên hoặc xem bản đồ để tìm điểm đến thú vị.</p>
+                    <div className="mt-4 flex justify-center gap-2"><button type="button" onClick={() => setActiveTab("ugc")} className="rounded-full bg-[#245b43] px-4 py-2.5 text-xs font-extrabold text-white">Tạo bài mới</button><button type="button" onClick={() => setActiveTab("map")} className="rounded-full border border-[#dce3d2] px-4 py-2.5 text-xs font-extrabold text-[#245b43]">Khám phá bản đồ</button></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* MAP TOOLBAR */}
       {activeTab === "map" && (
       <header
@@ -8004,6 +8090,14 @@ export default function Home() {
       <nav className={`fixed bottom-2 left-1/2 z-50 w-[min(94vw,520px)] -translate-x-1/2 pb-[env(safe-area-inset-bottom)] transition-opacity ${commentOpenPostId !== null || ugcMorePostId !== null || (activeTab === "ugc" && (cameraOpen || cameraPreviewOpen)) ? "pointer-events-none opacity-0" : "opacity-100"}`}>
         <div className="rounded-[1.7rem] border border-white/15 bg-[#07182a]/72 p-1.5 shadow-[0_14px_45px_rgba(0,0,0,0.28)] backdrop-blur-2xl">
           <div className="flex h-[64px] items-center justify-around gap-1 px-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("home")}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "home" ? "bg-[#f7f4e8] text-[#245b43] shadow-lg" : "text-white/45 hover:text-white"}`}
+            >
+              <span className="text-xl">⌂</span>
+              <span className="text-[11px] font-semibold">Trang chủ</span>
+            </button>
             <button
               type="button"
               onClick={() => setActiveTab("map")}
