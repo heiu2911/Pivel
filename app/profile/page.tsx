@@ -28,6 +28,7 @@ export default function PersonalProfilePage() {
   const [nameDraft, setNameDraft] = useState("");
   const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [postFilter, setPostFilter] = useState<"all" | "photos" | "text">("all");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -145,6 +146,11 @@ export default function PersonalProfilePage() {
     }
   };
   const totalLikes = posts.reduce((sum, post) => sum + (post.likes ?? 0), 0);
+  const visiblePosts = posts.filter((post) => {
+    if (postFilter === "photos") return Boolean(post.image_url);
+    if (postFilter === "text") return !post.image_url;
+    return true;
+  });
 
   return (
     <main className="min-h-screen bg-[#f7f4e8] px-4 pb-12 text-[#183d32]">
@@ -194,14 +200,27 @@ export default function PersonalProfilePage() {
         <section className="mt-6">
           <div className="mb-4 flex items-end justify-between">
             <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#84917e]">Nhật ký hành trình</p><h2 className="mt-1 text-xl font-black">Bài đăng của tớ</h2></div>
-            <span className="text-sm font-semibold text-[#71816e]">{posts.length} bài</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[#71816e]">{visiblePosts.length} bài</span>
+              <button type="button" onClick={() => window.location.reload()} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-xs font-bold hover:bg-[#f0f3e9]" aria-label="Tải lại trang cá nhân">↻ Làm mới</button>
+            </div>
+          </div>
+          <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Lọc bài đăng">
+            {([
+              ["all", "Tất cả"],
+              ["photos", "Có ảnh"],
+              ["text", "Bài viết chữ"],
+            ] as const).map(([filter, label]) => (
+              <button key={filter} type="button" onClick={() => setPostFilter(filter)} aria-pressed={postFilter === filter} className={`rounded-full px-4 py-2 text-sm font-bold transition ${postFilter === filter ? "bg-[#245b43] text-white" : "border border-[#dce3d2] bg-white text-[#526b54] hover:bg-[#f0f3e9]"}`}>{label}</button>
+            ))}
           </div>
           {!user && !loading && <div className="rounded-2xl border border-[#e0e5d8] bg-[#fffef9] p-6 text-center"><p className="font-bold">Cậu chưa đăng nhập</p><p className="mt-2 text-sm text-[#71816e]">{message}</p><button onClick={() => router.push("/")} className="mt-4 rounded-full bg-[#245b43] px-5 py-3 text-sm font-bold text-white">Đăng nhập tại trang chủ</button></div>}
           {loading && <div className="rounded-2xl bg-[#fffef9] p-8 text-center text-sm text-[#71816e]">Đang tải trang cá nhân…</div>}
           {!loading && user && posts.length === 0 && <div className="rounded-2xl border border-dashed border-[#cdd8c5] bg-[#fffef9] p-8 text-center"><div className="text-4xl">📷</div><p className="mt-3 font-bold">Chưa có bài đăng nào</p><p className="mt-1 text-sm text-[#71816e]">Chia sẻ khoảnh khắc đầu tiên trong chuyến đi của cậu nhé.</p><button onClick={() => router.push("/")} className="mt-4 rounded-full bg-[#245b43] px-5 py-3 text-sm font-bold text-white">Chia sẻ khoảnh khắc</button></div>}
           {message && user && !loading && <p className="mb-3 text-sm text-amber-700">{message}</p>}
+          {!loading && user && posts.length > 0 && visiblePosts.length === 0 && <div className="rounded-2xl border border-dashed border-[#cdd8c5] bg-[#fffef9] p-6 text-center text-sm text-[#71816e]">Không có bài đăng phù hợp với bộ lọc này.</div>}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {posts.map((post) => <article key={post.id} className="overflow-hidden rounded-[1.5rem] border border-[#e0e5d8] bg-[#fffef9] shadow-sm">
+            {visiblePosts.map((post) => <article key={post.id} className="overflow-hidden rounded-[1.5rem] border border-[#e0e5d8] bg-[#fffef9] shadow-sm">
               {post.image_url ? <img src={post.image_url} alt="Ảnh bài đăng" className="aspect-[4/3] w-full object-cover" /> : <div className="flex aspect-[4/3] items-center justify-center bg-[#edf1e5] text-5xl">🌿</div>}
               <div className="p-4"><p className="whitespace-pre-wrap break-words text-sm leading-6">{post.content || "📸 Khoảnh khắc của tôi"}</p><div className="mt-3 flex items-center justify-between gap-3 text-xs font-semibold text-[#81907c]"><span>♥ {post.likes ?? 0} lượt thích</span><time>{new Date(post.created_at).toLocaleDateString("vi-VN")}</time></div></div>
             </article>)}
