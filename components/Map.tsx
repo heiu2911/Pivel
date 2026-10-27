@@ -470,7 +470,7 @@ function createCheckpointDetailsModal({
   imageSection.style.position = "relative";
   imageSection.style.width = "100%";
   imageSection.style.height = "300px";
-  imageSection.style.background = "linear-gradient(135deg,#dbeafe,#e0f2fe)";
+  imageSection.style.background = "linear-gradient(135deg,#edf2e7,#f1f4eb)";
   imageSection.style.overflow = "hidden";
 
   const gallery = document.createElement("div");
@@ -492,7 +492,7 @@ function createCheckpointDetailsModal({
   loading.style.display = "flex";
   loading.style.alignItems = "center";
   loading.style.justifyContent = "center";
-  loading.style.color = "#64748b";
+  loading.style.color = "#71816e";
   loading.style.fontSize = "14px";
 
   const counter = document.createElement("div");
@@ -928,10 +928,10 @@ function createCheckpointDetailsModal({
   const tabButtons: HTMLButtonElement[] = [];
 
   const infoRow = (icon: string, title: string, value: string) =>
-    "<div style=\"display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eef0f2;\">" +
+    "<div style=\"display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #e4e9dd;\">" +
       "<div style=\"width:24px;flex:0 0 24px;text-align:center;font-size:19px;\">" + icon + "</div>" +
-      "<div style=\"min-width:0;\"><div style=\"font-size:11px;color:#8a9199;font-weight:700;text-transform:uppercase;letter-spacing:.03em;\">" + title + "</div>" +
-      "<div style=\"margin-top:3px;font-size:14px;color:#344054;line-height:1.45;word-break:break-word;\">" + value + "</div></div>" +
+      "<div style=\"min-width:0;\"><div style=\"font-size:11px;color:#71816e;font-weight:700;text-transform:uppercase;letter-spacing:.03em;\">" + title + "</div>" +
+      "<div style=\"margin-top:3px;font-size:14px;color:#183d32;line-height:1.45;word-break:break-word;\">" + value + "</div></div>" +
     "</div>";
 
   const clearRouteFromMap = () => {
@@ -993,7 +993,7 @@ function createCheckpointDetailsModal({
     head.style.padding = "18px 20px 14px";
     head.style.borderBottom = "1px solid #e4e9dd";
     head.innerHTML =
-      "<div style='font-size:11px;color:#8a9199;font-weight:800;text-transform:uppercase'>Chỉ đường</div>" +
+      "<div style='font-size:11px;color:#71816e;font-weight:800;text-transform:uppercase'>Chỉ đường</div>" +
       "<div style='margin-top:4px;font-size:19px;font-weight:850;color:#183d32'>" +
       escapeHtml(checkpoint.name) +
       "</div>" +
@@ -1479,8 +1479,8 @@ function createCheckpointDetailsModal({
       stopButton.style.border = "0";
       stopButton.style.borderRadius = "999px";
       stopButton.style.padding = "7px 10px";
-      stopButton.style.background = "#eef2f4";
-      stopButton.style.color = "#344054";
+      stopButton.style.background = "#f1f4eb";
+      stopButton.style.color = "#183d32";
       stopButton.style.fontSize = "12px";
       stopButton.style.fontWeight = "800";
       stopButton.style.cursor = "pointer";
@@ -1575,7 +1575,7 @@ function createCheckpointDetailsModal({
         .slice(0, 12)
         .map(
           (step, index) =>
-            "<div style='display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #eef0f2'>" +
+            "<div style='display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #e4e9dd'>" +
             "<div style='width:24px;height:24px;border-radius:50%;background:#e0f5f5;color:#007c91;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800'>" +
             (index + 1) +
             "</div><div style='flex:1;font-size:12px;line-height:1.45;color:#315b45'>" +
@@ -1583,7 +1583,7 @@ function createCheckpointDetailsModal({
               step.maneuver?.instruction ??
                 (step.name || "Tiếp tục theo tuyến đường")
             ) +
-            "<div style='margin-top:2px;color:#8a9199'>" +
+            "<div style='margin-top:2px;color:#71816e'>" +
             formatRouteDistance(step.distance) +
             " · " +
             formatRouteDuration(step.duration) +
@@ -1607,7 +1607,7 @@ function createCheckpointDetailsModal({
         "<div style='margin-top:6px;color:#71816e;font-size:12px'>" +
         escapeHtml(mode.note) +
         "</div>" +
-        "<div style='margin-top:10px;padding:9px 11px;border-radius:10px;background:#ecfdf5;color:#047857;font-size:12px;font-weight:700'>" +
+        "<div style='margin-top:10px;padding:9px 11px;border-radius:10px;background:#edf5e7;color:#43875b;font-size:12px;font-weight:700'>" +
         "📍 Đang chỉ đường trực tiếp trên bản đồ TravelQuest" +
         "</div>" +
         "<div style='margin-top:14px;font-size:13px;font-weight:800;color:#183d32'>Các bước chỉ đường</div>" +
@@ -1972,7 +1972,7 @@ function createCheckpointDetailsModal({
     ];
     body.innerHTML =
       "<div style=\"font-size:14px;line-height:1.65;color:#3c4043;\">" + safeDescription + "</div>" +
-      "<div style=\"margin-top:14px;padding:12px 14px;border-radius:14px;background:#f0f9ff;color:#174e57;font-size:12px;font-weight:700;\">" + safeBadge + "</div>" +
+      "<div style=\"margin-top:14px;padding:12px 14px;border-radius:14px;background:#f1f4eb;color:#174e57;font-size:12px;font-weight:700;\">" + safeBadge + "</div>" +
       "<div style=\"margin-top:12px;\">" +
         infoRow("📍", "Địa chỉ", address) +
         infoRow("◷", "Giờ mở cửa", hours) +
@@ -1987,7 +1987,7 @@ function createCheckpointDetailsModal({
           destinationDetails.map((item) => detailCard(item.icon, item.title, item.value)).join("") +
         "</div>" +
       "</section>" +
-      "<div style=\"margin-top:14px;font-size:11px;color:#8a9199;\">Giờ mở cửa là thông tin tham khảo và có thể thay đổi theo ngày/lễ.</div>";
+      "<div style=\"margin-top:14px;font-size:11px;color:#71816e;\">Giờ mở cửa là thông tin tham khảo và có thể thay đổi theo ngày/lễ.</div>";
   };
 
   const renderTickets = () => {
@@ -1995,16 +1995,16 @@ function createCheckpointDetailsModal({
       ? "Giá tham khảo: <strong style=\"color:#183d32;\">" + escapeHtml(details.price) + "</strong>"
       : "TravelQuest chưa có dữ liệu giá vé cho checkpoint này.";
     body.innerHTML =
-      "<div style=\"padding:16px;border-radius:16px;background:#f8fafc;\">" +
+      "<div style=\"padding:16px;border-radius:16px;background:#fffdf6;\">" +
         "<div style=\"font-size:15px;font-weight:800;color:#183d32;\">🎟️ Thông tin vé</div>" +
         "<div style=\"margin-top:8px;font-size:13px;color:#71816e;line-height:1.55;\">" + price + "</div>" +
-        "<div style=\"margin-top:12px;font-size:12px;color:#8a9199;\">Dữ liệu giá vé có thể được bổ sung vào checkpoint sau này.</div>" +
+        "<div style=\"margin-top:12px;font-size:12px;color:#71816e;\">Dữ liệu giá vé có thể được bổ sung vào checkpoint sau này.</div>" +
       "</div>";
   };
 
   const renderReviews = () => {
     body.innerHTML =
-      "<div style=\"padding:16px;border-radius:16px;background:#f8fafc;\">" +
+      "<div style=\"padding:16px;border-radius:16px;background:#fffdf6;\">" +
         "<div style=\"font-size:15px;font-weight:800;color:#183d32;\">⭐ Đánh giá</div>" +
         "<div style=\"margin-top:8px;font-size:24px;font-weight:800;color:#183d32;\">" + rating + "</div>" +
         "<div style=\"margin-top:4px;font-size:13px;color:#71816e;\">" + (reviewCount || "Chưa có dữ liệu đánh giá") + "</div>" +
@@ -2490,7 +2490,7 @@ export default function Map({
           <strong style="font-size:16px;color:#183d32;">
             ${escapeHtml(city.name)}
           </strong>
-          <div style="margin-top:6px;color:#4b5563;font-size:12px;">
+          <div style="margin-top:6px;color:#526b56;font-size:12px;">
             ${city.checkpoints.length} checkpoint đang khám phá
           </div>
           <div style="margin-top:8px;color:#315b45;font-size:12px;font-weight:700;">
@@ -2966,12 +2966,12 @@ export default function Map({
       closeOnClick: false,
       maxWidth: "260px",
     }).setHTML(`
-      <div style="padding: 10px 12px; font-family: system-ui, -apple-system, sans-serif; text-align: center; color: #0f172a;">
+      <div style="padding: 10px 12px; font-family: system-ui, -apple-system, sans-serif; text-align: center; color: #183d32;">
         <div style="font-weight: 800; font-size: 13px; margin-bottom: 3px; display: flex; align-items: center; justify-content: center; gap: 6px;">
           <span>${escapeHtml(avatarEmoji || "🧭")}</span>
           <span>Vị trí hiện tại của bạn</span>
         </div>
-        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
+        <div style="font-size: 11px; color: #71816e; margin-bottom: 8px;">
           ${latitude.toFixed(5)}, ${longitude.toFixed(5)}
         </div>
         <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: #edf5e7; border: 1px solid #b8d5a5; color: #315b45; font-size: 10px; font-weight: 700;">
