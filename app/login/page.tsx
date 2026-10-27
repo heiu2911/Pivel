@@ -6,6 +6,26 @@ import { supabase } from "../../lib/supabase";
 
 type Mode = "login" | "register" | "reset" | "update";
 
+function authErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("invalid login") || normalized.includes("invalid credentials")) {
+    return "Email hoặc mật khẩu không đúng.";
+  }
+  if (normalized.includes("email not confirmed")) {
+    return "Email chưa được xác nhận. Hãy kiểm tra hộp thư trước khi đăng nhập.";
+  }
+  if (normalized.includes("user already registered")) {
+    return "Email này đã có tài khoản. Cậu hãy đăng nhập nhé.";
+  }
+  if (normalized.includes("password should be at least")) {
+    return "Mật khẩu cần có ít nhất 6 ký tự.";
+  }
+  if (normalized.includes("rate limit") || normalized.includes("too many requests")) {
+    return "Cậu thao tác quá nhanh. Hãy đợi một chút rồi thử lại.";
+  }
+  return "Chưa thể hoàn tất yêu cầu. Cậu kiểm tra thông tin và thử lại nhé.";
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
@@ -31,11 +51,11 @@ export default function LoginPage() {
       const cleanEmail = email.trim();
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password });
-        if (error) setMessage(error.message.toLowerCase().includes("invalid login") ? "Email hoặc mật khẩu không đúng." : error.message);
+        if (error) setMessage(authErrorMessage(error.message));
         else { router.replace("/"); router.refresh(); }
       } else if (mode === "register") {
         const { data, error } = await supabase.auth.signUp({ email: cleanEmail, password, options: { emailRedirectTo: window.location.origin + "/login" } });
-        if (error) setMessage(error.message);
+        if (error) setMessage(authErrorMessage(error.message));
         else if (data.session) { router.replace("/"); router.refresh(); }
         else { setMessage("Đăng ký thành công! Hãy kiểm tra email để xác nhận tài khoản."); setMode("login"); setPassword(""); }
       } else if (mode === "reset") {
@@ -59,7 +79,7 @@ export default function LoginPage() {
     setBusy(true); setMessage("");
     try {
       const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + "/login" } });
-      if (error) setMessage("Đăng nhập Google chưa khả dụng: " + error.message);
+      if (error) setMessage("Đăng nhập Google chưa khả dụng. Cậu kiểm tra cấu hình OAuth rồi thử lại nhé.");
     } catch { setMessage("Không thể kết nối Google lúc này."); }
     finally { setBusy(false); }
   }
