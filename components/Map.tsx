@@ -2493,7 +2493,7 @@ export default function Map({
           <div style="margin-top:6px;color:#4b5563;font-size:12px;">
             ${city.checkpoints.length} checkpoint đang khám phá
           </div>
-          <div style="margin-top:8px;color:#2563eb;font-size:12px;font-weight:700;">
+          <div style="margin-top:8px;color:#315b45;font-size:12px;font-weight:700;">
             Nhấn để zoom vào khu vực
           </div>
         </div>
@@ -2740,7 +2740,7 @@ export default function Map({
           avatar.style.height = "42px";
           avatar.style.borderRadius = "50%";
           avatar.style.border = "3px solid #fff";
-          avatar.style.background = "#172554";
+          avatar.style.background = "#245b43";
           avatar.style.display = "flex";
           avatar.style.alignItems = "center";
           avatar.style.justifyContent = "center";
@@ -2974,8 +2974,8 @@ export default function Map({
         <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
           ${latitude.toFixed(5)}, ${longitude.toFixed(5)}
         </div>
-        <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; font-size: 10px; font-weight: 700;">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background: #2563eb; display: inline-block;"></span>
+        <div style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; background: #edf5e7; border: 1px solid #b8d5a5; color: #315b45; font-size: 10px; font-weight: 700;">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: #43875b; display: inline-block;"></span>
           GPS đang hoạt động
         </div>
       </div>
