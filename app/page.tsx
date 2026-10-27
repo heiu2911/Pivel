@@ -5897,6 +5897,7 @@ export default function Home() {
                   >{authMode === "login" ? "Đăng ký ngay" : "Đăng nhập"}</button>
                 </p>
                 <p className="mt-6 text-center text-[11px] leading-5 text-[#a0aa9f]">Tiếp tục đồng nghĩa với việc bạn đồng ý khám phá có trách nhiệm cùng TravelQuest.</p>
+                <p className="mt-3 text-center text-xs text-[#849184]">Muốn dùng giao diện đăng nhập riêng?{" "}<a href="/login" className="font-bold text-[#285b43] underline underline-offset-4 hover:text-[#d77b35]">Mở trang đăng nhập</a></p>
               </div>
             </div>
           </section>
