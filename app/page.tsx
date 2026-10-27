@@ -6097,10 +6097,10 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={`flex items-center gap-2 rounded-[1.6rem] border border-white/15 bg-[#07182a]/60 px-2 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.22)] backdrop-blur-2xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
+          <div className={`flex items-center gap-2 rounded-[1.6rem] border border-[#dce3d2] bg-[#fffdf6]/95 px-2 py-2 shadow-[0_12px_40px_rgba(36,66,46,0.10)] backdrop-blur-2xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
             <div data-map-search-box className="relative min-w-0 flex-1">
-              <div className="flex h-11 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 text-white shadow-inner backdrop-blur-sm">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-base">⌕</span>
+              <div className="flex h-11 items-center gap-2 rounded-full border border-[#e2e5d9] bg-white px-3 text-[#183d32] shadow-inner backdrop-blur-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eaf0e5] text-base text-[#315b45]">⌕</span>
                 <input
                   value={mapSearchQuery}
                   onChange={(event) => setMapSearchQuery(event.target.value)}
@@ -6109,7 +6109,7 @@ export default function Home() {
                     if (event.key === "Enter") setMapSearchActive(false);
                   }}
                   placeholder="Tìm địa điểm, checkpoint..."
-                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/45"
+                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-[#183d32] outline-none placeholder:text-[#9aa69a]"
                   aria-label="Tìm địa điểm trên bản đồ"
                 />
                 {mapSearchQuery && (
@@ -6198,7 +6198,7 @@ export default function Home() {
               <div className="relative">
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/8 text-lg transition hover:bg-white/14"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eaf0e5] text-lg text-[#315b45] transition hover:bg-[#dce7d8]"
                   onClick={() => setHeaderMenuOpen((value) => !value)}
                   title="Công cụ"
                   aria-label="Công cụ"
