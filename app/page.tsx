@@ -1075,6 +1075,7 @@ export default function Home() {
   const [cameraFacing, setCameraFacing] = useState<"user" | "environment">("environment");
   const [cameraError, setCameraError] = useState("");
   const cameraVideoRef = useRef<HTMLVideoElement | null>(null);
+  const homeCameraVideoRef = useRef<HTMLVideoElement | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const cameraPermissionBlockedRef = useRef(false);
 
@@ -3071,6 +3072,7 @@ export default function Home() {
     cameraStreamRef.current?.getTracks().forEach((track) => track.stop());
     cameraStreamRef.current = null;
     if (cameraVideoRef.current) cameraVideoRef.current.srcObject = null;
+    if (homeCameraVideoRef.current) homeCameraVideoRef.current.srcObject = null;
   };
 
   const closeCamera = () => {
@@ -3108,9 +3110,12 @@ export default function Home() {
       cameraStreamRef.current = stream;
       setCameraOpen(true);
       requestAnimationFrame(() => {
-        if (cameraVideoRef.current) {
-          cameraVideoRef.current.srcObject = stream;
-          void cameraVideoRef.current.play();
+        const video = activeTab === "home"
+          ? homeCameraVideoRef.current
+          : cameraVideoRef.current;
+        if (video) {
+          video.srcObject = stream;
+          void video.play();
         }
       });
     } catch (error) {
@@ -3150,9 +3155,12 @@ export default function Home() {
         audio: false,
       });
       cameraStreamRef.current = stream;
-      if (cameraVideoRef.current) {
-        cameraVideoRef.current.srcObject = stream;
-        await cameraVideoRef.current.play();
+      const video = activeTab === "home"
+        ? homeCameraVideoRef.current
+        : cameraVideoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        await video.play();
       }
     } catch (error) {
       console.error("Lỗi đổi camera:", error);
@@ -3173,7 +3181,9 @@ export default function Home() {
   }, [activeTab, user?.id, cameraOpen, cameraPreviewOpen, ugcSelectedUserId]);
 
   const captureCameraPhoto = () => {
-    const video = cameraVideoRef.current;
+    const video = activeTab === "home"
+      ? homeCameraVideoRef.current
+      : cameraVideoRef.current;
     if (!video || video.readyState < 2 || video.videoWidth === 0) {
       setCameraError("Camera chưa sẵn sàng, thử lại sau một chút.");
       return;
@@ -3213,7 +3223,8 @@ export default function Home() {
       setImagePreview(URL.createObjectURL(file));
       setPostMessage("");
       closeCamera();
-      setCameraPreviewOpen(true);
+      setCameraPreviewOpen(activeTab === "ugc");
+      if (activeTab === "home") setHomeComposerOpen(true);
     }, "image/jpeg", 0.9);
   };
 
@@ -6040,6 +6051,7 @@ export default function Home() {
                     )}
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <button type="button" onClick={() => imageInputRef.current?.click()} className="rounded-xl border border-[#dce3d2] bg-[#f7f8f1] px-3 py-2 text-xs font-bold text-[#245b43]">🖼️ Thêm ảnh</button>
+                      <button type="button" onClick={() => { setCameraError(""); void openCamera(); }} className="rounded-xl border border-[#dce3d2] bg-[#f7f8f1] px-3 py-2 text-xs font-bold text-[#245b43]">📷 Chụp ảnh</button>
                       <label className="flex items-center gap-2 rounded-xl border border-[#dce3d2] px-3 py-2 text-xs font-bold text-[#245b43]">📍 Địa điểm
                         <select value={selectedPostCheckpoint ?? ""} onChange={(event) => setSelectedPostCheckpoint(event.target.value ? Number(event.target.value) : null)} className="max-w-36 bg-transparent outline-none">
                           <option value="">Không gắn</option>
@@ -6052,6 +6064,26 @@ export default function Home() {
                   </div>
                 </div>
                 </>
+              )}
+
+              {cameraOpen && activeTab === "home" && (
+                <div className="fixed inset-0 z-[230] bg-black text-white">
+                  <video ref={homeCameraVideoRef} autoPlay playsInline muted className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`} />
+                  <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent px-5 pb-16 pt-7">
+                    <div className="flex items-center justify-between">
+                      <div><p className="text-[10px] font-black tracking-[0.24em] text-white/55">TRAVELQUEST</p><p className="mt-1 text-sm font-bold">Chụp ảnh cho bài viết</p></div>
+                      <button type="button" onClick={closeCamera} className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-2xl" aria-label="Đóng camera">×</button>
+                    </div>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-28">
+                    {cameraError && <p className="mb-4 rounded-xl bg-black/60 p-3 text-center text-xs">{cameraError}</p>}
+                    <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
+                      <button type="button" onClick={() => imageInputRef.current?.click()} className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl" aria-label="Chọn ảnh từ máy">🖼️</button>
+                      <button type="button" onClick={captureCameraPhoto} className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2 shadow-2xl active:scale-90" aria-label="Chụp ảnh"><span className="block h-full w-full rounded-full bg-white" /></button>
+                      <button type="button" onClick={() => void switchCamera()} className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl" aria-label="Đổi camera">🔄</button>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {commentOpenPostId !== null && activeTab === "home" && (
