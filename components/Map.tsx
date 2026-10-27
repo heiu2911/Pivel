@@ -455,8 +455,9 @@ function createCheckpointDetailsModal({
   card.style.maxHeight = "min(820px, calc(100vh - 48px))";
   card.style.overflow = "hidden";
   card.style.borderRadius = "22px";
-  card.style.background = "#ffffff";
-  card.style.boxShadow = "0 24px 80px rgba(0,0,0,0.45)";
+  card.style.background = "#fffdf6";
+  card.style.border = "1px solid #dce7d2";
+  card.style.boxShadow = "0 24px 80px rgba(24,61,50,0.28)";
   card.style.fontFamily = "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
   card.style.color = "#202124";
   card.style.display = "flex";
@@ -903,7 +904,8 @@ function createCheckpointDetailsModal({
 
   const header = document.createElement("div");
   header.style.padding = "16px 20px 16px";
-  header.style.borderBottom = "1px solid #e4e9dd";
+  header.style.borderBottom = "1px solid #dce7d2";
+  header.style.background = "#f1f5e9";
   header.style.flexShrink = "0";
   header.innerHTML =
     "<div style=\"display:flex;align-items:flex-start;gap:14px;\">" +
@@ -918,22 +920,27 @@ function createCheckpointDetailsModal({
   const tabs = document.createElement("div");
   tabs.style.display = "grid";
   tabs.style.gridTemplateColumns = "repeat(4,1fr)";
-  tabs.style.borderBottom = "1px solid #e4e9dd";
+  tabs.style.borderBottom = "1px solid #dce7d2";
+  tabs.style.background = "#f8faf3";
   tabs.style.flexShrink = "0";
 
   const body = document.createElement("div");
   body.className = "tq-checkpoint-modal-body";
   body.style.overflowY = "auto";
   body.style.padding = "18px 20px 22px";
+  body.style.background = "#fffdf6";
+  body.style.color = "#183d32";
 
   const modalContrastStyle = document.createElement("style");
   modalContrastStyle.textContent = `
-    .tq-checkpoint-modal, .tq-checkpoint-modal * { color: #183d32 !important; }
-    .tq-checkpoint-modal [data-action="close"] { color: #315b45 !important; }
-    .tq-checkpoint-modal-body { background: #fffdf6 !important; }
-    .tq-checkpoint-modal-body article { background: #ffffff !important; border-color: #e4e9dd !important; }
+    .tq-checkpoint-modal { background: #fffdf6 !important; color: #183d32 !important; }
+    .tq-checkpoint-modal-body { background: #fffdf6 !important; color: #183d32 !important; }
+    .tq-checkpoint-modal-body article { background: #f7f9f1 !important; border: 1px solid #dce7d2 !important; box-shadow: 0 2px 8px rgba(24,61,50,.04); }
     .tq-checkpoint-modal-body article > div:first-child { color: #315b45 !important; }
     .tq-checkpoint-modal-body article > div:last-child { color: #526b56 !important; }
+    .tq-checkpoint-modal-body section > div:first-child { color: #183d32 !important; }
+    .tq-checkpoint-modal button { transition: background-color .16s ease, color .16s ease; }
+    .tq-checkpoint-modal [data-action="close"] { color: #315b45 !important; background: #edf2e7 !important; }
   `;
   card.appendChild(modalContrastStyle);
 
@@ -2044,13 +2051,15 @@ function createCheckpointDetailsModal({
     button.style.padding = "13px 6px";
     button.style.fontSize = "13px";
     button.style.fontWeight = index === 0 ? "800" : "600";
-    button.style.color = index === 0 ? "#43875b" : "#71816e";
+    button.style.color = index === 0 ? "#315b45" : "#64765e";
+    button.style.background = index === 0 ? "#edf5e7" : "transparent";
     button.style.cursor = "pointer";
     button.style.borderBottom = index === 0 ? "3px solid #43875b" : "3px solid transparent";
     button.addEventListener("click", () => {
       tabButtons.forEach((tab, tabIndex) => {
         tab.style.fontWeight = tabIndex === index ? "800" : "600";
-        tab.style.color = tabIndex === index ? "#43875b" : "#71816e";
+        tab.style.color = tabIndex === index ? "#315b45" : "#64765e";
+        tab.style.background = tabIndex === index ? "#edf5e7" : "transparent";
         tab.style.borderBottom = tabIndex === index ? "3px solid #43875b" : "3px solid transparent";
       });
       if (index === 0) renderOverview();
