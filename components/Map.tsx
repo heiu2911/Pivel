@@ -2236,7 +2236,7 @@ export default function Map({
     try {
       mapInstance = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: "mapbox://styles/mapbox/light-v11",
         center: [105.852, 21.0285],
         zoom: 13,
       });
@@ -2409,13 +2409,13 @@ export default function Map({
       icon.style.width = "54px";
       icon.style.height = "54px";
       icon.style.borderRadius = "50%";
-      icon.style.background = "rgba(7, 24, 42, 0.97)";
+      icon.style.background = "rgba(36, 91, 67, 0.97)";
       icon.style.border = "2px solid rgba(255,255,255,0.95)";
       icon.style.display = "flex";
       icon.style.alignItems = "center";
       icon.style.justifyContent = "center";
       icon.style.fontSize = "28px";
-      icon.style.boxShadow = "0 6px 22px rgba(0,0,0,0.5)";
+      icon.style.boxShadow = "0 6px 20px rgba(24,61,50,0.28), 0 0 0 3px rgba(247,244,232,0.9)";
       icon.style.transition = "transform 0.15s ease";
       icon.style.overflow = "hidden";
       const cityImage = document.createElement("img");
@@ -2453,8 +2453,8 @@ export default function Map({
       label.style.whiteSpace = "nowrap";
       label.style.padding = "4px 8px";
       label.style.borderRadius = "999px";
-      label.style.background = "rgba(7, 24, 42, 0.92)";
-      label.style.border = "1px solid rgba(255,255,255,0.12)";
+      label.style.background = "#183d32";
+      label.style.border = "1px solid rgba(247,244,232,0.8)";
       label.style.color = "white";
       label.style.fontSize = "11px";
       label.style.fontWeight = "700";
@@ -2527,16 +2527,16 @@ export default function Map({
       markerIcon.style.height = "48px";
       markerIcon.style.borderRadius = "50%";
       markerIcon.style.background =
-        "rgba(7, 24, 42, 0.96)";
+        "rgba(36, 91, 67, 0.97)";
       markerIcon.style.border =
-        "2px solid rgba(255,255,255,0.9)";
+        "2px solid #f7f4e8";
       markerIcon.style.display = "flex";
       markerIcon.style.alignItems = "center";
       markerIcon.style.justifyContent = "center";
       markerIcon.style.fontSize = "26px";
       markerIcon.style.lineHeight = "1";
       markerIcon.style.boxShadow =
-        "0 5px 20px rgba(0,0,0,0.45)";
+        "0 6px 18px rgba(24, 61, 50, 0.28), 0 0 0 3px rgba(247,244,232,0.88)";
       markerIcon.style.transition =
         "transform 0.15s ease";
       markerIcon.style.overflow = "hidden";
@@ -2745,7 +2745,7 @@ export default function Map({
           avatar.style.alignItems = "center";
           avatar.style.justifyContent = "center";
           avatar.style.overflow = "hidden";
-          avatar.style.boxShadow = "0 4px 16px rgba(0,0,0,.35), 0 0 0 2px #60a5fa";
+          avatar.style.boxShadow = "0 4px 16px rgba(24,61,50,.25), 0 0 0 2px #b8d5a5";
           avatar.style.fontSize = "19px";
 
           if (friend.avatar_url?.startsWith("data:image/")) {
@@ -2766,8 +2766,8 @@ export default function Map({
           name.style.maxWidth = "120px";
           name.style.padding = "2px 7px";
           name.style.borderRadius = "999px";
-          name.style.background = "rgba(7,24,42,.92)";
-          name.style.color = "#fff";
+          name.style.background = "#183d32";
+          name.style.color = "#f7f4e8";
           name.style.font = "700 10px system-ui, sans-serif";
           name.style.whiteSpace = "nowrap";
           name.style.overflow = "hidden";
@@ -2874,7 +2874,7 @@ export default function Map({
     pulseRing.style.width = "44px";
     pulseRing.style.height = "44px";
     pulseRing.style.borderRadius = "50%";
-    pulseRing.style.background = "rgba(37, 99, 235, 0.35)";
+    pulseRing.style.background = "rgba(67, 135, 91, 0.28)";
     pulseRing.style.animation = "tq-radar-pulse 2.2s infinite ease-out";
     pulseRing.style.pointerEvents = "none";
     pulseRing.style.zIndex = "1";
@@ -2889,9 +2889,9 @@ export default function Map({
     avatarBadge.style.borderRadius = "50%";
     avatarBadge.style.border = "3px solid #ffffff";
     avatarBadge.style.boxShadow =
-      "0 4px 14px rgba(0, 0, 0, 0.4), 0 0 0 2px #2563eb";
+      "0 4px 14px rgba(24, 61, 50, 0.24), 0 0 0 3px #f7f4e8, 0 0 0 5px #43875b";
     avatarBadge.style.background =
-      "linear-gradient(135deg, #1d4ed8, #0284c7)";
+      "linear-gradient(135deg, #245b43, #8cae79)";
     avatarBadge.style.overflow = "hidden";
     avatarBadge.style.display = "flex";
     avatarBadge.style.alignItems = "center";
@@ -2933,10 +2933,10 @@ export default function Map({
     pinTip.style.marginTop = "-6px";
     pinTip.style.width = "12px";
     pinTip.style.height = "12px";
-    pinTip.style.background = "#2563eb";
+    pinTip.style.background = "#43875b";
     pinTip.style.transform = "rotate(45deg)";
-    pinTip.style.borderRight = "2.5px solid white";
-    pinTip.style.borderBottom = "2.5px solid white";
+    pinTip.style.borderRight = "2.5px solid #f7f4e8";
+    pinTip.style.borderBottom = "2.5px solid #f7f4e8";
     pinTip.style.borderRadius = "2px";
     pinTip.style.boxShadow = "2px 2px 4px rgba(0, 0, 0, 0.25)";
     markerWrapper.appendChild(pinTip);
@@ -2948,7 +2948,7 @@ export default function Map({
     anchorDot.style.width = "4px";
     anchorDot.style.height = "4px";
     anchorDot.style.borderRadius = "50%";
-    anchorDot.style.background = "#1d4ed8";
+    anchorDot.style.background = "#245b43";
     markerWrapper.appendChild(anchorDot);
 
     // Hiệu ứng hover
@@ -3064,15 +3064,15 @@ export default function Map({
   return (
     <div
       ref={mapContainer}
-      className="relative w-full h-full min-h-[320px] bg-[#0b1220]"
+      className="relative w-full h-full min-h-[320px] bg-[#e9eddf]"
     >
       {mapError ? (
         <div className="absolute inset-0 z-[1000] flex items-center justify-center p-6 text-center">
-          <div className="max-w-sm rounded-2xl border border-white/10 bg-slate-950/95 p-5 text-white shadow-2xl">
+          <div className="max-w-sm rounded-2xl border border-[#dce5d6] bg-[#fffef9] p-5 text-[#183d32] shadow-2xl">
             <div className="text-3xl">🗺️</div>
             <h2 className="mt-3 text-base font-extrabold">Không tải được bản đồ</h2>
-            <p className="mt-2 text-xs leading-5 text-slate-300">{mapError}</p>
-            <p className="mt-3 text-[11px] leading-5 text-slate-400">
+            <p className="mt-2 text-xs leading-5 text-[#526b59]">{mapError}</p>
+            <p className="mt-3 text-[11px] leading-5 text-[#71816e]">
               Nếu bạn đang mở bằng địa chỉ IP của máy tính, hãy kiểm tra Mapbox token có cho phép địa chỉ đó.
             </p>
           </div>
