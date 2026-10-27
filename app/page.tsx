@@ -8304,15 +8304,7 @@ export default function Home() {
 
             <button
               type="button"
-              onClick={() => {
-                if (!user) {
-                  setAuthOpen(true);
-                  setAuthMode("login");
-                  return;
-                }
-                setAuthOpen(true);
-                setProfileNameInput(profileName);
-              }}
+              onClick={() => { window.location.href = "/profile"; }}
               className="flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition text-white/45 hover:text-white"
             >
               <span className="text-xl">👤</span>
