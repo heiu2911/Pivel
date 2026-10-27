@@ -6226,7 +6226,7 @@ export default function Home() {
               {authReady && user && (
                 <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/95 text-base shadow-lg backdrop-blur-xl transition hover:bg-[#f1f4eb]" title="Thông báo">
                   🔔
-                  {notifications.some((item) => !item.is_read) && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#07182a] bg-red-400" />}
+                  {notifications.some((item) => !item.is_read) && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#fffdf6] bg-red-400" />}
                 </button>
               )}
               {authReady && (
