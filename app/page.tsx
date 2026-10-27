@@ -8583,16 +8583,16 @@ export default function Home() {
               setPublicProfileOpen(false);
               setPublicProfileMessage("");
             }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#203c2d]/45 backdrop-blur-sm"
           />
 
           <div className="relative w-full max-w-sm pointer-events-auto">
 
-            <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a] p-6 shadow-2xl">
+            <div className="overflow-hidden rounded-[2rem] border border-[#e1e7d9] bg-[#fffdf7] text-[#203c2d] p-6 shadow-2xl">
 
               <div className="flex items-center gap-4">
 
-                <div className="w-16 h-16 rounded-full bg-blue-500/15 border border-blue-400/20 flex items-center justify-center text-3xl">
+                <div className="w-16 h-16 rounded-full bg-[#e6eee0] border border-[#d7e4d1] flex items-center justify-center text-3xl">
                   👤
                 </div>
 
@@ -8609,7 +8609,7 @@ export default function Home() {
                           "Traveller"}
                       </p>
 
-                      <p className="text-xs text-white/40 mt-1">
+                      <p className="text-xs text-[#718071] mt-1">
                         Level{" "}
                         {publicProfile?.level ?? 1}
                         {" · "}
@@ -8626,7 +8626,7 @@ export default function Home() {
                     setPublicProfileOpen(false);
                     setPublicProfileMessage("");
                   }}
-                  className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+                  className="w-9 h-9 rounded-full bg-[#f8f8f0] text-white/50 hover:text-white transition"
                 >
                   ✕
                 </button>
@@ -8634,19 +8634,19 @@ export default function Home() {
               </div>
 
               {publicProfileLoading ? (
-                <div className="py-10 text-center text-sm text-white/40">
+                <div className="py-10 text-center text-sm text-[#718071]">
                   Đang tải thông tin Traveller...
                 </div>
               ) : publicProfileMessage ? (
-                <div className="py-8 text-center text-sm text-white/45">
+                <div className="py-8 text-center text-sm text-[#718071]">
                   {publicProfileMessage}
                 </div>
               ) : publicProfile ? (
                 <>
                   <div className="mt-6 grid grid-cols-2 gap-3">
 
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                      <p className="text-xs text-white/40">
+                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
+                      <p className="text-xs text-[#718071]">
                         Checkpoint
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -8654,8 +8654,8 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                      <p className="text-xs text-white/40">
+                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
+                      <p className="text-xs text-[#718071]">
                         UGC
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -8663,8 +8663,8 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                      <p className="text-xs text-white/40">
+                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
+                      <p className="text-xs text-[#718071]">
                         Người theo dõi
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -8672,8 +8672,8 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                      <p className="text-xs text-white/40">
+                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
+                      <p className="text-xs text-[#718071]">
                         Đang theo dõi
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -8701,8 +8701,8 @@ export default function Home() {
                         followingUserIds.includes(
                           publicProfile.user_id
                         )
-                          ? "bg-white/5 border-white/10 text-white/70"
-                          : "bg-blue-500 border-blue-400/20 text-white hover:bg-blue-400"
+                          ? "bg-[#f8f8f0] border-[#e1e7d9] text-white/70"
+                          : "bg-[#416c4b] border-[#416c4b] text-white hover:bg-[#34583c]"
                       }`}
                     >
                       {followLoading[
@@ -8726,35 +8726,35 @@ export default function Home() {
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="text-sm font-black">🧭 Hành trình</p>
-                        <p className="text-[11px] text-white/35 mt-1">
+                        <p className="text-[11px] text-[#718071] mt-1">
                           Tiến trình khám phá của Traveller
                         </p>
                       </div>
 
-                      <div className="text-xs text-white/40">
+                      <div className="text-xs text-[#718071]">
                         {publicProfile.checkpoint_count} checkpoint
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+                    <div className="rounded-2xl bg-[#f8f8f0] border border-[#e1e7d9] p-4">
 
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-white/45">XP</span>
-                        <span className="font-bold text-blue-200">
+                        <span className="text-[#718071]">XP</span>
+                        <span className="font-bold text-[#416c4b]">
                           {publicProfile.xp} XP
                         </span>
                       </div>
 
-                      <div className="h-2 mt-3 rounded-full bg-black/20 overflow-hidden">
+                      <div className="h-2 mt-3 rounded-full bg-[#e8eddf] overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-blue-500 transition-all"
+                          className="h-full rounded-full bg-[#416c4b] transition-all"
                           style={{
                             width: `${Math.min(100, ((publicProfile.xp % 500) / 500) * 100)}%`,
                           }}
                         />
                       </div>
 
-                      <div className="flex items-center justify-between mt-2 text-[10px] text-white/30">
+                      <div className="flex items-center justify-between mt-2 text-[10px] text-[#8a9586]">
                         <span>Level {publicProfile.level}</span>
                         <span>
                           {publicProfile.xp % 500} / 500 XP đến level tiếp theo
@@ -8773,48 +8773,48 @@ export default function Home() {
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.checkpoint_count >= 1
-                          ? "bg-blue-500/10 border-blue-400/20"
-                          : "bg-white/5 border-white/10 opacity-45"
+                          ? "bg-[#edf3e8] border-[#d7e4d1]"
+                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
                       }`}>
                         <p className="text-lg">🌱</p>
                         <p className="text-xs font-bold mt-1">Khởi hành</p>
-                        <p className="text-[10px] text-white/35 mt-1">
+                        <p className="text-[10px] text-[#718071] mt-1">
                           Checkpoint đầu tiên
                         </p>
                       </div>
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.checkpoint_count >= 2
-                          ? "bg-blue-500/10 border-blue-400/20"
-                          : "bg-white/5 border-white/10 opacity-45"
+                          ? "bg-[#edf3e8] border-[#d7e4d1]"
+                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
                       }`}>
                         <p className="text-lg">🗺️</p>
                         <p className="text-xs font-bold mt-1">Nhà khám phá</p>
-                        <p className="text-[10px] text-white/35 mt-1">
+                        <p className="text-[10px] text-[#718071] mt-1">
                           2 checkpoint
                         </p>
                       </div>
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.post_count >= 1
-                          ? "bg-blue-500/10 border-blue-400/20"
-                          : "bg-white/5 border-white/10 opacity-45"
+                          ? "bg-[#edf3e8] border-[#d7e4d1]"
+                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
                       }`}>
                         <p className="text-lg">📸</p>
                         <p className="text-xs font-bold mt-1">Người kể chuyện</p>
-                        <p className="text-[10px] text-white/35 mt-1">
+                        <p className="text-[10px] text-[#718071] mt-1">
                           Bài UGC đầu tiên
                         </p>
                       </div>
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.post_count >= 5
-                          ? "bg-blue-500/10 border-blue-400/20"
-                          : "bg-white/5 border-white/10 opacity-45"
+                          ? "bg-[#edf3e8] border-[#d7e4d1]"
+                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
                       }`}>
                         <p className="text-lg">🎒</p>
                         <p className="text-xs font-bold mt-1">Travel Creator</p>
-                        <p className="text-[10px] text-white/35 mt-1">
+                        <p className="text-[10px] text-[#718071] mt-1">
                           5 bài UGC
                         </p>
                       </div>
@@ -8825,7 +8825,7 @@ export default function Home() {
 
                   {publicProfile.user_id ===
                     user?.id && (
-                    <div className="mt-5 rounded-xl bg-blue-500/10 border border-blue-400/15 px-4 py-3 text-center text-sm text-blue-200">
+                    <div className="mt-5 rounded-xl bg-blue-500/10 border border-blue-400/15 px-4 py-3 text-center text-sm text-[#416c4b]">
                       Đây là hồ sơ công khai của bạn.
                     </div>
                   )}
