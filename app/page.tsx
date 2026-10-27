@@ -6066,23 +6066,38 @@ export default function Home() {
                 </>
               )}
 
-              {cameraOpen && activeTab === "home" && (
+              {(cameraOpen || cameraError) && activeTab === "home" && homeComposerOpen && (
                 <div className="fixed inset-0 z-[230] bg-black text-white">
-                  <video ref={homeCameraVideoRef} autoPlay playsInline muted className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`} />
-                  <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent px-5 pb-16 pt-7">
-                    <div className="flex items-center justify-between">
-                      <div><p className="text-[10px] font-black tracking-[0.24em] text-white/55">TRAVELQUEST</p><p className="mt-1 text-sm font-bold">Chụp ảnh cho bài viết</p></div>
-                      <button type="button" onClick={closeCamera} className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-2xl" aria-label="Đóng camera">×</button>
+                  {cameraOpen ? (
+                    <video ref={homeCameraVideoRef} autoPlay playsInline muted className={`h-full w-full object-cover ${cameraFacing === "user" ? "-scale-x-100" : ""}`} />
+                  ) : (
+                    <div className="flex h-full items-center justify-center px-6 text-center">
+                      <div className="max-w-sm">
+                        <div className="text-5xl">📷</div>
+                        <p className="mt-4 text-lg font-black">Không mở được camera</p>
+                        <p className="mt-2 text-sm text-white/70">{cameraError}</p>
+                        <button type="button" onClick={() => void retryCamera()} className="mt-5 rounded-full bg-white px-5 py-3 text-sm font-black text-black">Thử lại camera</button>
+                        <button type="button" onClick={closeCamera} className="ml-2 rounded-full border border-white/30 px-5 py-3 text-sm font-bold">Đóng</button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-28">
-                    {cameraError && <p className="mb-4 rounded-xl bg-black/60 p-3 text-center text-xs">{cameraError}</p>}
-                    <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
-                      <button type="button" onClick={() => imageInputRef.current?.click()} className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl" aria-label="Chọn ảnh từ máy">🖼️</button>
-                      <button type="button" onClick={captureCameraPhoto} className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2 shadow-2xl active:scale-90" aria-label="Chụp ảnh"><span className="block h-full w-full rounded-full bg-white" /></button>
-                      <button type="button" onClick={() => void switchCamera()} className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl" aria-label="Đổi camera">🔄</button>
-                    </div>
-                  </div>
+                  )}
+                  {cameraOpen && (
+                    <>
+                      <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent px-5 pb-16 pt-7">
+                        <div className="flex items-center justify-between">
+                          <div><p className="text-[10px] font-black tracking-[0.24em] text-white/55">TRAVELQUEST</p><p className="mt-1 text-sm font-bold">Chụp ảnh cho bài viết</p></div>
+                          <button type="button" onClick={closeCamera} className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-2xl" aria-label="Đóng camera">×</button>
+                        </div>
+                      </div>
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-5 pb-[calc(env(safe-area-inset-bottom)+2rem)] pt-28">
+                        <div className="mx-auto flex max-w-sm items-center justify-between gap-5">
+                          <button type="button" onClick={() => imageInputRef.current?.click()} className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl" aria-label="Chọn ảnh từ máy">🖼️</button>
+                          <button type="button" onClick={captureCameraPhoto} className="h-24 w-24 rounded-full border-4 border-white bg-white/20 p-2 shadow-2xl active:scale-90" aria-label="Chụp ảnh"><span className="block h-full w-full rounded-full bg-white" /></button>
+                          <button type="button" onClick={() => void switchCamera()} className="h-12 w-12 rounded-full border border-white/20 bg-black/25 text-xl" aria-label="Đổi camera">🔄</button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
