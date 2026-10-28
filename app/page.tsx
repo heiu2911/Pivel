@@ -6152,7 +6152,7 @@ export default function Home() {
                 🎉
               </div>
 
-              <p className="relative text-blue-300 text-xs font-bold tracking-[0.25em]">
+              <p className="relative text-[#075b52] text-xs font-bold tracking-[0.25em]">
                 ACHIEVEMENT UNLOCKED
               </p>
 
@@ -6173,7 +6173,7 @@ export default function Home() {
                 {unlockedBadge.name}
               </p>
 
-              <p className="relative text-blue-300 font-bold text-sm mt-3">
+              <p className="relative text-[#075b52] font-bold text-sm mt-3">
                 {unlockedBadge.badge ??
                   "🏆 Huy hiệu TravelQuest"}
               </p>
@@ -7696,7 +7696,7 @@ export default function Home() {
         {/* ================= BADGES ================= */}
 
         {activeTab === "badges" && (
-          <section className="pt-28 px-5 max-w-5xl mx-auto text-[#123f3a]">
+          <section className="min-h-screen bg-[#faf9f1] pt-28 px-5 pb-28 max-w-5xl mx-auto text-[#123f3a]">
 
             <div className="mb-8">
 
@@ -7817,7 +7817,7 @@ export default function Home() {
                   const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
                   const readyToClaim = mission.done && !claimed;
                   return (
-                    <div key={mission.id} className="flex items-center gap-3 rounded-2xl border border-[#dce5d7] bg-[#f8f8f0] p-3 sm:p-4">
+                    <div key={mission.id} className="flex items-center gap-3 rounded-2xl border border-[#dce5d7] bg-[#f1f3e8] p-3 sm:p-4">
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e8eee0] text-xl">
                         {claimed ? "✅" : mission.icon}
                       </div>
@@ -7830,7 +7830,7 @@ export default function Home() {
                         type="button"
                         onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)}
                         disabled={!readyToClaim}
-                        className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition ${claimed ? "bg-[#e8eee0] text-[#687c70]" : readyToClaim ? "bg-[#075b52] text-white hover:bg-[#34583c]" : "bg-[#eceee6] text-[#8a9586]"} disabled:cursor-not-allowed`}
+                        className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition ${claimed ? "bg-[#e8eee0] text-[#687c70]" : readyToClaim ? "bg-[#075b52] text-white hover:bg-[#064940]" : "bg-[#eceee6] text-[#8a9586]"} disabled:cursor-not-allowed`}
                       >
                         {claimed ? "Đã nhận" : mission.done ? "Nhận XP" : "Chưa xong"}
                       </button>
@@ -7870,7 +7870,7 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3 mt-5">
 
-                <div className="bg-[#f5f4e9] border border-[#dce5d7] rounded-2xl p-4">
+                <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
 
                   <p className="text-xs text-[#687c70]">
                     Chuỗi hiện tại
@@ -7886,7 +7886,7 @@ export default function Home() {
 
                 </div>
 
-                <div className="bg-[#f5f4e9] border border-[#dce5d7] rounded-2xl p-4">
+                <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
 
                   <p className="text-xs text-[#687c70]">
                     Kỷ lục
@@ -7904,7 +7904,7 @@ export default function Home() {
 
               </div>
 
-              <div className="mt-4 rounded-2xl bg-[#edf3e8] border border-[#d7e4d1] p-4">
+              <div className="mt-4 rounded-2xl bg-[#e8eee0] border border-[#d7e4d1] p-4">
 
                 <p className="text-xs text-[#416c4b]">
                   {currentStreak > 0
@@ -7981,8 +7981,8 @@ export default function Home() {
                           key={entry.user_id}
                           className={`flex items-center gap-3 rounded-2xl border p-3 transition ${
                             isCurrentUser
-                              ? "bg-[#edf3e8] border-[#b9cfb3]"
-                              : "bg-[#f8f8f0] border-[#e6e9df]"
+                              ? "bg-[#e8eee0] border-[#b9cfb3]"
+                              : "bg-[#f1f3e8] border-[#e6e9df]"
                           }`}
                         >
 
@@ -8011,7 +8011,7 @@ export default function Home() {
                               </p>
 
                               {isCurrentUser && (
-                                <span className="shrink-0 text-[9px] font-bold text-[#075b52] bg-blue-500/10 border border-blue-400/15 rounded-full px-2 py-1">
+                                <span className="shrink-0 text-[9px] font-bold text-[#075b52] bg-[#e8eee0] border border-[#d6e2d6] rounded-full px-2 py-1">
                                   BẠN
                                 </span>
                               )}
@@ -8049,7 +8049,7 @@ export default function Home() {
               <button
                 onClick={loadLeaderboard}
                 disabled={leaderboardLoading}
-                className="w-full mt-4 py-3 rounded-xl bg-[#075b52] hover:bg-[#34583c] border border-[#416c4b] text-white text-sm font-bold transition disabled:opacity-50"
+                className="w-full mt-4 py-3 rounded-xl bg-[#075b52] hover:bg-[#064940] border border-[#416c4b] text-white text-sm font-bold transition disabled:opacity-50"
               >
                 {leaderboardLoading
                   ? "📡 Đang cập nhật..."
@@ -8166,7 +8166,7 @@ export default function Home() {
             <div className="mx-auto w-full max-w-lg">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-black tracking-[0.2em] text-blue-300">TRAVELQUEST</p>
+                  <p className="text-[10px] font-black tracking-[0.2em] text-[#075b52]">TRAVELQUEST</p>
                   <h1 className="mt-1 text-3xl font-black">👥 Bạn bè</h1>
                   <p className="mt-1 text-xs text-white/45">{friendProfiles.length} Traveller đang theo dõi</p>
                 </div>
@@ -8191,12 +8191,12 @@ export default function Home() {
                 ) : (
                   friendProfiles.map((friend) => (
                     <div key={friend.user_id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500/15 text-xl">🧭</div>
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8eee0] text-xl">🧭</div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-bold">{friend.display_name}</p>
                         <p className="mt-1 text-[11px] text-white/40">Level {friend.level} · {friend.xp} XP · {friend.checkpoint_count} checkpoint</p>
                       </div>
-                      <button type="button" onClick={() => openChatWithFriend(friend)} className="rounded-xl bg-blue-500/15 px-3 py-2 text-xs font-bold text-blue-200">💬 Chat</button>
+                      <button type="button" onClick={() => openChatWithFriend(friend)} className="rounded-xl bg-[#e8eee0] px-3 py-2 text-xs font-bold text-[#075b52]">💬 Chat</button>
                     </div>
                   ))
                 )}
@@ -8219,7 +8219,7 @@ export default function Home() {
               <div className="absolute inset-x-3 top-16 z-50 mx-auto max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a]/95 p-3 shadow-2xl backdrop-blur-xl">
                 <div className="flex items-center justify-between px-2 py-1">
                   <div>
-                    <p className="text-[10px] font-black tracking-[0.2em] text-blue-300">TRAVELQUEST</p>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-[#075b52]">TRAVELQUEST</p>
                     <p className="text-base font-black">Bạn bè</p>
                   </div>
                   <button type="button" onClick={() => setFriendsOpen(false)} className="h-9 w-9 rounded-full bg-white/5 text-white/70">✕</button>
@@ -8233,7 +8233,7 @@ export default function Home() {
                   </button>
                   {friendProfiles.map((friend) => (
                     <button key={friend.user_id} type="button" onClick={() => selectUgcTraveller(friend.user_id)} className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition hover:bg-white/10 active:scale-[0.99]">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-blue-500/15 text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-[#e8eee0] text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
                       <div className="w-full min-w-0"><p className="truncate text-[11px] font-bold">{friend.display_name}</p></div>
                       
                     </button>
@@ -8561,7 +8561,7 @@ export default function Home() {
                     <p className="text-[10px] text-white/35">Ảnh sẽ được chia sẻ vào Moment.</p>
                     <span className="text-[10px] text-white/30">{postContent.length}/1000</span>
                   </div>
-                  {postMessage && <p className="mt-2 text-xs text-blue-300">{postMessage}</p>}
+                  {postMessage && <p className="mt-2 text-xs text-[#075b52]">{postMessage}</p>}
                 </div>
               </div>
             )}
@@ -8686,7 +8686,7 @@ export default function Home() {
               />
 
               {reportMessage && (
-                <p className="text-xs text-blue-300 mt-3 leading-relaxed">
+                <p className="text-xs text-[#075b52] mt-3 leading-relaxed">
                   {reportMessage}
                 </p>
               )}
@@ -8830,7 +8830,7 @@ export default function Home() {
                             closeSearch();
                             openPublicProfile(traveller.user_id);
                           }}
-                          className="w-12 h-12 shrink-0 rounded-full bg-blue-500/15 border border-blue-400/15 flex items-center justify-center text-xl"
+                          className="w-12 h-12 shrink-0 rounded-full bg-[#e8eee0] border border-[#d6e2d6] flex items-center justify-center text-xl"
                           title="Mở hồ sơ"
                         >
                           👤
@@ -8964,7 +8964,7 @@ export default function Home() {
 
                       <div className="flex gap-3">
 
-                        <div className="w-10 h-10 shrink-0 rounded-full bg-blue-500/10 border border-blue-400/10 flex items-center justify-center">
+                        <div className="w-10 h-10 shrink-0 rounded-full bg-[#e8eee0] border border-blue-400/10 flex items-center justify-center">
                           {notification.type ===
                           "follow"
                             ? "👤"
@@ -9005,7 +9005,7 @@ export default function Home() {
                   disabled={
                     notificationsLoading
                   }
-                  className="text-xs text-blue-300 hover:text-blue-200 font-bold transition disabled:opacity-50"
+                  className="text-xs text-[#075b52] hover:text-[#075b52] font-bold transition disabled:opacity-50"
                 >
                   ↻ Cập nhật
                 </button>
@@ -9074,7 +9074,7 @@ export default function Home() {
                     setPublicProfileOpen(false);
                     setPublicProfileMessage("");
                   }}
-                  className="w-9 h-9 rounded-full bg-[#f8f8f0] text-white/50 hover:text-white transition"
+                  className="w-9 h-9 rounded-full bg-[#f1f3e8] text-white/50 hover:text-white transition"
                 >
                   ✕
                 </button>
@@ -9093,7 +9093,7 @@ export default function Home() {
                 <>
                   <div className="mt-6 grid grid-cols-2 gap-3">
 
-                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                    <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
                       <p className="text-xs text-[#687c70]">
                         Checkpoint
                       </p>
@@ -9102,7 +9102,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                    <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
                       <p className="text-xs text-[#687c70]">
                         UGC
                       </p>
@@ -9111,7 +9111,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                    <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
                       <p className="text-xs text-[#687c70]">
                         Người theo dõi
                       </p>
@@ -9120,7 +9120,7 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                    <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
                       <p className="text-xs text-[#687c70]">
                         Đang theo dõi
                       </p>
@@ -9149,8 +9149,8 @@ export default function Home() {
                         followingUserIds.includes(
                           publicProfile.user_id
                         )
-                          ? "bg-[#f8f8f0] border-[#dce5d7] text-white/70"
-                          : "bg-[#075b52] border-[#416c4b] text-white hover:bg-[#34583c]"
+                          ? "bg-[#f1f3e8] border-[#dce5d7] text-white/70"
+                          : "bg-[#075b52] border-[#416c4b] text-white hover:bg-[#064940]"
                       }`}
                     >
                       {followLoading[
@@ -9184,7 +9184,7 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-[#f8f8f0] border border-[#dce5d7] p-4">
+                    <div className="rounded-2xl bg-[#f1f3e8] border border-[#dce5d7] p-4">
 
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-[#687c70]">XP</span>
@@ -9221,8 +9221,8 @@ export default function Home() {
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.checkpoint_count >= 1
-                          ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
+                          ? "bg-[#e8eee0] border-[#d7e4d1]"
+                          : "bg-[#f1f3e8] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">🌱</p>
                         <p className="text-xs font-bold mt-1">Khởi hành</p>
@@ -9233,8 +9233,8 @@ export default function Home() {
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.checkpoint_count >= 2
-                          ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
+                          ? "bg-[#e8eee0] border-[#d7e4d1]"
+                          : "bg-[#f1f3e8] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">🗺️</p>
                         <p className="text-xs font-bold mt-1">Nhà khám phá</p>
@@ -9245,8 +9245,8 @@ export default function Home() {
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.post_count >= 1
-                          ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
+                          ? "bg-[#e8eee0] border-[#d7e4d1]"
+                          : "bg-[#f1f3e8] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">📸</p>
                         <p className="text-xs font-bold mt-1">Người kể chuyện</p>
@@ -9257,8 +9257,8 @@ export default function Home() {
 
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.post_count >= 5
-                          ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
+                          ? "bg-[#e8eee0] border-[#d7e4d1]"
+                          : "bg-[#f1f3e8] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">🎒</p>
                         <p className="text-xs font-bold mt-1">Travel Creator</p>
@@ -9273,7 +9273,7 @@ export default function Home() {
 
                   {publicProfile.user_id ===
                     user?.id && (
-                    <div className="mt-5 rounded-xl bg-blue-500/10 border border-blue-400/15 px-4 py-3 text-center text-sm text-[#416c4b]">
+                    <div className="mt-5 rounded-xl bg-[#e8eee0] border border-[#d6e2d6] px-4 py-3 text-center text-sm text-[#416c4b]">
                       Đây là hồ sơ công khai của bạn.
                     </div>
                   )}
@@ -9304,7 +9304,7 @@ export default function Home() {
 
                 <div className="flex items-center gap-4">
 
-                  <div className="w-14 h-14 rounded-full bg-blue-500/15 border border-blue-400/20 flex items-center justify-center text-2xl">
+                  <div className="w-14 h-14 rounded-full bg-[#e8eee0] border border-blue-400/20 flex items-center justify-center text-2xl">
                     👤
                   </div>
 
@@ -9382,7 +9382,7 @@ export default function Home() {
                   </div>
 
                   {profileMessage && (
-                    <p className="text-xs text-blue-300 mt-2">
+                    <p className="text-xs text-[#075b52] mt-2">
                       {profileMessage}
                     </p>
                   )}
@@ -9421,7 +9421,7 @@ export default function Home() {
                           type="button"
                           onClick={() => avatarInputRef.current?.click()}
                           disabled={avatarUploading}
-                          className="px-3 py-2 rounded-xl bg-blue-500/15 border border-blue-400/20 text-blue-200 text-xs font-bold hover:bg-blue-500/25 transition disabled:opacity-50"
+                          className="px-3 py-2 rounded-xl bg-[#e8eee0] border border-blue-400/20 text-[#075b52] text-xs font-bold hover:bg-blue-500/25 transition disabled:opacity-50"
                         >
                           {avatarUploading ? "📡 Đang xử lý..." : "📷 Chọn ảnh"}
                         </button>
@@ -9450,7 +9450,7 @@ export default function Home() {
                         key={emoji}
                         type="button"
                         onClick={() => setAvatarEmoji(emoji)}
-                        className={`w-10 h-10 rounded-xl border ${avatarEmoji === emoji ? "border-blue-400 bg-blue-500/15" : "border-white/10 bg-white/5"}`}
+                        className={`w-10 h-10 rounded-xl border ${avatarEmoji === emoji ? "border-blue-400 bg-[#e8eee0]" : "border-white/10 bg-white/5"}`}
                       >
                         {emoji}
                       </button>
@@ -9656,7 +9656,7 @@ export default function Home() {
 
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs text-blue-300 font-bold uppercase tracking-wider">
+                  <p className="text-xs text-[#075b52] font-bold uppercase tracking-wider">
                     Tài khoản
                   </p>
                   <h2 className="text-xl font-black mt-1">
@@ -9699,7 +9699,7 @@ export default function Home() {
                       {notificationsEnabled ? "Đang bật" : "Đang tắt"}
                     </p>
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${notificationsEnabled ? "bg-blue-500/20 text-blue-300" : "bg-white/10 text-white/40"}`}>
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${notificationsEnabled ? "bg-blue-500/20 text-[#075b52]" : "bg-white/10 text-white/40"}`}>
                     {notificationsEnabled ? "BẬT" : "TẮT"}
                   </span>
                 </button>
@@ -9714,7 +9714,7 @@ export default function Home() {
                       {gpsEnabled ? "Cho phép TravelQuest theo dõi vị trí khi cần check-in" : "Đang tắt theo dõi vị trí"}
                     </p>
                   </div>
-                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${gpsEnabled ? "bg-blue-500/20 text-blue-300" : "bg-white/10 text-white/40"}`}>
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${gpsEnabled ? "bg-blue-500/20 text-[#075b52]" : "bg-white/10 text-white/40"}`}>
                     {gpsEnabled ? "BẬT" : "TẮT"}
                   </span>
                 </button>
@@ -9731,7 +9731,7 @@ export default function Home() {
               </div>
 
               {settingsMessage && (
-                <p className="text-xs text-blue-300 mt-4">
+                <p className="text-xs text-[#075b52] mt-4">
                   {settingsMessage}
                 </p>
               )}
