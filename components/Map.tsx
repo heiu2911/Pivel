@@ -3161,6 +3161,20 @@ export default function Map({
     };
   }, [checkpoints, showCheckpoints, forceCheckpointView]);
 
+  // When a filter is activated, leave city-cluster mode so the result pins
+  // become visible even if the map was previously zoomed far out.
+  useEffect(() => {
+    const mapInstance = map.current;
+    if (!mapInstance || !mapReady || !forceCheckpointView) return;
+    if (mapInstance.getZoom() < CITY_ZOOM_LIMIT + 0.5) {
+      mapInstance.easeTo({
+        zoom: CITY_ZOOM_LIMIT + 0.5,
+        duration: 500,
+        essential: true,
+      });
+    }
+  }, [forceCheckpointView, mapReady]);
+
   // When a search result is chosen, move the map to that checkpoint and zoom in
   // far enough that the individual marker is visible instead of only city clusters.
   useEffect(() => {
