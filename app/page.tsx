@@ -958,6 +958,8 @@ export default function Home() {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [dailyMissionClaims, setDailyMissionClaims] = useState<Record<string, string>>({});
   const [missionBonusXP, setMissionBonusXP] = useState(0);
+  const [rewardXPSpent, setRewardXPSpent] = useState(0);
+  const [redeemedRewards, setRedeemedRewards] = useState<Record<string, boolean>>({});
   const [routePlannerOpen, setRoutePlannerOpen] = useState(false);
   const [smartTravelOpen, setSmartTravelOpen] = useState(false);
   const [assistantInput, setAssistantInput] = useState("");
@@ -5529,6 +5531,19 @@ export default function Home() {
     setMessage(`🎁 +${reward} XP từ nhiệm vụ hôm nay!`);
   };
 
+  const rewardOffers = [
+    { id: "coffee", icon: "☕", name: "Ưu đãi đồ uống", partner: "Voucher trải nghiệm", cost: 300, description: "Đổi điểm để nhận mã ưu đãi đồ uống tại đối tác." },
+    { id: "museum", icon: "🏛️", name: "Vé tham quan", partner: "Văn hóa & khám phá", cost: 600, description: "Mở khóa voucher tham quan cho chuyến đi tiếp theo." },
+    { id: "travel", icon: "🎒", name: "Ưu đãi hành trình", partner: "TravelQuest Rewards", cost: 900, description: "Dùng XP tích lũy để nhận ưu đãi du lịch đặc biệt." },
+  ];
+  const availableRewardXP = Math.max(0, totalXP - rewardXPSpent);
+  const redeemReward = (reward: (typeof rewardOffers)[number]) => {
+    if (redeemedRewards[reward.id] || availableRewardXP < reward.cost) return;
+    setRewardXPSpent((current) => current + reward.cost);
+    setRedeemedRewards((current) => ({ ...current, [reward.id]: true }));
+    setMessage(`🎁 Đã đổi ${reward.cost} XP lấy: ${reward.name}!`);
+  };
+
   const missingAchievements = achievements.filter((achievement) => !achievement.unlocked);
 
   const advancedAchievements = [
@@ -7843,6 +7858,43 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* ================= REWARDS & VOUCHERS ================= */}
+            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-xs text-[#b8793d] font-semibold">TRAVELQUEST REWARDS</p>
+                  <h3 className="text-xl font-black mt-1">🎁 Đổi XP lấy ưu đãi</h3>
+                  <p className="text-sm text-[#718071] mt-1">Dùng XP tích lũy để mở khóa voucher cho hành trình tiếp theo.</p>
+                </div>
+                <div className="shrink-0 rounded-2xl bg-[#f8edd9] border border-[#eadbc2] px-3 py-2 text-right">
+                  <p className="text-[10px] text-[#92765c]">XP khả dụng</p>
+                  <p className="text-lg font-black text-[#70472f]">{availableRewardXP}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {rewardOffers.map((reward) => {
+                  const redeemed = Boolean(redeemedRewards[reward.id]);
+                  const canRedeem = availableRewardXP >= reward.cost && !redeemed;
+                  return (
+                    <div key={reward.id} className="flex flex-col rounded-2xl border border-[#eadbc2] bg-[#fff8e8] p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f4e6cc] text-2xl">{reward.icon}</span>
+                        <span className="rounded-full bg-[#f8edd9] px-2 py-1 text-[10px] font-bold text-[#70472f]">{reward.cost} XP</span>
+                      </div>
+                      <h4 className="mt-3 text-sm font-black text-[#5c3b2b]">{reward.name}</h4>
+                      <p className="mt-1 text-[10px] font-semibold text-[#805234]">{reward.partner}</p>
+                      <p className="mt-2 flex-1 text-xs leading-relaxed text-[#765640]">{reward.description}</p>
+                      {redeemed && <p className="mt-3 rounded-lg bg-[#e8eddf] px-2 py-2 text-xs font-bold text-[#416c4b]">✓ Đã đổi voucher</p>}
+                      <button type="button" onClick={() => redeemReward(reward)} disabled={!canRedeem} className={`mt-4 rounded-xl px-3 py-2.5 text-xs font-bold transition ${redeemed ? "bg-[#e8eddf] text-[#527a55]" : canRedeem ? "bg-[#70472f] text-white hover:bg-[#5c3b2b]" : "bg-[#eee5d6] text-[#a28b73]"} disabled:cursor-not-allowed`}>
+                        {redeemed ? "Đã nhận" : canRedeem ? "Đổi XP" : `Cần thêm ${Math.max(0, reward.cost - availableRewardXP)} XP`}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-3 text-[10px] leading-relaxed text-[#92765c]">Lưu ý: voucher hiện là tính năng demo trong giao diện; mã ưu đãi thực tế cần được kết nối với đối tác.</p>
             </div>
 
             <button type="button" onClick={resetProgress} className="mt-2 text-xs text-[#b8793d] hover:text-[#8c4c2b] transition">
