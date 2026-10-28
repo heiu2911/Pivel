@@ -2369,6 +2369,10 @@ export default function Map({
     nearbyMarkers.current = [];
     setNearbyPlaces([]);
     setNearbyError("");
+    if (!showNearbyPanel) {
+      setNearbyLoading(false);
+      return;
+    }
     if (!mapInstance || !mapReady) return;
     if (!nearbyOrigin || !Number.isFinite(nearbyOrigin.latitude) || !Number.isFinite(nearbyOrigin.longitude)) {
       setNearbyError("Bật GPS để tìm địa điểm gần vị trí của cậu.");
@@ -2426,13 +2430,13 @@ export default function Map({
     };
     void loadNearby();
     return () => { cancelled = true; };
-  }, [mapReady, nearbyOrigin, nearbyCategory]);
+  }, [mapReady, nearbyOrigin, nearbyCategory, showNearbyPanel]);
 
   useEffect(() => {
     const mapInstance = map.current;
     nearbyMarkers.current.forEach((marker) => marker.remove());
     nearbyMarkers.current = [];
-    if (!mapInstance || !mapReady) return;
+    if (!mapInstance || !mapReady || !showNearbyPanel) return;
     nearbyPlaces.forEach((place, index) => {
       const element = document.createElement("button");
       element.type = "button";
@@ -2456,7 +2460,7 @@ export default function Map({
       nearbyMarkers.current.push(marker);
     });
     return () => { nearbyMarkers.current.forEach((marker) => marker.remove()); nearbyMarkers.current = []; };
-  }, [mapReady, nearbyPlaces, nearbyCategory]);
+  }, [mapReady, nearbyPlaces, nearbyCategory, showNearbyPanel]);
 
   // ========================================
   // TUYẾN ĐƯỜNG ĐÃ LẬP TRONG TRAVELQUEST
