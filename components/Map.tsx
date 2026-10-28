@@ -2351,11 +2351,6 @@ export default function Map({
     };
   }, []);
 
-  // Keep nearby search centered on the latest shared GPS position when available.
-  useEffect(() => {
-    if (userLocation) setNearbyOrigin(userLocation);
-  }, [userLocation]);
-
   // ========================================
   // ĐỊA ĐIỂM ĂN UỐNG, NGHỈ NGƠI VÀ TIỆN ÍCH GẦN GPS
   // ========================================
