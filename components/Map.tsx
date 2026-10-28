@@ -2526,15 +2526,24 @@ export default function Map({
         if (disposed || thisRequest !== requestId) return;
         const route = data.routes?.[0];
         if (!route?.geometry?.coordinates?.length) throw new Error("Không tìm thấy tuyến đường phù hợp.");
-        // GPS may return before the Mapbox style has finished loading.
-        // Wait for the map before adding a source/layer to avoid addSource errors.
+        // The initial load event may already have fired before GPS returns.
+        // Wait for styledata/idle rather than waiting for "load" a second time.
         if (mapInstance && !mapInstance.isStyleLoaded()) {
           await new Promise<void>((resolve, reject) => {
-            const timeout = window.setTimeout(() => reject(new Error("Bản đồ tải quá lâu. Hãy thử lại.")), 15000);
-            mapInstance.once("load", () => {
+            let settled = false;
+            const checkStyle = () => { if (mapInstance.isStyleLoaded()) finish(); };
+            const finish = (error?: Error) => {
+              if (settled) return;
+              settled = true;
               window.clearTimeout(timeout);
-              resolve();
-            });
+              mapInstance.off("styledata", checkStyle);
+              mapInstance.off("idle", checkStyle);
+              if (error) reject(error); else resolve();
+            };
+            const timeout = window.setTimeout(() => finish(new Error("Bản đồ chưa sẵn sàng. Kiểm tra kết nối mạng rồi thử lại.")), 20000);
+            mapInstance.on("styledata", checkStyle);
+            mapInstance.on("idle", checkStyle);
+            checkStyle();
           });
         }
         if (disposed || thisRequest !== requestId || !mapInstance) return;
@@ -2567,6 +2576,14 @@ export default function Map({
     watchId = navigator.geolocation.watchPosition((position) => {
       const location: UserLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
       if (!isValidCoordinate(location.latitude, location.longitude)) return;
+      // On the first GPS fix, automatically choose the nearest selected checkpoint.
+      if (!lastRerouteLocation) {
+        stops.sort((a, b) => {
+          const distanceA = calculateDistance(location.latitude, location.longitude, a.latitude, a.longitude) ?? Infinity;
+          const distanceB = calculateDistance(location.latitude, location.longitude, b.latitude, b.longitude) ?? Infinity;
+          return distanceA - distanceB;
+        });
+      }
       const target = stops[0];
       if (target) {
         const targetDistance = calculateDistance(location.latitude, location.longitude, target.latitude, target.longitude);
