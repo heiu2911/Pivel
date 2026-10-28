@@ -2526,6 +2526,18 @@ export default function Map({
         if (disposed || thisRequest !== requestId) return;
         const route = data.routes?.[0];
         if (!route?.geometry?.coordinates?.length) throw new Error("Không tìm thấy tuyến đường phù hợp.");
+        // GPS may return before the Mapbox style has finished loading.
+        // Wait for the map before adding a source/layer to avoid addSource errors.
+        if (mapInstance && !mapInstance.isStyleLoaded()) {
+          await new Promise<void>((resolve, reject) => {
+            const timeout = window.setTimeout(() => reject(new Error("Bản đồ tải quá lâu. Hãy thử lại.")), 15000);
+            mapInstance.once("load", () => {
+              window.clearTimeout(timeout);
+              resolve();
+            });
+          });
+        }
+        if (disposed || thisRequest !== requestId || !mapInstance) return;
         latestDistance = route.distance;
         latestDuration = route.duration;
         const nextStep = route.legs?.flatMap((leg) => leg.steps || []).find((step) => step.maneuver?.instruction || step.name);
