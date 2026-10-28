@@ -5679,7 +5679,10 @@ export default function Home() {
   };
 
   const buildRouteUrl = () => {
-    const selected = checkpoints.filter((checkpoint) => journeyCheckpointIds.includes(checkpoint.id));
+    // Preserve the in-app planner order, including nearest-first GPS ordering.
+    const selected = journeyCheckpointIds
+      .map((id) => checkpoints.find((checkpoint) => checkpoint.id === id))
+      .filter((checkpoint): checkpoint is Checkpoint => Boolean(checkpoint));
     if (selected.length < 2) return "";
     const origin = selected[0];
     const destination = selected[selected.length - 1];
