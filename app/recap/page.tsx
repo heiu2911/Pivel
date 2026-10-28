@@ -54,7 +54,7 @@ export default function JourneyRecapPage() {
   }, [posts]);
 
   return (
-    <main className="min-h-screen bg-[#f7f4e8] px-4 pb-12 text-[#183d32]">
+    <main className="min-h-screen bg-[#faf9f1] px-4 pb-12 text-[#123f3a]">
       <div className="mx-auto max-w-4xl">
         <header className="flex items-center justify-between gap-3 py-5">
           <Link href="/profile" className="text-sm font-bold text-[#245b43]">← Trang cá nhân</Link>
