@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f4e8;
+  --background: #e7f1e8;
   --foreground: #183d32;
 }
 
@@ -19,13 +19,13 @@
   --tq-brand: #285b43;
 }
 
-html { background: #f7f4e8; }
+html { background: #e7f1e8; }
 
 body {
   min-height: 100dvh;
   margin: 0;
   overflow-x: hidden;
-  background: #f7f4e8;
+  background: #e7f1e8;
   color: #183d32;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
@@ -71,7 +71,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .tq-bottom-nav {
-  background: rgba(247,244,232,.94);
+  background: rgba(231,241,232,.96);
   backdrop-filter: blur(24px) saturate(1.15);
   -webkit-backdrop-filter: blur(24px) saturate(1.15);
   box-shadow: 0 -10px 30px rgba(36,66,46,.1);
@@ -128,3 +128,4 @@ a {
     min-height: 40px;
   }
 }
+\n\n/* Keep readable dark text whenever a light card accidentally inherits white text. */\n[class~="bg-white"][class~="text-white"],\n[class*="bg-[#fffdf6]"][class~="text-white"],\n[class*="bg-[#fff8e8]"][class~="text-white"],\n[class~="bg-white"] [class~="text-white"],\n[class*="bg-[#fffdf6]"] [class~="text-white"],\n[class*="bg-[#fff8e8]"] [class~="text-white"] {\n  color: #183d32 !important;\n}\n\n/* TravelQuest green-tinted canvas and surfaces for a consistent visual theme. */\n:root {\n  --tq-canvas: #e7f1e8;\n  --tq-surface-green: #f4faf3;\n}\n
