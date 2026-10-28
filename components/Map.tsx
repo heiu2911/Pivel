@@ -34,6 +34,16 @@ type FriendLocation = {
   avatar_url?: string | null;
 };
 
+type NearbyPlace = {
+  id: string;
+  name: string;
+  category: string;
+  latitude: number;
+  longitude: number;
+  distance: number;
+  address?: string;
+};
+
 type MapProps = {
   userLocation?: UserLocation | null;
   checkpoints?: Checkpoint[];
@@ -2207,6 +2217,11 @@ export default function Map({
   const [mapReady, setMapReady] = useState(false);
   const plannedRouteKey = plannedRoute.map((stop) => stop.id).join(",");
   const [mapError, setMapError] = useState<string | null>(null);
+  const [nearbyCategory, setNearbyCategory] = useState<"food" | "rest" | "toilets" | "fuel" | "shops">("food");
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState("");
+  const nearbyMarkers = useRef<mapboxgl.Marker[]>([]);
 
   const userMarker =
     useRef<mapboxgl.Marker | null>(null);
@@ -2334,6 +2349,101 @@ export default function Map({
         false;
     };
   }, []);
+
+  // ========================================
+  // ĐỊA ĐIỂM ĂN UỐNG, NGHỈ NGƠI VÀ TIỆN ÍCH GẦN GPS
+  // ========================================
+  useEffect(() => {
+    const mapInstance = map.current;
+    nearbyMarkers.current.forEach((marker) => marker.remove());
+    nearbyMarkers.current = [];
+    setNearbyPlaces([]);
+    setNearbyError("");
+    if (!mapInstance || !mapReady) return;
+    if (!userLocation || !Number.isFinite(userLocation.latitude) || !Number.isFinite(userLocation.longitude)) {
+      setNearbyError("Bật GPS để tìm địa điểm gần vị trí của cậu.");
+      setNearbyLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setNearbyLoading(true);
+    const categoryFilters: Record<typeof nearbyCategory, string[]> = {
+      food: ['["amenity"~"restaurant|cafe|fast_food|food_court|ice_cream"]'],
+      rest: ['["tourism"~"hotel|guest_house|hostel|motel"]', '["amenity"="shelter"]'],
+      toilets: ['["amenity"="toilets"]'],
+      fuel: ['["amenity"="fuel"]'],
+      shops: ['["shop"~"supermarket|convenience"]'],
+    };
+    const selectors = categoryFilters[nearbyCategory].map((filter) =>
+      "node" + filter + "(around:5000," + userLocation.latitude + "," + userLocation.longitude + ");" +
+      "way" + filter + "(around:5000," + userLocation.latitude + "," + userLocation.longitude + ");"
+    ).join("\n");
+    const query = "[out:json][timeout:20];(" + selectors + ");out center tags;";
+    const loadNearby = async () => {
+      try {
+        const response = await fetch("https://overpass-api.de/api/interpreter", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body: "data=" + encodeURIComponent(query),
+        });
+        if (!response.ok) throw new Error("Dịch vụ tìm địa điểm đang bận. Thử lại sau nhé.");
+        const data = await response.json() as { elements?: Array<{ id: number; type: string; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> }> };
+        if (cancelled) return;
+        const radians = (value: number) => (value * Math.PI) / 180;
+        const places = (data.elements ?? []).flatMap((element) => {
+          const latitude = element.lat ?? element.center?.lat;
+          const longitude = element.lon ?? element.center?.lon;
+          if (latitude === undefined || longitude === undefined) return [];
+          const tags = element.tags ?? {};
+          const name = tags.name || tags["name:vi"] || tags.brand || tags.operator;
+          if (!name) return [];
+          const dLat = radians(latitude - userLocation.latitude);
+          const dLon = radians(longitude - userLocation.longitude);
+          const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(userLocation.latitude)) * Math.cos(radians(latitude)) * Math.sin(dLon / 2) ** 2;
+          const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return [{ id: element.type + "-" + element.id, name, category: tags.amenity || tags.tourism || tags.shop || "place", latitude, longitude, distance, address: [tags["addr:street"], tags["addr:city"]].filter(Boolean).join(", ") }];
+        }).sort((a, b) => a.distance - b.distance).slice(0, 18);
+        setNearbyPlaces(places);
+        if (!places.length) setNearbyError("Chưa tìm thấy địa điểm có dữ liệu quanh đây. Thử danh mục khác nhé.");
+      } catch (error) {
+        if (!cancelled) setNearbyError(error instanceof Error ? error.message : "Không thể tải địa điểm gần đây.");
+      } finally {
+        if (!cancelled) setNearbyLoading(false);
+      }
+    };
+    void loadNearby();
+    return () => { cancelled = true; };
+  }, [mapReady, userLocation, nearbyCategory]);
+
+  useEffect(() => {
+    const mapInstance = map.current;
+    nearbyMarkers.current.forEach((marker) => marker.remove());
+    nearbyMarkers.current = [];
+    if (!mapInstance || !mapReady) return;
+    nearbyPlaces.forEach((place, index) => {
+      const element = document.createElement("button");
+      element.type = "button";
+      element.title = place.name;
+      element.setAttribute("aria-label", place.name);
+      element.style.width = "34px";
+      element.style.height = "34px";
+      element.style.borderRadius = "50%";
+      element.style.border = "2px solid white";
+      element.style.background = "#f4faf3";
+      element.style.boxShadow = "0 3px 12px rgba(24,61,50,.3)";
+      element.style.display = "flex";
+      element.style.alignItems = "center";
+      element.style.justifyContent = "center";
+      element.style.fontSize = "17px";
+      element.textContent = nearbyCategory === "food" ? "🍜" : nearbyCategory === "rest" ? "🛏️" : nearbyCategory === "toilets" ? "🚻" : nearbyCategory === "fuel" ? "⛽" : "🛒";
+      element.addEventListener("click", () => mapInstance.flyTo({ center: [place.longitude, place.latitude], zoom: 16, duration: 650 }));
+      const distanceLabel = place.distance < 1000 ? Math.round(place.distance) + " m" : (place.distance / 1000).toFixed(1) + " km";
+      const popupHtml = "<div style=\"padding:12px;color:#183d32;font-family:system-ui,sans-serif\"><strong>" + String(index + 1) + ". " + escapeHtml(place.name) + "</strong><div style=\"font-size:12px;margin-top:5px\">Cách đây " + distanceLabel + "</div></div>";
+      const marker = new mapboxgl.Marker({ element, anchor: "bottom" }).setLngLat([place.longitude, place.latitude]).setPopup(new mapboxgl.Popup({ offset: 22 }).setHTML(popupHtml)).addTo(mapInstance);
+      nearbyMarkers.current.push(marker);
+    });
+    return () => { nearbyMarkers.current.forEach((marker) => marker.remove()); nearbyMarkers.current = []; };
+  }, [mapReady, nearbyPlaces, nearbyCategory]);
 
   // ========================================
   // TUYẾN ĐƯỜNG ĐÃ LẬP TRONG TRAVELQUEST
@@ -3401,6 +3511,20 @@ export default function Map({
           </div>
         </div>
       ) : null}
+      <div className="absolute left-3 top-3 z-[80] w-[min(360px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-hidden rounded-2xl border border-[#b8d5a5] bg-[#f4faf3]/95 text-[#183d32] shadow-xl backdrop-blur-md">
+        <div className="p-3">
+          <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold tracking-wider text-[#43875b]">KHÁM PHÁ QUANH ĐÂY</p><p className="text-sm font-black">Ăn uống · Nghỉ ngơi · Tiện ích</p></div><span className="text-[10px] font-bold text-[#526b59]">{nearbyPlaces.length} nơi</span></div>
+          <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
+            {([{id:"food",label:"🍜 Ăn uống"},{id:"rest",label:"🛏️ Nghỉ ngơi"},{id:"toilets",label:"🚻 WC"},{id:"fuel",label:"⛽ Xăng"},{id:"shops",label:"🛒 Cửa hàng"}] as const).map((item) => <button key={item.id} type="button" onClick={() => setNearbyCategory(item.id)} className={"shrink-0 rounded-full border px-2.5 py-2 text-[11px] font-extrabold " + (nearbyCategory === item.id ? "border-[#285b43] bg-[#285b43] text-white" : "border-[#cbdcc7] bg-white text-[#285b43]")}>{item.label}</button>)}
+          </div>
+        </div>
+        <div className="max-h-[min(42dvh,360px)] overflow-y-auto border-t border-[#dce8d8] px-3 py-2">
+          {nearbyLoading ? <p className="py-4 text-center text-xs text-[#526b59]">Đang tìm địa điểm gần GPS…</p> : null}
+          {!nearbyLoading && nearbyError ? <p className="py-3 text-xs leading-5 text-[#526b59]">{nearbyError}</p> : null}
+          {!nearbyLoading && nearbyPlaces.map((place, index) => <button key={place.id} type="button" onClick={() => map.current?.flyTo({center:[place.longitude, place.latitude],zoom:16,duration:650})} className="flex w-full items-start gap-2 border-b border-[#e0e9dc] py-2.5 text-left last:border-0 hover:bg-[#e7f1e8]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dcebd8] text-xs font-black text-[#285b43]">{index+1}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-extrabold text-[#183d32]">{place.name}</span><span className="mt-1 block text-[10px] text-[#526b59]">{place.distance < 1000 ? Math.round(place.distance) + " m" : (place.distance/1000).toFixed(1) + " km"} · {place.category.replace(/_/g," ")}</span></span><span className="pt-1 text-[#43875b]">↗</span></button>)}
+          <p className="pt-2 text-[9px] leading-4 text-[#71816e]">Dữ liệu địa điểm từ OpenStreetMap contributors. Kết quả phụ thuộc dữ liệu được cập nhật.</p>
+        </div>
+      </div>
     </div>
   );
 }
