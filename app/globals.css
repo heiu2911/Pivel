@@ -146,14 +146,14 @@ a {
   border-color: rgba(40, 91, 67, 0.16);
 }
 
-/* Fix white/low-opacity white labels inside light cards, checkpoint lists and modals. */
-[class*="bg-white"] [class*="text-white"],
-[class*="bg-[#fffdf6]"] [class*="text-white"],
-[class*="bg-[#fff8e8]"] [class*="text-white"],
-[class*="bg-[#f7f4e8]"] [class*="text-white"],
-[class*="bg-[#f1f4eb]"] [class*="text-white"],
-[class*="bg-[#f4faf3]"] [class*="text-white"],
-[class*="bg-[#e7f1e8]"] [class*="text-white"] {
+/* Prevent white text on the same light-colored element; do not override text on green buttons nested in cards. */
+[class*="bg-white"][class*="text-white"],
+[class*="bg-[#fffdf6]"][class*="text-white"],
+[class*="bg-[#fff8e8]"][class*="text-white"],
+[class*="bg-[#f7f4e8]"][class*="text-white"],
+[class*="bg-[#f1f4eb]"][class*="text-white"],
+[class*="bg-[#f4faf3]"][class*="text-white"],
+[class*="bg-[#e7f1e8]"][class*="text-white"] {
   color: #183d32 !important;
 }
 
