@@ -251,6 +251,14 @@ function getDeviceId() {
   return newId;
 }
 
+function normalizeSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .toLowerCase();
+}
+
 function formatPostTime(
   createdAt: string
 ) {
@@ -4045,11 +4053,22 @@ export default function Home() {
 
   const mapSearchResults = checkpoints
     .filter((checkpoint) => {
-      const query = mapSearchQuery.trim().toLowerCase();
-      const matchesQuery =
-        !query ||
-        checkpoint.name.toLowerCase().includes(query) ||
-        (checkpoint.description ?? "").toLowerCase().includes(query);
+      // Search without Vietnamese diacritics and include the destination details.
+      const query = normalizeSearchText(mapSearchQuery.trim());
+      const searchableText = normalizeSearchText(
+        [
+          checkpoint.name,
+          checkpoint.description,
+          checkpoint.history,
+          checkpoint.architecture,
+          checkpoint.distinctive_feature,
+          checkpoint.fun_fact,
+          checkpoint.slogan,
+        ]
+          .filter((value): value is string => Boolean(value))
+          .join(" ")
+      );
+      const matchesQuery = !query || searchableText.includes(query);
 
       if (!matchesQuery) return false;
 
