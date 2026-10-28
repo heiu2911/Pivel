@@ -5987,7 +5987,7 @@ export default function Home() {
             }}
           />
 
-          <section className="relative my-auto grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-[#e7e1d2] bg-[#fffdf7] shadow-[0_30px_100px_rgba(24,61,50,0.24)] md:min-h-[620px] md:grid-cols-[1.02fr_0.98fr]">
+          <section className="relative my-auto grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-[#e7e1d2] bg-[#fffef9] shadow-[0_30px_100px_rgba(24,61,50,0.24)] md:min-h-[620px] md:grid-cols-[1.02fr_0.98fr]">
             <div className="relative hidden min-h-[620px] overflow-hidden bg-[#234d3d] md:block">
               <img
                 src="/checkpoints/hoang-thanh-thang-long-1.jpg"
@@ -6257,13 +6257,13 @@ export default function Home() {
               </div>
               <div className="mt-3 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none]">
                 <button type="button" onClick={() => { if (!user) { openAuth("login"); return; } setHomeComposerOpen(true); }} className="w-[68px] shrink-0 text-center">
-                  <span className="mx-auto flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-dashed border-[#9caf9b] bg-[#e8eddf] text-2xl text-[#245b43]">＋</span>
+                  <span className="mx-auto flex h-[62px] w-[62px] items-center justify-center rounded-full border-2 border-dashed border-[#9caf9b] bg-[#e8eee0] text-2xl text-[#245b43]">＋</span>
                   <span className="mt-1.5 block truncate text-[10px] font-bold">Đăng ảnh</span>
                 </button>
                 {friendProfiles.slice(0, 12).map((friend) => (
                   <button key={friend.user_id} type="button" onClick={() => { setActiveTab("ugc"); selectUgcTraveller(friend.user_id); }} className="w-[68px] shrink-0 text-center">
                     <span className="mx-auto flex h-[62px] w-[62px] items-center justify-center overflow-hidden rounded-full border-[3px] border-[#e78328] bg-white p-0.5">
-                      <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#e8eddf] text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</span>
+                      <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#e8eee0] text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</span>
                     </span>
                     <span className="mt-1.5 block truncate text-[10px] font-bold">{friend.display_name}</span>
                   </button>
@@ -6284,7 +6284,7 @@ export default function Home() {
                   </div>
                   <div className="p-4">
                     <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eddf]">{avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : "👤"}</div>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eee0]">{avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : "👤"}</div>
                       <textarea value={postContent} onChange={(event) => setPostContent(event.target.value)} placeholder="Cậu đang nghĩ gì? Chia sẻ hành trình của mình..." maxLength={1000} rows={3} className="min-w-0 flex-1 resize-y rounded-xl bg-[#f8f8f2] p-3 text-sm text-[#123f3a] outline-none placeholder:text-[#9aa69a]" />
                     </div>
                     {imagePreview && (
@@ -6355,7 +6355,7 @@ export default function Home() {
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
                       {comments.filter((comment) => comment.post_id === commentOpenPostId).map((comment) => (
                         <div key={comment.id} className="flex gap-3 border-b border-[#e7e9e0] py-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eddf]">🧭</div>
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eee0]">🧭</div>
                           <div className="min-w-0 flex-1">
                             <p className="text-[11px] font-bold text-[#849184]">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
                             <p className="mt-1 text-sm leading-5">{comment.content}</p>
@@ -6407,7 +6407,7 @@ export default function Home() {
                   return (
                     <article key={post.id} className="overflow-hidden rounded-[1.6rem] border border-[#e2e5d9] bg-white shadow-[0_8px_28px_rgba(36,66,46,0.06)]">
                       <div className="flex items-center gap-3 px-4 py-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eddf] text-lg">{authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eee0] text-lg">{authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
                         <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{authorName}</p><p className="mt-0.5 truncate text-[11px] text-[#849184]">{checkpoint ? `📍 ${checkpoint.name} · ` : ""}{formatPostTime(post.created_at)}</p></div>
                         <button type="button" onClick={() => setUgcMorePostId(post.id)} className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#7d8b7d]" aria-label="Tùy chọn bài viết">···</button>
                       </div>
@@ -6457,11 +6457,18 @@ export default function Home() {
               type="button"
               onClick={() => setActiveTab("map")}
               className="flex items-center gap-2.5 text-left transition active:scale-[0.98]"
-              aria-label="TravelQuest - Bản đồ"
+              aria-label="Pivel - Bản đồ"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#dce3d2] bg-[#e8eee0] text-xl shadow-lg backdrop-blur-xl">🧭</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#d6e2d6] bg-[#fffef9] shadow-lg backdrop-blur-xl">
+                <svg viewBox="0 0 40 40" className="h-8 w-8" aria-hidden="true">
+                  <path d="M5 35V5h12c9 0 14 5 14 12s-5 12-14 12h-4v6H5Zm8-13h4c4 0 6-2 6-5s-2-5-6-5h-4v10Z" fill="#075b52"/>
+                  <path d="M10 15c4-8 11-10 18-7" fill="none" stroke="#ed852c" strokeWidth="2.5" strokeLinecap="round"/>
+                  <path d="M20 8l7-4-1 7" fill="#075b52"/>
+                  <circle cx="27" cy="7" r="3" fill="#ed852c"/>
+                </svg>
+              </span>
               <span>
-                <span className="block text-lg font-black tracking-tight text-[#123f3a] drop-shadow">TravelQuest</span>
+                <span className="block text-lg font-black tracking-tight text-[#075b52] drop-shadow">Pivel</span>
                 <span className="block text-[9px] font-semibold tracking-[0.16em] text-[#71816e]">EXPLORE • CHECK-IN • MOMENT</span>
               </span>
             </button>
@@ -7689,11 +7696,11 @@ export default function Home() {
         {/* ================= BADGES ================= */}
 
         {activeTab === "badges" && (
-          <section className="pt-28 px-5 max-w-5xl mx-auto text-[#203c2d]">
+          <section className="pt-28 px-5 max-w-5xl mx-auto text-[#123f3a]">
 
             <div className="mb-8">
 
-              <p className="text-[#527a55] text-sm font-semibold">
+              <p className="text-[#075b52] text-sm font-semibold">
                 YOUR COLLECTION
               </p>
 
@@ -7701,17 +7708,17 @@ export default function Home() {
                 Bộ sưu tập huy hiệu
               </h2>
 
-              <p className="text-[#718071] mt-2">
+              <p className="text-[#687c70] mt-2">
                 Hoàn thành checkpoint để mở khóa huy hiệu.
               </p>
 
             </div>
 
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between mb-3">
 
-                <span className="text-sm text-[#718071]">
+                <span className="text-sm text-[#687c70]">
                   Tiến độ hành trình
                 </span>
 
@@ -7722,10 +7729,10 @@ export default function Home() {
 
               </div>
 
-              <div className="h-3 bg-[#e8eddf] rounded-full overflow-hidden">
+              <div className="h-3 bg-[#e8eee0] rounded-full overflow-hidden">
 
                 <div
-                  className="h-full bg-[#416c4b] rounded-full transition-all duration-500"
+                  className="h-full bg-[#075b52] rounded-full transition-all duration-500"
                   style={{
                     width: `${progress}%`,
                   }}
@@ -7733,7 +7740,7 @@ export default function Home() {
 
               </div>
 
-              <p className="text-xs text-[#718071] mt-3">
+              <p className="text-xs text-[#687c70] mt-3">
                 {progress === 100
                   ? "🎉 Bạn đã hoàn thành tất cả checkpoint!"
                   : `Còn ${
@@ -7746,12 +7753,12 @@ export default function Home() {
 
             {/* ================= XP & LEVEL ================= */}
 
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between mb-3">
 
                 <div>
-                  <p className="text-xs text-[#527a55] font-semibold">
+                  <p className="text-xs text-[#075b52] font-semibold">
                     LEVEL {currentLevel}
                   </p>
 
@@ -7766,10 +7773,10 @@ export default function Home() {
 
               </div>
 
-              <div className="h-3 bg-[#e8eddf] rounded-full overflow-hidden">
+              <div className="h-3 bg-[#e8eee0] rounded-full overflow-hidden">
 
                 <div
-                  className="h-full bg-[#416c4b] rounded-full transition-all duration-500"
+                  className="h-full bg-[#075b52] rounded-full transition-all duration-500"
                   style={{
                     width: `${levelProgress}%`,
                   }}
@@ -7779,29 +7786,29 @@ export default function Home() {
 
               <div className="flex items-center justify-between mt-2">
 
-                <p className="text-xs text-[#718071]">
+                <p className="text-xs text-[#687c70]">
                   {currentLevelXP}/{XP_PER_LEVEL} XP
                 </p>
 
-                <p className="text-xs text-[#718071]">
+                <p className="text-xs text-[#687c70]">
                   Còn {nextLevelXP} XP → Level {currentLevel + 1}
                 </p>
 
               </div>
 
-              <p className="text-xs text-[#718071] mt-3">
+              <p className="text-xs text-[#687c70] mt-3">
                 🏆 Mỗi checkpoint đã chinh phục nhận +{XP_PER_CHECKPOINT} XP.
               </p>
 
             </div>
 
             {/* ================= DAILY MISSIONS ================= */}
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <div>
                   <p className="text-xs font-semibold text-[#b8793d]">DAILY QUESTS</p>
                   <h3 className="text-xl font-black mt-1">Nhiệm vụ hôm nay</h3>
-                  <p className="text-sm text-[#718071] mt-1">Hoàn thành nhiệm vụ để nhận XP thưởng.</p>
+                  <p className="text-sm text-[#687c70] mt-1">Hoàn thành nhiệm vụ để nhận XP thưởng.</p>
                 </div>
                 <div className="text-3xl">🎁</div>
               </div>
@@ -7810,20 +7817,20 @@ export default function Home() {
                   const claimed = dailyMissionClaims[mission.id] === dailyMissionKey;
                   const readyToClaim = mission.done && !claimed;
                   return (
-                    <div key={mission.id} className="flex items-center gap-3 rounded-2xl border border-[#e1e7d9] bg-[#f8f8f0] p-3 sm:p-4">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e8eddf] text-xl">
+                    <div key={mission.id} className="flex items-center gap-3 rounded-2xl border border-[#dce5d7] bg-[#f8f8f0] p-3 sm:p-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e8eee0] text-xl">
                         {claimed ? "✅" : mission.icon}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-bold text-sm">{mission.title}</p>
-                        <p className="mt-1 text-xs text-[#718071]">{mission.description}</p>
-                        <p className="mt-2 text-xs font-bold text-[#527a55]">+{mission.reward} XP</p>
+                        <p className="mt-1 text-xs text-[#687c70]">{mission.description}</p>
+                        <p className="mt-2 text-xs font-bold text-[#075b52]">+{mission.reward} XP</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => claimDailyMission(mission.id, mission.reward, mission.done)}
                         disabled={!readyToClaim}
-                        className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition ${claimed ? "bg-[#e8eddf] text-[#718071]" : readyToClaim ? "bg-[#416c4b] text-white hover:bg-[#34583c]" : "bg-[#eceee6] text-[#8a9586]"} disabled:cursor-not-allowed`}
+                        className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition ${claimed ? "bg-[#e8eee0] text-[#687c70]" : readyToClaim ? "bg-[#075b52] text-white hover:bg-[#34583c]" : "bg-[#eceee6] text-[#8a9586]"} disabled:cursor-not-allowed`}
                       >
                         {claimed ? "Đã nhận" : mission.done ? "Nhận XP" : "Chưa xong"}
                       </button>
@@ -7833,66 +7840,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ================= BADGE COLLECTION ================= */}
-            <section className="mb-6 rounded-3xl border border-[#e1e7d9] bg-[#fffdf7] p-5 shadow-sm">
-              <div className="mb-5 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-[#527a55]">YOUR COLLECTION</p>
-                  <h3 className="mt-1 text-xl font-black">Bộ sưu tập huy hiệu</h3>
-                  <p className="mt-1 text-sm leading-5 text-[#718071]">Mở khóa huy hiệu khi check-in, khám phá địa danh và chia sẻ nội dung du lịch.</p>
-                </div>
-                <span className="text-3xl">🏅</span>
-              </div>
-              {(() => {
-                const allBadges = badgeGroups.flatMap((group) => group.badges);
-                const earnedCount = allBadges.filter((badge) => badge.progress >= badge.goal).length;
-                return (
-                  <div className="mb-5 rounded-2xl border border-[#e1e7d9] bg-[#f8f8f0] p-4">
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-semibold text-[#526b59]">Tiến độ sưu tập</span>
-                      <span className="font-black text-[#203c2d]">{earnedCount}/{allBadges.length} huy hiệu</span>
-                    </div>
-                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#e8eddf]">
-                      <div className="h-full rounded-full bg-[#416c4b] transition-all" style={{ width: `${Math.round((earnedCount / allBadges.length) * 100)}%` }} />
-                    </div>
-                  </div>
-                );
-              })()}
-              <div className="space-y-5">
-                {badgeGroups.map((group) => (
-                  <div key={group.title}>
-                    <div className="mb-3 flex items-center gap-2">
-                      <span className="text-lg">{group.emoji}</span>
-                      <h4 className="text-sm font-black text-[#203c2d]">{group.title}</h4>
-                      <span className="text-xs text-[#718071]">({group.badges.filter((badge) => badge.progress >= badge.goal).length}/{group.badges.length})</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                      {group.badges.map((badge) => {
-                        const unlocked = badge.progress >= badge.goal;
-                        const progress = Math.min(badge.progress, badge.goal);
-                        return (
-                          <div key={badge.title} className={`flex min-w-0 flex-col items-center rounded-2xl border p-3 text-center transition ${unlocked ? "border-[#d3e2cb] bg-white" : "border-dashed border-[#d9dfd1] bg-[#f8f8f0]"}`}>
-                            <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-3xl ${unlocked ? "border-[#d3e2cb] bg-gradient-to-br from-white to-[#e0ecd9]" : "border-[#d9dfd1] bg-[#e9ebdf] grayscale"}`}>
-                              {badge.emoji}
-                              <span className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] text-white ${unlocked ? "bg-[#2c684c]" : "bg-[#879183]"}`}>{unlocked ? "✓" : "🔒"}</span>
-                            </div>
-                            <p className="mt-3 text-xs font-extrabold leading-snug text-[#234a39]">{badge.title}</p>
-                            <div className="mt-3 w-full">
-                              <div className="h-1.5 overflow-hidden rounded-full bg-[#e5e8df]"><div className="h-full rounded-full bg-[#4d8762]" style={{ width: `${Math.round((progress / badge.goal) * 100)}%` }} /></div>
-                              <p className="mt-1 text-[10px] font-bold tabular-nums text-[#71816e]">{progress}/{badge.goal}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
             {/* ================= STREAK ================= */}
 
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between">
 
@@ -7906,7 +7856,7 @@ export default function Home() {
                     Chuỗi chinh phục
                   </h3>
 
-                  <p className="text-xs text-[#718071] mt-2">
+                  <p className="text-xs text-[#687c70] mt-2">
                     Chinh phục checkpoint mỗi ngày để giữ lửa hành trình.
                   </p>
 
@@ -7920,9 +7870,9 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-3 mt-5">
 
-                <div className="bg-[#f5f4e9] border border-[#e1e7d9] rounded-2xl p-4">
+                <div className="bg-[#f5f4e9] border border-[#dce5d7] rounded-2xl p-4">
 
-                  <p className="text-xs text-[#718071]">
+                  <p className="text-xs text-[#687c70]">
                     Chuỗi hiện tại
                   </p>
 
@@ -7936,9 +7886,9 @@ export default function Home() {
 
                 </div>
 
-                <div className="bg-[#f5f4e9] border border-[#e1e7d9] rounded-2xl p-4">
+                <div className="bg-[#f5f4e9] border border-[#dce5d7] rounded-2xl p-4">
 
-                  <p className="text-xs text-[#718071]">
+                  <p className="text-xs text-[#687c70]">
                     Kỷ lục
                   </p>
 
@@ -7968,7 +7918,7 @@ export default function Home() {
 
             {/* ================= LEADERBOARD ================= */}
 
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
 
               <div className="flex items-center justify-between mb-4">
 
@@ -7982,7 +7932,7 @@ export default function Home() {
                     Bảng xếp hạng
                   </h3>
 
-                  <p className="text-xs text-[#718071] mt-2">
+                  <p className="text-xs text-[#687c70] mt-2">
                     Xếp hạng theo XP từ checkpoint đã chinh phục.
                   </p>
 
@@ -7995,15 +7945,15 @@ export default function Home() {
               </div>
 
               {leaderboardLoading ? (
-                <div className="py-8 text-center text-sm text-[#718071]">
+                <div className="py-8 text-center text-sm text-[#687c70]">
                   📡 Đang tải bảng xếp hạng...
                 </div>
               ) : leaderboardMessage ? (
-                <div className="py-6 text-center text-sm text-[#718071]">
+                <div className="py-6 text-center text-sm text-[#687c70]">
                   {leaderboardMessage}
                 </div>
               ) : leaderboard.length === 0 ? (
-                <div className="py-8 text-center text-sm text-[#718071]">
+                <div className="py-8 text-center text-sm text-[#687c70]">
                   Chưa có dữ liệu xếp hạng.
                 </div>
               ) : (
@@ -8061,7 +8011,7 @@ export default function Home() {
                               </p>
 
                               {isCurrentUser && (
-                                <span className="shrink-0 text-[9px] font-bold text-[#527a55] bg-blue-500/10 border border-blue-400/15 rounded-full px-2 py-1">
+                                <span className="shrink-0 text-[9px] font-bold text-[#075b52] bg-blue-500/10 border border-blue-400/15 rounded-full px-2 py-1">
                                   BẠN
                                 </span>
                               )}
@@ -8099,7 +8049,7 @@ export default function Home() {
               <button
                 onClick={loadLeaderboard}
                 disabled={leaderboardLoading}
-                className="w-full mt-4 py-3 rounded-xl bg-[#416c4b] hover:bg-[#34583c] border border-[#416c4b] text-white text-sm font-bold transition disabled:opacity-50"
+                className="w-full mt-4 py-3 rounded-xl bg-[#075b52] hover:bg-[#34583c] border border-[#416c4b] text-white text-sm font-bold transition disabled:opacity-50"
               >
                 {leaderboardLoading
                   ? "📡 Đang cập nhật..."
@@ -8109,10 +8059,10 @@ export default function Home() {
             </div>
 
             {/* ================= ACHIEVEMENTS ================= */}
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-[#527a55] font-semibold">ACHIEVEMENTS</p>
+                  <p className="text-xs text-[#075b52] font-semibold">ACHIEVEMENTS</p>
                   <h3 className="text-xl font-black mt-1">Thành tựu hành trình</h3>
                 </div>
                 <p className="text-lg font-black">{unlockedAchievementCount}/{achievements.length}</p>
@@ -8122,16 +8072,16 @@ export default function Home() {
                   <div key={achievement.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{achievement.unlocked ? achievement.icon : "🔒"}</p>
                     <p className="mt-2 text-sm font-bold">{achievement.name}</p>
-                    <p className="mt-1 text-[10px] text-[#718071]">{achievement.unlocked ? "Đã mở khóa" : "Chưa mở khóa"}</p>
+                    <p className="mt-1 text-[10px] text-[#687c70]">{achievement.unlocked ? "Đã mở khóa" : "Chưa mở khóa"}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-[#527a55] font-semibold">REGIONAL BADGES</p>
+                  <p className="text-xs text-[#075b52] font-semibold">REGIONAL BADGES</p>
                   <h3 className="text-xl font-black mt-1">🏙️ Huy hiệu theo khu vực</h3>
                 </div>
                 <span className="text-xs text-[#8a9586]">{regionalBadges.filter((item) => item.unlocked).length}/{regionalBadges.length}</span>
@@ -8141,13 +8091,13 @@ export default function Home() {
                   <div key={badge.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{badge.unlocked ? badge.icon : "🔒"}</p>
                     <p className="mt-2 text-sm font-bold">{badge.name}</p>
-                    <p className="mt-1 text-[10px] text-[#718071]">{badge.description}</p>
+                    <p className="mt-1 text-[10px] text-[#687c70]">{badge.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs text-[#b8793d] font-semibold">ADVANCED ACHIEVEMENTS</p>
@@ -8160,19 +8110,19 @@ export default function Home() {
                   <div key={item.id} className="rounded-2xl border border-white/10 bg-black/10 p-4">
                     <p className="text-2xl">{item.unlocked ? item.icon : "🔒"}</p>
                     <p className="mt-2 text-sm font-bold">{item.name}</p>
-                    <p className="mt-1 text-[10px] text-[#718071]">{item.description}</p>
+                    <p className="mt-1 text-[10px] text-[#687c70]">{item.description}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* ================= REWARDS & VOUCHERS ================= */}
-            <div className="bg-[#fffdf7] border border-[#e1e7d9] shadow-sm rounded-3xl p-5 mb-6">
+            <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <p className="text-xs text-[#b8793d] font-semibold">TRAVELQUEST REWARDS</p>
                   <h3 className="text-xl font-black mt-1">🎁 Đổi XP lấy ưu đãi</h3>
-                  <p className="text-sm text-[#718071] mt-1">Dùng XP tích lũy để mở khóa voucher cho hành trình tiếp theo.</p>
+                  <p className="text-sm text-[#687c70] mt-1">Dùng XP tích lũy để mở khóa voucher cho hành trình tiếp theo.</p>
                 </div>
                 <div className="shrink-0 rounded-2xl bg-[#f8edd9] border border-[#eadbc2] px-3 py-2 text-right">
                   <p className="text-[10px] text-[#92765c]">XP khả dụng</p>
@@ -8192,8 +8142,8 @@ export default function Home() {
                       <h4 className="mt-3 text-sm font-black text-[#5c3b2b]">{reward.name}</h4>
                       <p className="mt-1 text-[10px] font-semibold text-[#805234]">{reward.partner}</p>
                       <p className="mt-2 flex-1 text-xs leading-relaxed text-[#765640]">{reward.description}</p>
-                      {redeemed && <p className="mt-3 rounded-lg bg-[#e8eddf] px-2 py-2 text-xs font-bold text-[#416c4b]">✓ Đã đổi voucher</p>}
-                      <button type="button" onClick={() => redeemReward(reward)} disabled={!canRedeem} className={`mt-4 rounded-xl px-3 py-2.5 text-xs font-bold transition ${redeemed ? "bg-[#e8eddf] text-[#527a55]" : canRedeem ? "bg-[#70472f] text-white hover:bg-[#5c3b2b]" : "bg-[#eee5d6] text-[#a28b73]"} disabled:cursor-not-allowed`}>
+                      {redeemed && <p className="mt-3 rounded-lg bg-[#e8eee0] px-2 py-2 text-xs font-bold text-[#416c4b]">✓ Đã đổi voucher</p>}
+                      <button type="button" onClick={() => redeemReward(reward)} disabled={!canRedeem} className={`mt-4 rounded-xl px-3 py-2.5 text-xs font-bold transition ${redeemed ? "bg-[#e8eee0] text-[#075b52]" : canRedeem ? "bg-[#70472f] text-white hover:bg-[#5c3b2b]" : "bg-[#eee5d6] text-[#a28b73]"} disabled:cursor-not-allowed`}>
                         {redeemed ? "Đã nhận" : canRedeem ? "Đổi XP" : `Cần thêm ${Math.max(0, reward.cost - availableRewardXP)} XP`}
                       </button>
                     </div>
@@ -9086,7 +9036,7 @@ export default function Home() {
 
           <div className="relative w-full max-w-sm pointer-events-auto">
 
-            <div className="overflow-hidden rounded-[2rem] border border-[#e1e7d9] bg-[#fffdf7] text-[#203c2d] p-6 shadow-2xl">
+            <div className="overflow-hidden rounded-[2rem] border border-[#dce5d7] bg-[#fffef9] text-[#203c2d] p-6 shadow-2xl">
 
               <div className="flex items-center gap-4">
 
@@ -9107,7 +9057,7 @@ export default function Home() {
                           "Traveller"}
                       </p>
 
-                      <p className="text-xs text-[#718071] mt-1">
+                      <p className="text-xs text-[#687c70] mt-1">
                         Level{" "}
                         {publicProfile?.level ?? 1}
                         {" · "}
@@ -9132,19 +9082,19 @@ export default function Home() {
               </div>
 
               {publicProfileLoading ? (
-                <div className="py-10 text-center text-sm text-[#718071]">
+                <div className="py-10 text-center text-sm text-[#687c70]">
                   Đang tải thông tin Traveller...
                 </div>
               ) : publicProfileMessage ? (
-                <div className="py-8 text-center text-sm text-[#718071]">
+                <div className="py-8 text-center text-sm text-[#687c70]">
                   {publicProfileMessage}
                 </div>
               ) : publicProfile ? (
                 <>
                   <div className="mt-6 grid grid-cols-2 gap-3">
 
-                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
-                      <p className="text-xs text-[#718071]">
+                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                      <p className="text-xs text-[#687c70]">
                         Checkpoint
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -9152,8 +9102,8 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
-                      <p className="text-xs text-[#718071]">
+                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                      <p className="text-xs text-[#687c70]">
                         UGC
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -9161,8 +9111,8 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
-                      <p className="text-xs text-[#718071]">
+                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                      <p className="text-xs text-[#687c70]">
                         Người theo dõi
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -9170,8 +9120,8 @@ export default function Home() {
                       </p>
                     </div>
 
-                    <div className="bg-[#f8f8f0] border border-[#e1e7d9] rounded-2xl p-4">
-                      <p className="text-xs text-[#718071]">
+                    <div className="bg-[#f8f8f0] border border-[#dce5d7] rounded-2xl p-4">
+                      <p className="text-xs text-[#687c70]">
                         Đang theo dõi
                       </p>
                       <p className="text-2xl font-black mt-1">
@@ -9199,8 +9149,8 @@ export default function Home() {
                         followingUserIds.includes(
                           publicProfile.user_id
                         )
-                          ? "bg-[#f8f8f0] border-[#e1e7d9] text-white/70"
-                          : "bg-[#416c4b] border-[#416c4b] text-white hover:bg-[#34583c]"
+                          ? "bg-[#f8f8f0] border-[#dce5d7] text-white/70"
+                          : "bg-[#075b52] border-[#416c4b] text-white hover:bg-[#34583c]"
                       }`}
                     >
                       {followLoading[
@@ -9224,28 +9174,28 @@ export default function Home() {
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="text-sm font-black">🧭 Hành trình</p>
-                        <p className="text-[11px] text-[#718071] mt-1">
+                        <p className="text-[11px] text-[#687c70] mt-1">
                           Tiến trình khám phá của Traveller
                         </p>
                       </div>
 
-                      <div className="text-xs text-[#718071]">
+                      <div className="text-xs text-[#687c70]">
                         {publicProfile.checkpoint_count} checkpoint
                       </div>
                     </div>
 
-                    <div className="rounded-2xl bg-[#f8f8f0] border border-[#e1e7d9] p-4">
+                    <div className="rounded-2xl bg-[#f8f8f0] border border-[#dce5d7] p-4">
 
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-[#718071]">XP</span>
+                        <span className="text-[#687c70]">XP</span>
                         <span className="font-bold text-[#416c4b]">
                           {publicProfile.xp} XP
                         </span>
                       </div>
 
-                      <div className="h-2 mt-3 rounded-full bg-[#e8eddf] overflow-hidden">
+                      <div className="h-2 mt-3 rounded-full bg-[#e8eee0] overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-[#416c4b] transition-all"
+                          className="h-full rounded-full bg-[#075b52] transition-all"
                           style={{
                             width: `${Math.min(100, ((publicProfile.xp % 500) / 500) * 100)}%`,
                           }}
@@ -9272,11 +9222,11 @@ export default function Home() {
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.checkpoint_count >= 1
                           ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
+                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">🌱</p>
                         <p className="text-xs font-bold mt-1">Khởi hành</p>
-                        <p className="text-[10px] text-[#718071] mt-1">
+                        <p className="text-[10px] text-[#687c70] mt-1">
                           Checkpoint đầu tiên
                         </p>
                       </div>
@@ -9284,11 +9234,11 @@ export default function Home() {
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.checkpoint_count >= 2
                           ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
+                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">🗺️</p>
                         <p className="text-xs font-bold mt-1">Nhà khám phá</p>
-                        <p className="text-[10px] text-[#718071] mt-1">
+                        <p className="text-[10px] text-[#687c70] mt-1">
                           2 checkpoint
                         </p>
                       </div>
@@ -9296,11 +9246,11 @@ export default function Home() {
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.post_count >= 1
                           ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
+                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">📸</p>
                         <p className="text-xs font-bold mt-1">Người kể chuyện</p>
-                        <p className="text-[10px] text-[#718071] mt-1">
+                        <p className="text-[10px] text-[#687c70] mt-1">
                           Bài UGC đầu tiên
                         </p>
                       </div>
@@ -9308,11 +9258,11 @@ export default function Home() {
                       <div className={`rounded-2xl border p-3 ${
                         publicProfile.post_count >= 5
                           ? "bg-[#edf3e8] border-[#d7e4d1]"
-                          : "bg-[#f8f8f0] border-[#e1e7d9] opacity-45"
+                          : "bg-[#f8f8f0] border-[#dce5d7] opacity-45"
                       }`}>
                         <p className="text-lg">🎒</p>
                         <p className="text-xs font-bold mt-1">Travel Creator</p>
-                        <p className="text-[10px] text-[#718071] mt-1">
+                        <p className="text-[10px] text-[#687c70] mt-1">
                           5 bài UGC
                         </p>
                       </div>
