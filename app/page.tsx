@@ -6966,7 +6966,7 @@ export default function Home() {
               className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#fff8e8] text-[#5c3b2b] border border-[#e8d9bd] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="p-6">
+              <div className="p-6 bg-gradient-to-b from-[#fff8e8] to-[#fffdf7]">
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-[#f4e6cc] flex items-center justify-center text-4xl shrink-0">
                     {selectedCheckpoint.icon ?? "📍"}
@@ -6978,14 +6978,14 @@ export default function Home() {
                         <p className="text-xs text-[#805234] font-semibold uppercase tracking-wider">
                           Checkpoint
                         </p>
-                        <h2 className="text-2xl font-black mt-1">
+                        <h2 className="text-2xl font-black mt-1 text-[#5c3b2b]">
                           {selectedCheckpoint.name}
                         </h2>
                       </div>
 
                       <button
                         onClick={() => setCheckpointDetailOpen(false)}
-                        className="w-9 h-9 rounded-full bg-white hover:bg-[#f4e6cc] text-[#92765c] hover:text-[#183d32] transition"
+                        className="w-9 h-9 rounded-full bg-[#f4e6cc] hover:bg-[#ead7b5] border border-[#e8d9bd] text-[#70472f] hover:text-[#5c3b2b] transition"
                       >
                         ✕
                       </button>
@@ -6993,7 +6993,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
-                        className="shrink-0 h-9 px-3 rounded-full bg-white hover:bg-[#f4e6cc] border border-[#e4e9dd] text-xs font-bold transition"
+                        className="shrink-0 h-9 px-3 rounded-full bg-[#f4e6cc] hover:bg-[#ead7b5] border border-[#e8d9bd] text-[#70472f] text-xs font-bold transition"
                       >
                         {isSavedPlace(selectedCheckpoint.id) ? "🔖 Đã lưu" : "☆ Lưu"}
                       </button>
@@ -7007,7 +7007,7 @@ export default function Home() {
                 </div>
 
                 <section className="mt-6">
-                  <h3 className="text-lg font-black">Khám phá địa danh</h3>
+                  <h3 className="text-lg font-black text-[#5c3b2b]">Khám phá địa danh</h3>
                   <p className="text-xs text-[#92765c] mt-1">
                     Lịch sử, cảnh quan và những điều thú vị về địa điểm này.
                   </p>
@@ -7069,7 +7069,7 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-3 mt-6">
                   <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                     <p className="text-[11px] text-[#92765c]">Trạng thái</p>
-                    <p className="text-sm font-bold mt-1">
+                    <p className="text-sm font-bold mt-1 text-[#5c3b2b]">
                       {isCheckedIn(selectedCheckpoint.id)
                         ? "✓ Đã chinh phục"
                         : "🔒 Chưa chinh phục"}
@@ -7078,7 +7078,7 @@ export default function Home() {
 
                   <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                     <p className="text-[11px] text-[#92765c]">Khoảng cách</p>
-                    <p className="text-sm font-bold mt-1">
+                    <p className="text-sm font-bold mt-1 text-[#5c3b2b]">
                       {distance !== null
                         ? `${distance}m`
                         : "Chưa xác định"}
@@ -7088,7 +7088,7 @@ export default function Home() {
 
                 <div className="mt-4 rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                   <p className="text-[11px] text-[#92765c]">Huy hiệu nhận được</p>
-                  <p className="text-base font-bold mt-1">
+                  <p className="text-base font-bold mt-1 text-[#5c3b2b]">
                     {selectedCheckpoint.badge ||
                       `${selectedCheckpoint.icon ?? "🏆"} Huy hiệu ${selectedCheckpoint.name}`}
                   </p>
