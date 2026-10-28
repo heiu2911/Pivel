@@ -43,6 +43,8 @@ type MapProps = {
   showCheckpoints?: boolean;
   onFriendMarkerClick?: (userId: string) => void;
   plannedRoute?: Array<Pick<Checkpoint, "id" | "name" | "longitude" | "latitude">>;
+  navigationActive?: boolean;
+  onNavigationStop?: () => void;
 };
 
 type CityDefinition = {
@@ -2193,6 +2195,8 @@ export default function Map({
   showCheckpoints = true,
   onFriendMarkerClick,
   plannedRoute = [],
+  navigationActive = false,
+  onNavigationStop,
 }: MapProps) {
   const mapContainer =
     useRef<HTMLDivElement | null>(null);
@@ -2402,6 +2406,170 @@ export default function Map({
       removePlannedRoute();
     };
   }, [mapReady, plannedRoute, checkpoints]);
+
+  // ========================================
+  // DẪN ĐƯỜNG GPS TRỰC TIẾP CHO HÀNH TRÌNH
+  // ========================================
+
+  useEffect(() => {
+    const mapInstance = map.current;
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    const sourceId = "travelquest-live-navigation-source";
+    const layerId = "travelquest-live-navigation-line";
+    let watchId: number | null = null;
+    let lastRerouteLocation: UserLocation | null = null;
+    let lastRerouteAt = 0;
+    let requestId = 0;
+    let disposed = false;
+    let banner: HTMLDivElement | null = null;
+    let latestInstruction = "Đang xác định vị trí GPS…";
+    let latestDistance = 0;
+    let latestDuration = 0;
+    let rerouting = false;
+
+    const removeRoute = () => {
+      if (!mapInstance?.isStyleLoaded()) return;
+      if (mapInstance.getLayer(layerId)) mapInstance.removeLayer(layerId);
+      if (mapInstance.getSource(sourceId)) mapInstance.removeSource(sourceId);
+    };
+
+    const stopWatch = () => {
+      if (watchId !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    };
+
+    if (!navigationActive || !mapInstance || !mapReady || plannedRoute.length === 0) {
+      stopWatch();
+      if (banner) banner.remove();
+      banner = null;
+      removeRoute();
+      return;
+    }
+
+    const stops = plannedRoute.filter((stop) => isValidCoordinate(stop.latitude, stop.longitude)).slice(0, 25);
+    if (stops.length === 0) return;
+
+    banner = document.createElement("div");
+    banner.setAttribute("role", "status");
+    banner.style.position = "fixed";
+    banner.style.zIndex = "9500";
+    banner.style.top = "max(12px, env(safe-area-inset-top))";
+    banner.style.left = "12px";
+    banner.style.right = "12px";
+    banner.style.maxWidth = "560px";
+    banner.style.margin = "0 auto";
+    banner.style.padding = "14px 16px";
+    banner.style.borderRadius = "18px";
+    banner.style.background = "rgba(18,55,42,.97)";
+    banner.style.color = "#fff";
+    banner.style.boxShadow = "0 10px 34px rgba(0,0,0,.28)";
+    banner.style.fontFamily = "system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+    banner.style.border = "1px solid rgba(190,230,196,.35)";
+    document.body.appendChild(banner);
+
+    const stopButton = document.createElement("button");
+    stopButton.type = "button";
+    stopButton.textContent = "Dừng";
+    stopButton.style.border = "0";
+    stopButton.style.borderRadius = "999px";
+    stopButton.style.padding = "8px 12px";
+    stopButton.style.background = "#d5f5d8";
+    stopButton.style.color = "#12372a";
+    stopButton.style.fontWeight = "800";
+    stopButton.style.cursor = "pointer";
+    stopButton.addEventListener("click", () => onNavigationStop?.());
+
+    const paintBanner = (message?: string) => {
+      if (!banner) return;
+      banner.innerHTML = "";
+      const top = document.createElement("div");
+      top.style.display = "flex";
+      top.style.alignItems = "flex-start";
+      top.style.gap = "12px";
+      const textWrap = document.createElement("div");
+      textWrap.style.minWidth = "0";
+      textWrap.style.flex = "1";
+      const label = document.createElement("div");
+      label.textContent = "📍 DẪN ĐƯỜNG GPS";
+      label.style.fontSize = "10px";
+      label.style.fontWeight = "900";
+      label.style.letterSpacing = ".08em";
+      label.style.color = "#a8efb7";
+      const instruction = document.createElement("div");
+      instruction.textContent = message || latestInstruction;
+      instruction.style.marginTop = "5px";
+      instruction.style.fontSize = "16px";
+      instruction.style.fontWeight = "850";
+      instruction.style.lineHeight = "1.3";
+      const stats = document.createElement("div");
+      stats.textContent = latestDistance > 0 ? (latestDistance >= 1000 ? (latestDistance / 1000).toFixed(1) + " km" : Math.round(latestDistance) + " m") + " · khoảng " + Math.max(1, Math.round(latestDuration / 60)) + " phút còn lại" : "Đang kết nối GPS…";
+      stats.style.marginTop = "5px";
+      stats.style.fontSize = "12px";
+      stats.style.color = "#d7e8d8";
+      textWrap.append(label, instruction, stats);
+      top.append(textWrap, stopButton);
+      banner.appendChild(top);
+    };
+
+    const fetchRoute = async (origin: UserLocation, isFirst: boolean) => {
+      if (rerouting || disposed) return;
+      rerouting = true;
+      const thisRequest = ++requestId;
+      try {
+        const coords = [String(origin.longitude) + "," + String(origin.latitude), ...stops.map((stop) => String(stop.longitude) + "," + String(stop.latitude))].join(";");
+        const response = await fetch("https://api.mapbox.com/directions/v5/mapbox/driving/" + coords + "?overview=full&geometries=geojson&steps=true&language=vi&access_token=" + encodeURIComponent(token || ""));
+        if (!response.ok) throw new Error("Không lấy được tuyến đường. Kiểm tra kết nối hoặc Mapbox token.");
+        const data = await response.json() as { routes?: Array<{ distance: number; duration: number; geometry: { type: "LineString"; coordinates: [number, number][] }; legs?: Array<{ steps?: Array<{ distance: number; duration: number; name?: string; maneuver?: { instruction?: string } }> }> }> };
+        if (disposed || thisRequest !== requestId) return;
+        const route = data.routes?.[0];
+        if (!route?.geometry?.coordinates?.length) throw new Error("Không tìm thấy tuyến đường phù hợp.");
+        latestDistance = route.distance;
+        latestDuration = route.duration;
+        const nextStep = route.legs?.flatMap((leg) => leg.steps || []).find((step) => step.maneuver?.instruction || step.name);
+        latestInstruction = nextStep?.maneuver?.instruction || (nextStep?.name ? "Đi theo " + nextStep.name : "Tiếp tục theo tuyến đường");
+        removeRoute();
+        mapInstance?.addSource(sourceId, { type: "geojson", data: { type: "Feature", properties: {}, geometry: route.geometry } });
+        mapInstance?.addLayer({ id: layerId, type: "line", source: sourceId, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#16884b", "line-width": 8, "line-opacity": 0.96 } });
+        if (isFirst) {
+          const bounds = new mapboxgl.LngLatBounds();
+          route.geometry.coordinates.forEach(([lng, lat]) => bounds.extend([lng, lat]));
+          mapInstance?.fitBounds(bounds, { padding: { top: 130, bottom: 70, left: 45, right: 45 }, maxZoom: 16, duration: 700 });
+        } else {
+          mapInstance?.easeTo({ center: [origin.longitude, origin.latitude], zoom: Math.max(mapInstance.getZoom(), 15.5), duration: 650 });
+        }
+        paintBanner();
+      } catch (error) {
+        if (!disposed) paintBanner(error instanceof Error ? error.message : "Lỗi cập nhật tuyến GPS.");
+      } finally {
+        rerouting = false;
+      }
+    };
+
+    if (!token) { paintBanner("Thiếu Mapbox token nên chưa thể dẫn đường."); return () => { disposed = true; banner?.remove(); }; }
+    if (!navigator.geolocation) { paintBanner("Trình duyệt này không hỗ trợ GPS."); return () => { disposed = true; banner?.remove(); }; }
+
+    paintBanner("Cho phép truy cập GPS để bắt đầu dẫn đường.");
+    watchId = navigator.geolocation.watchPosition((position) => {
+      const location: UserLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+      if (!isValidCoordinate(location.latitude, location.longitude)) return;
+      const moved = lastRerouteLocation ? calculateDistance(lastRerouteLocation.latitude, lastRerouteLocation.longitude, location.latitude, location.longitude) ?? 0 : Infinity;
+      const now = Date.now();
+      if (!lastRerouteLocation || (moved >= 75 && now - lastRerouteAt >= 12000)) {
+        lastRerouteLocation = location;
+        lastRerouteAt = now;
+        void fetchRoute(location, !lastRerouteLocation);
+      }
+    }, (error) => {
+      paintBanner(error.code === 1 ? "GPS bị từ chối. Hãy bật quyền vị trí cho trình duyệt." : "Đang chờ tín hiệu GPS…");
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 });
+
+    return () => {
+      disposed = true;
+      stopWatch();
+      banner?.remove();
+      removeRoute();
+    };
+  }, [navigationActive, mapReady, plannedRoute, onNavigationStop]);
 
   // ========================================
   // GOM CHECKPOINT THEO THÀNH PHỐ
