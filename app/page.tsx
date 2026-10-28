@@ -7266,10 +7266,10 @@ export default function Home() {
 
                 {/* ================= WEATHER ================= */}
 
-                <div className="mt-4 rounded-2xl bg-[#f4f0e6] border border-[#d8dfc8] p-4 text-[#244638]">
+                <div className="mt-4 rounded-2xl bg-[#fff8e8] border border-[#e8d9bd] p-4 text-[#6b422d]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[11px] text-[#77846f]">THỜI TIẾT TẠI CHECKPOINT</p>
+                      <p className="text-[11px] text-[#8b6b53]">THỜI TIẾT TẠI CHECKPOINT</p>
                       <p className="text-sm font-bold mt-1">🌤️ Dự báo địa điểm</p>
                     </div>
 
@@ -7277,14 +7277,14 @@ export default function Home() {
                       type="button"
                       onClick={() => void loadCheckpointWeather(selectedCheckpoint)}
                       disabled={weatherLoading}
-                      className="px-3 py-2 rounded-xl bg-[#e3ead8] hover:bg-[#d5e1c8] border border-[#cbd8bd] text-[#315b45] text-xs font-semibold disabled:opacity-50 transition"
+                      className="px-3 py-2 rounded-xl bg-[#f4e6cc] hover:bg-[#ead7b5] border border-[#e4cda8] text-[#70472f] text-xs font-semibold disabled:opacity-50 transition"
                     >
                       {weatherLoading ? "Đang tải..." : "↻ Làm mới"}
                     </button>
                   </div>
 
                   {weatherLoading && (
-                    <div className="mt-4 rounded-xl bg-[#e9eddf] p-4 text-sm text-[#62735c]">
+                    <div className="mt-4 rounded-xl bg-[#f8edd9] p-4 text-sm text-[#7a5a42]">
                       🌤️ Đang lấy dữ liệu thời tiết...
                     </div>
                   )}
@@ -7292,29 +7292,29 @@ export default function Home() {
                   {!weatherLoading && weather && (
                     <>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
-                        <div className="rounded-xl bg-[#e9eddf] border border-[#dce3d2] p-3">
+                        <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
                           <p className="text-[10px] text-white/40">Nhiệt độ</p>
                           <p className="text-lg font-black mt-1">{Math.round(weather.current.temperature)}°C</p>
                         </div>
-                        <div className="rounded-xl bg-[#e9eddf] border border-[#dce3d2] p-3">
+                        <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
                           <p className="text-[10px] text-white/40">Cảm nhận</p>
                           <p className="text-lg font-black mt-1">{Math.round(weather.current.apparentTemperature)}°C</p>
                         </div>
-                        <div className="rounded-xl bg-[#e9eddf] border border-[#dce3d2] p-3">
+                        <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
                           <p className="text-[10px] text-white/40">Độ ẩm</p>
                           <p className="text-lg font-black mt-1">{weather.current.humidity}%</p>
                         </div>
-                        <div className="rounded-xl bg-[#e9eddf] border border-[#dce3d2] p-3">
+                        <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
                           <p className="text-[10px] text-white/40">Gió</p>
                           <p className="text-lg font-black mt-1">{Math.round(weather.current.windSpeed)} km/h</p>
                         </div>
                       </div>
 
-                      <div className="mt-3 rounded-xl bg-[#e9eddf] border border-[#dce3d2] p-3 flex items-center gap-3">
+                      <div className="mt-3 rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3 flex items-center gap-3">
                         <span className="text-3xl">{weatherDescription(weather.current.weatherCode).icon}</span>
                         <div>
                           <p className="font-bold">{weatherDescription(weather.current.weatherCode).label}</p>
-                          <p className="text-xs text-[#77846f]">Điều kiện hiện tại tại checkpoint</p>
+                          <p className="text-xs text-[#8b6b53]">Điều kiện hiện tại tại checkpoint</p>
                         </div>
                       </div>
 
@@ -7322,7 +7322,7 @@ export default function Home() {
                         {weather.daily.map((day) => {
                           const description = weatherDescription(day.weatherCode);
                           return (
-                            <div key={day.date} className="rounded-xl bg-[#e9eddf] border border-[#dce3d2] p-2 text-center">
+                            <div key={day.date} className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-2 text-center">
                               <p className="text-[10px] text-white/40">{formatWeatherDate(day.date)}</p>
                               <div className="text-xl my-2">{description.icon}</div>
                               <p className="text-xs font-bold">{Math.round(day.temperatureMax)}°</p>
@@ -7335,7 +7335,7 @@ export default function Home() {
                   )}
 
                   {!weatherLoading && !weather && weatherError && (
-                    <div className="mt-4 rounded-xl bg-[#fff0e8] border border-[#f1c9b5] p-3 text-xs text-[#9b4d32]">
+                    <div className="mt-4 rounded-xl bg-[#fff2e5] border border-[#e8c7a8] p-3 text-xs text-[#8b4d2f]">
                       {weatherError}
                     </div>
                   )}
