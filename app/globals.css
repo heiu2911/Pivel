@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #e7f1e8;
-  --foreground: #183d32;
+  --background: #faf9f1;
+  --foreground: #123f3a;
 }
 
 @theme inline {
@@ -13,20 +13,20 @@
 }
 
 :root {
-  --tq-ink: #183d32;
+  --tq-ink: #123f3a;
   --tq-surface: rgba(255, 255, 255, 0.96);
   --tq-border: rgba(49, 91, 69, 0.14);
-  --tq-brand: #285b43;
+  --tq-brand: #075b52;
 }
 
-html { background: #e7f1e8; }
+html { background: #faf9f1; }
 
 body {
   min-height: 100dvh;
   margin: 0;
   overflow-x: hidden;
-  background: #e7f1e8;
-  color: #183d32;
+  background: #faf9f1;
+  color: #123f3a;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   text-rendering: optimizeLegibility;
 }
@@ -51,7 +51,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   border-radius: 999px;
   background: rgba(255,255,255,.94);
   padding: 0 13px;
-  color: #315b45;
+  color: #075b52;
   box-shadow: 0 6px 18px rgba(36,66,46,.08);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -64,8 +64,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
  .tq-map-chip:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(36,66,46,.14); }
 
 .tq-map-chip-active {
-  background: #285b43;
-  border-color: #285b43;
+  background: #075b52;
+  border-color: #075b52;
   color: #fff7df;
   box-shadow: 0 8px 22px rgba(40,91,67,.2);
 }
@@ -82,7 +82,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   padding: 0 !important;
   overflow: hidden;
   background: #fffdf6 !important;
-  color: #183d32;
+  color: #123f3a;
   box-shadow: 0 16px 45px rgba(36,66,46,.18) !important;
 }
 
@@ -130,37 +130,49 @@ a {
 }
 
 
-/* TravelQuest palette: pale green surfaces must always use dark-green text. */
+/* Pivel design system: warm ivory canvas, deep teal brand, muted sage surfaces, orange accent. */
 :root {
-  --tq-canvas: #e7f1e8;
-  --tq-surface-green: #f4faf3;
+  --pivel-canvas: #faf9f1;
+  --pivel-ink: #123f3a;
+  --pivel-brand: #075b52;
+  --pivel-sage: #e8eee0;
+  --pivel-surface: #fffef9;
+  --pivel-orange: #ed852c;
+  --pivel-border: rgba(7, 91, 82,  0.16);
+  --tq-canvas: var(--pivel-canvas);
+  --tq-surface-green: #f1f3e8;
 }
 
-[class~="bg-white"],
-[class*="bg-[#fffdf6]"],
-[class*="bg-[#fff8e8]"],
-[class*="bg-[#f7f4e8]"],
-[class*="bg-[#f1f4eb]"],
-[class*="bg-[#f4faf3]"],
-[class*="bg-[#e7f1e8]"] {
-  border-color: rgba(40, 91, 67, 0.16);
+html,
+body {
+  background: var(--pivel-canvas);
+  color: var(--pivel-ink);
 }
 
-/* Prevent white text on the same light-colored element; do not override text on green buttons nested in cards. */
-[class*="bg-white"][class*="text-white"],
-[class*="bg-[#fffdf6]"][class*="text-white"],
-[class*="bg-[#fff8e8]"][class*="text-white"],
-[class*="bg-[#f7f4e8]"][class*="text-white"],
-[class*="bg-[#f1f4eb]"][class*="text-white"],
-[class*="bg-[#f4faf3]"][class*="text-white"],
-[class*="bg-[#e7f1e8]"][class*="text-white"] {
-  color: #183d32 !important;
+::selection { background: rgba(237, 133, 44, 0.24); }
+
+/* Keep cards, forms, popovers and navigation visually consistent across pages. */
+[class*="border-[#d"], [class*="border-[#e"] {
+  border-color: var(--pivel-border);
 }
 
-/* Keep modal headings, labels and descriptions readable on pale-green surfaces. */
-[class*="bg-[#fffdf6]"] h1, [class*="bg-[#fffdf6]"] h2, [class*="bg-[#fffdf6]"] h3,
-[class*="bg-[#fffdf6]"] label, [class*="bg-[#fffdf6]"] p,
-[class*="bg-[#f4faf3]"] h1, [class*="bg-[#f4faf3]"] h2, [class*="bg-[#f4faf3]"] h3,
-[class*="bg-[#f4faf3]"] label {
-  color: #183d32;
+.tq-bottom-nav {
+  background: rgba(250, 249, 241, 0.94);
+  border-color: var(--pivel-border);
+}
+
+.tq-map-chip-active {
+  background: var(--pivel-brand);
+  border-color: var(--pivel-brand);
+}
+
+.mapboxgl-popup-content {
+  background: var(--pivel-surface) !important;
+  color: var(--pivel-ink);
+}
+
+.mapboxgl-popup-tip { border-top-color: var(--pivel-surface) !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
