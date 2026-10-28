@@ -8962,15 +8962,15 @@ export default function Home() {
             className="absolute inset-0 bg-black/30"
           />
 
-          <div className="relative w-full max-w-sm max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.5rem] border border-white/10 bg-[#07182a] shadow-2xl">
+          <div className="relative w-full max-w-sm max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.5rem] border border-[#dce5d7] bg-[#fffef9] shadow-2xl">
 
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#dce5d7]">
 
               <div>
                 <p className="font-black text-lg">
                   🔔 Thông báo
                 </p>
-                <p className="text-[10px] text-white/35 mt-1">
+                <p className="text-[10px] text-[#81907c] mt-1">
                   Các hoạt động mới trên TravelQuest
                 </p>
               </div>
@@ -8980,7 +8980,7 @@ export default function Home() {
                 onClick={() =>
                   setNotificationsOpen(false)
                 }
-                className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+                className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#123f3a] transition"
               >
                 ✕
               </button>
@@ -8990,7 +8990,7 @@ export default function Home() {
             <div className="max-h-[65vh] overflow-y-auto">
 
               {notificationsLoading ? (
-                <div className="py-10 text-center text-sm text-white/40">
+                <div className="py-10 text-center text-sm text-[#687c70]">
                   📡 Đang tải thông báo...
                 </div>
               ) : notifications.length === 0 ? (
@@ -9004,7 +9004,7 @@ export default function Home() {
                     Chưa có thông báo
                   </p>
 
-                  <p className="text-xs text-white/35 mt-1">
+                  <p className="text-xs text-[#81907c] mt-1">
                     Khi có Traveller tương tác với cậu, thông báo sẽ xuất hiện ở đây.
                   </p>
 
@@ -9039,7 +9039,7 @@ export default function Home() {
                             {notification.message}
                           </p>
 
-                          <p className="text-[10px] text-white/30 mt-1">
+                          <p className="text-[10px] text-[#123f3a]/30 mt-1">
                             {formatPostTime(
                               notification.created_at
                             )}
@@ -9057,7 +9057,7 @@ export default function Home() {
             </div>
 
             {notifications.length > 0 && (
-              <div className="px-5 py-3 border-t border-white/10 text-center">
+              <div className="px-5 py-3 border-t border-[#dce5d7] text-center">
                 <button
                   type="button"
                   onClick={loadNotifications}
@@ -9133,7 +9133,7 @@ export default function Home() {
                     setPublicProfileOpen(false);
                     setPublicProfileMessage("");
                   }}
-                  className="w-9 h-9 rounded-full bg-[#f1f3e8] text-white/50 hover:text-white transition"
+                  className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#123f3a] transition"
                 >
                   ✕
                 </button>
@@ -9208,8 +9208,8 @@ export default function Home() {
                         followingUserIds.includes(
                           publicProfile.user_id
                         )
-                          ? "bg-[#f1f3e8] border-[#dce5d7] text-white/70"
-                          : "bg-[#075b52] border-[#416c4b] text-white hover:bg-[#064940]"
+                          ? "bg-[#f1f3e8] border-[#dce5d7] text-[#123f3a]/70"
+                          : "bg-[#075b52] border-[#416c4b] text-[#123f3a] hover:bg-[#064940]"
                       }`}
                     >
                       {followLoading[
@@ -9359,7 +9359,7 @@ export default function Home() {
 
             <div className="relative w-full max-w-sm pointer-events-auto">
 
-              <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#07182a] p-6 shadow-2xl">
+              <div className="overflow-hidden rounded-[2rem] border border-[#dce5d7] bg-[#fffef9] p-6 shadow-2xl">
 
                 <div className="flex items-center gap-4">
 
@@ -9373,7 +9373,7 @@ export default function Home() {
                       {profileName}
                     </p>
 
-                    <p className="text-xs text-white/45 truncate">
+                    <p className="text-xs text-[#123f3a]/45 truncate">
                       {user.email}
                     </p>
 
@@ -9384,7 +9384,7 @@ export default function Home() {
                       setAuthOpen(false);
                       setAuthMessage("");
                     }}
-                    className="w-9 h-9 rounded-full bg-white/5 text-white/50 hover:text-white transition"
+                    className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#123f3a] transition"
                   >
                     ✕
                   </button>
@@ -9395,7 +9395,7 @@ export default function Home() {
 
                 <div className="mt-6">
 
-                  <label className="block text-xs text-white/50 mb-2">
+                  <label className="block text-xs text-[#687c70] mb-2">
                     Tên hiển thị
                   </label>
 
@@ -9421,7 +9421,7 @@ export default function Home() {
                         }
                       }}
                       placeholder="Tên của bạn"
-                      className="min-w-0 flex-1 rounded-xl bg-black/20 border border-white/10 px-4 py-3 text-sm text-white placeholder:text-white/25 outline-none focus:border-blue-400/50 transition"
+                      className="min-w-0 flex-1 rounded-xl bg-black/20 border border-[#dce5d7] px-4 py-3 text-sm text-[#123f3a] placeholder:text-[#123f3a]/25 outline-none focus:border-blue-400/50 transition"
                     />
 
                     <button
@@ -9449,10 +9449,10 @@ export default function Home() {
                 </div>
 
                 <div className="mt-5">
-                  <p className="text-xs text-white/50 mb-2">Ảnh avatar</p>
+                  <p className="text-xs text-[#687c70] mb-2">Ảnh avatar</p>
 
                   <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 bg-white/5 shrink-0">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-white/20 bg-[#f1f3e8] shrink-0">
                       {avatarImageUrl ? (
                         <img
                           src={avatarImageUrl}
@@ -9489,27 +9489,27 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={removeAvatarImage}
-                            className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 text-xs font-bold hover:bg-white/10 hover:text-white transition"
+                            className="px-3 py-2 rounded-xl bg-[#f1f3e8] border border-[#dce5d7] text-[#123f3a]/60 text-xs font-bold hover:bg-[#e8eee0] hover:text-[#123f3a] transition"
                           >
                             Xóa ảnh
                           </button>
                         )}
                       </div>
 
-                      <p className="text-[10px] text-white/35 mt-2">
+                      <p className="text-[10px] text-[#81907c] mt-2">
                         PNG, JPG hoặc WebP · tối đa 5MB. Ảnh được thu nhỏ để làm avatar.
                       </p>
                     </div>
                   </div>
 
-                  <p className="text-xs text-white/50 mt-4 mb-2">Avatar biểu tượng</p>
+                  <p className="text-xs text-[#687c70] mt-4 mb-2">Avatar biểu tượng</p>
                   <div className="flex gap-2 flex-wrap">
                     {["🧭","🌍","🏕️","📸","🎒","🗺️","🏆","✨"].map((emoji) => (
                       <button
                         key={emoji}
                         type="button"
                         onClick={() => setAvatarEmoji(emoji)}
-                        className={`w-10 h-10 rounded-xl border ${avatarEmoji === emoji ? "border-blue-400 bg-[#e8eee0]" : "border-white/10 bg-white/5"}`}
+                        className={`w-10 h-10 rounded-xl border ${avatarEmoji === emoji ? "border-blue-400 bg-[#e8eee0]" : "border-[#dce5d7] bg-[#f1f3e8]"}`}
                       >
                         {emoji}
                       </button>
@@ -9521,9 +9521,9 @@ export default function Home() {
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
 
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-[#687c70]">
                       Checkpoint
                     </p>
 
@@ -9531,15 +9531,15 @@ export default function Home() {
                       {checkins.length}
                     </p>
 
-                    <p className="text-[10px] text-white/30 mt-1">
+                    <p className="text-[10px] text-[#123f3a]/30 mt-1">
                       đã chinh phục
                     </p>
 
                   </div>
 
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <div className="bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
 
-                    <p className="text-xs text-white/40">
+                    <p className="text-xs text-[#687c70]">
                       UGC
                     </p>
 
@@ -9547,7 +9547,7 @@ export default function Home() {
                       {userPostCount}
                     </p>
 
-                    <p className="text-[10px] text-white/30 mt-1">
+                    <p className="text-[10px] text-[#123f3a]/30 mt-1">
                       bài đã đăng
                     </p>
 
@@ -9555,13 +9555,13 @@ export default function Home() {
 
                 </div>
 
-                <div className="mt-4 bg-white/5 border border-white/10 rounded-2xl p-4">
+                <div className="mt-4 bg-[#f1f3e8] border border-[#dce5d7] rounded-2xl p-4">
 
                   <div className="flex items-center justify-between">
 
                     <div>
 
-                      <p className="text-xs text-white/40">
+                      <p className="text-xs text-[#687c70]">
                         Trạng thái
                       </p>
 
@@ -9585,7 +9585,7 @@ export default function Home() {
                     setAuthOpen(false);
                     setSettingsOpen(true);
                   }}
-                  className="w-full mt-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold transition"
+                  className="w-full mt-4 py-3 rounded-xl bg-[#f1f3e8] hover:bg-[#e8eee0] border border-[#dce5d7] text-[#123f3a] font-bold transition"
                 >
                   ⚙️ Cài đặt
                 </button>
@@ -9614,10 +9614,10 @@ export default function Home() {
         {/* ================= EXTRA FEATURE MODALS ================= */}
       {editPostId !== null && (
         <div className="fixed inset-0 z-[260] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md rounded-3xl bg-[#07182a] border border-white/10 p-5">
+          <div className="w-full max-w-md rounded-3xl bg-[#fffef9] border border-[#dce5d7] p-5">
             <div className="flex items-center justify-between"><h3 className="font-black">✏️ Sửa bài viết</h3><button onClick={() => setEditPostId(null)}>✕</button></div>
-            <textarea value={editPostContent} onChange={(event) => setEditPostContent(event.target.value)} maxLength={1000} className="w-full min-h-40 mt-4 rounded-2xl bg-black/20 border border-white/10 p-4 text-sm outline-none" />
-            <div className="flex gap-2 mt-3"><button onClick={() => setEditPostId(null)} className="flex-1 rounded-xl bg-white/5 py-3">Hủy</button><button onClick={() => void saveEditedPost()} className="flex-1 rounded-xl bg-blue-500 py-3 font-bold">Lưu</button></div>
+            <textarea value={editPostContent} onChange={(event) => setEditPostContent(event.target.value)} maxLength={1000} className="w-full min-h-40 mt-4 rounded-2xl bg-black/20 border border-[#dce5d7] p-4 text-sm outline-none" />
+            <div className="flex gap-2 mt-3"><button onClick={() => setEditPostId(null)} className="flex-1 rounded-xl bg-[#f1f3e8] py-3">Hủy</button><button onClick={() => void saveEditedPost()} className="flex-1 rounded-xl bg-blue-500 py-3 font-bold">Lưu</button></div>
           </div>
         </div>
       )}
@@ -9646,7 +9646,7 @@ export default function Home() {
             </div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Gợi ý lịch trình</p><div className="mt-2 space-y-2">{checkpoints.filter((checkpoint) => !isCheckedIn(checkpoint.id)).slice(0, 4).map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 text-sm"><span className="w-7 h-7 rounded-full bg-[#dcebd8] flex items-center justify-center text-xs">{index + 1}</span><span>{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">🏆 Huy hiệu còn thiếu</p><p className="text-sm mt-1">{missingAchievements.length ? missingAchievements.map((item) => item.name).slice(0, 3).join(" · ") : "Bạn đã mở hết huy hiệu cơ bản."}</p></div>
-            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#123f3a] px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-[#075b52] text-white px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-[#075b52] mt-3">{assistantReply}</p>}</div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#123f3a] px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-[#075b52] text-[#123f3a] px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-[#075b52] mt-3">{assistantReply}</p>}</div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Journey Summary</p><p className="text-sm font-bold mt-1">{journeyName} · {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint · {journeyProgress}%</p><p className="text-[10px] text-[#71816e] mt-1">{journeyStartDate || "Chưa có ngày bắt đầu"} → {journeyEndDate || "Chưa có ngày kết thúc"}</p></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Travel services</p><div className="grid grid-cols-2 gap-2 mt-2">{bookingOptions.map((option) => <div key={option.title} className="rounded-xl bg-[#faf9f1] border border-[#cfe2ce] p-3"><p className="text-sm font-bold">{option.icon} {option.title}</p><div className="flex flex-wrap gap-2 mt-2">{option.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="text-[10px] text-[#43875b] hover:text-[#075b52]">{link.label}</a>)}</div></div>)}</div></div>
           </div>
