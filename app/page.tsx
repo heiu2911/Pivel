@@ -8221,39 +8221,39 @@ export default function Home() {
 
             {/* ================= FRIENDS ================= */}
         {activeTab === "friends" && (
-          <section className="fixed inset-0 z-40 overflow-y-auto bg-[#06111f] px-4 pb-28 pt-8 text-white">
+          <section className="fixed inset-0 z-40 overflow-y-auto bg-[#faf9f1] px-4 pb-28 pt-8 text-[#3f3428]">
             <div className="mx-auto w-full max-w-lg">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-black tracking-[0.2em] text-[#075b52]">TRAVELQUEST</p>
+                  <p className="text-[10px] font-black tracking-[0.2em] text-[#075b52]">PIVEL</p>
                   <h1 className="mt-1 text-3xl font-black">👥 Bạn bè</h1>
-                  <p className="mt-1 text-xs text-white/45">{friendProfiles.length} Traveller đang theo dõi</p>
+                  <p className="mt-1 text-xs text-[#786b5b]">{friendProfiles.length} Traveller đang theo dõi</p>
                 </div>
-                <button type="button" onClick={() => void loadFriendProfiles()} className="h-10 w-10 rounded-full bg-white/5 border border-white/10">↻</button>
+                <button type="button" onClick={() => void loadFriendProfiles()} className="h-10 w-10 rounded-full bg-[#fffef9] border border-[#dce5d7]">↻</button>
               </div>
 
-              <button type="button" onClick={openSearch} className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left">
+              <button type="button" onClick={openSearch} className="mt-5 flex w-full items-center gap-3 rounded-2xl border border-[#dce5d7] bg-[#fffef9] px-4 py-3 text-left">
                 <span>🔎</span>
-                <span className="text-sm text-white/40">Tìm Traveller mới...</span>
+                <span className="text-sm text-[#786b5b]">Tìm Traveller mới...</span>
               </button>
 
               <div className="mt-5 space-y-3">
                 {friendsLoading ? (
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-white/45">Đang tải bạn bè...</div>
+                  <div className="rounded-2xl border border-[#dce5d7] bg-[#fffef9] p-6 text-center text-sm text-[#786b5b]">Đang tải bạn bè...</div>
                 ) : friendProfiles.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-center">
+                  <div className="rounded-2xl border border-dashed border-[#dce5d7] bg-[#fffef9] p-8 text-center">
                     <div className="text-4xl">🧭</div>
                     <p className="mt-3 font-bold">Chưa có bạn bè</p>
-                    <p className="mt-1 text-xs text-white/40">Tìm Traveller và nhấn Theo dõi để bắt đầu.</p>
-                    <button type="button" onClick={openSearch} className="mt-4 rounded-xl bg-blue-500 px-4 py-2 text-xs font-bold">Tìm bạn</button>
+                    <p className="mt-1 text-xs text-[#786b5b]">Tìm Traveller và nhấn Theo dõi để bắt đầu.</p>
+                    <button type="button" onClick={openSearch} className="mt-4 rounded-xl bg-[#075b52] px-4 py-2 text-xs font-bold text-white">Tìm bạn</button>
                   </div>
                 ) : (
                   friendProfiles.map((friend) => (
-                    <div key={friend.user_id} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div key={friend.user_id} className="flex items-center gap-3 rounded-2xl border border-[#dce5d7] bg-[#fffef9] p-4">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e8eee0] text-xl">🧭</div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-bold">{friend.display_name}</p>
-                        <p className="mt-1 text-[11px] text-white/40">Level {friend.level} · {friend.xp} XP · {friend.checkpoint_count} checkpoint</p>
+                        <p className="mt-1 text-[11px] text-[#786b5b]">Level {friend.level} · {friend.xp} XP · {friend.checkpoint_count} checkpoint</p>
                       </div>
                       <button type="button" onClick={() => openChatWithFriend(friend)} className="rounded-xl bg-[#e8eee0] px-3 py-2 text-xs font-bold text-[#075b52]">💬 Chat</button>
                     </div>
