@@ -208,7 +208,6 @@ export default function PersonalProfilePage() {
               <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{checkinCount}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt check-in</p></div>
               <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{totalLikes}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt thích</p></div>
             </div>
-   </button>
           </div>
         </section>
 
