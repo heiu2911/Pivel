@@ -960,6 +960,47 @@ export default function Home() {
   const [missionBonusXP, setMissionBonusXP] = useState(0);
   const [rewardXPSpent, setRewardXPSpent] = useState(0);
   const [redeemedRewards, setRedeemedRewards] = useState<Record<string, boolean>>({});
+  const [rewardStorageLoaded, setRewardStorageLoaded] = useState(false);
+  useEffect(() => {
+    if (!user?.id) {
+      setRewardXPSpent(0);
+      setRedeemedRewards({});
+      setRewardStorageLoaded(false);
+      return;
+    }
+
+    setRewardStorageLoaded(false);
+    try {
+      const raw = window.localStorage.getItem(`travelquest-rewards:${user.id}`);
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          const data = parsed as { spent?: unknown; redeemed?: unknown };
+          if (typeof data.spent === "number" && data.spent >= 0) setRewardXPSpent(data.spent);
+          if (data.redeemed && typeof data.redeemed === "object" && !Array.isArray(data.redeemed)) {
+            setRedeemedRewards(data.redeemed as Record<string, boolean>);
+          }
+        }
+      }
+    } catch {
+      // Ignore invalid reward data and keep safe defaults.
+    } finally {
+      setRewardStorageLoaded(true);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || !rewardStorageLoaded) return;
+    try {
+      window.localStorage.setItem(
+        `travelquest-rewards:${user.id}`,
+        JSON.stringify({ spent: rewardXPSpent, redeemed: redeemedRewards })
+      );
+    } catch {
+      // Local persistence may be unavailable in private browsing.
+    }
+  }, [user?.id, rewardStorageLoaded, rewardXPSpent, redeemedRewards]);
+
   const [routePlannerOpen, setRoutePlannerOpen] = useState(false);
   const [smartTravelOpen, setSmartTravelOpen] = useState(false);
   const [assistantInput, setAssistantInput] = useState("");
