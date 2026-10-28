@@ -557,6 +557,7 @@ export default function Home() {
 
   const [mapSearchQuery, setMapSearchQuery] = useState("");
   const [mapSearchActive, setMapSearchActive] = useState(false);
+  const [focusedMapCheckpoint, setFocusedMapCheckpoint] = useState<Checkpoint | null>(null);
   const [homeSearchOpen, setHomeSearchOpen] = useState(false);
   const [homeSearchQuery, setHomeSearchQuery] = useState("");
   const [mapFilter, setMapFilter] = useState<"none" | "all" | "nearby" | "unvisited" | "saved">("none");
@@ -6511,6 +6512,7 @@ export default function Home() {
                       event.preventDefault();
                       if (mapSearchResults[0]) {
                         selectCheckpoint(mapSearchResults[0]);
+                        setFocusedMapCheckpoint(mapSearchResults[0]);
                         setShowExplorePanel(false);
                         setMapSearchQuery("");
                         setMapSearchActive(false);
@@ -6561,6 +6563,7 @@ export default function Home() {
                         type="button"
                         onClick={() => {
                           selectCheckpoint(checkpoint);
+                          setFocusedMapCheckpoint(checkpoint);
                           setShowExplorePanel(false);
                           setMapSearchQuery("");
                           setMapFilter("none");
@@ -6674,6 +6677,8 @@ export default function Home() {
                 userLocation={
                   userLocation
                 }
+                forceCheckpointView={mapFilter !== "none"}
+                focusCheckpoint={focusedMapCheckpoint}
                 checkpoints={
                   mapDisplayCheckpoints
                 }
