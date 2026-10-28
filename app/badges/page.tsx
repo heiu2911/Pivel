@@ -178,13 +178,13 @@ export default function BadgesPage() {
   })).filter((section) => section.badges.length > 0);
 
   return (
-    <main className="min-h-screen bg-[#f4f4eb] px-3 pb-12 text-[#183d32] sm:px-5">
+    <main className="min-h-screen bg-[#faf9f1] px-3 pb-12 text-[#183d32] sm:px-5">
       <div className="mx-auto max-w-6xl">
         <header className="flex flex-wrap items-center justify-between gap-3 py-5 sm:py-7">
-          <Link href="/" className="flex items-center gap-2 text-sm font-black text-[#245b43]"><span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#245b43] text-lg text-white">✈</span><span>TravelQuest <span className="block text-[10px] font-semibold tracking-wide text-[#81907c]">KHÁM PHÁ · CHECK-IN · SƯU TẬP</span></span></Link>
+          <Link href="/" aria-label="Pivel - Trang chủ" className="flex items-center gap-3 text-sm font-black text-[#075b52]"><span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#d9e5d7] bg-[#fffef9] text-2xl text-[#075b52]"><svg viewBox="0 0 40 40" className="h-8 w-8" aria-hidden="true"><path d="M8 34V7h11c7 0 11 4 11 10s-4 10-11 10h-4v7H8Zm7-14h4c3 0 4-1 4-3s-1-3-4-3h-4v6Z" fill="currentColor"/><path d="M13 15c3-7 10-9 16-7" fill="none" stroke="#ed852c" strokeWidth="2.5" strokeLinecap="round"/><circle cx="27" cy="8" r="3" fill="#ed852c"/></svg></span><span className="text-lg leading-tight">Pivel <span className="block pt-1 text-[10px] font-semibold tracking-[0.14em] text-[#81907c]">KHÁM PHÁ · CHECK-IN · SƯU TẬP</span></span></Link>
           <div className="flex gap-2">
             <Link href="/profile" className="rounded-full border border-[#dce3d2] bg-white px-4 py-2.5 text-xs font-extrabold text-[#315b45] sm:text-sm">Trang cá nhân</Link>
-            <Link href="/" className="rounded-full bg-[#245b43] px-4 py-2.5 text-xs font-extrabold text-white sm:text-sm">← Khám phá</Link>
+            <Link href="/" className="rounded-full bg-[#075b52] px-4 py-2.5 text-xs font-extrabold text-white sm:text-sm">← Khám phá</Link>
           </div>
         </header>
 
