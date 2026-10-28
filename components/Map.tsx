@@ -55,6 +55,7 @@ type MapProps = {
   plannedRoute?: Array<Pick<Checkpoint, "id" | "name" | "longitude" | "latitude">>;
   navigationActive?: boolean;
   onNavigationStop?: () => void;
+  showNearbyPanel?: boolean;
 };
 
 type CityDefinition = {
@@ -2207,6 +2208,7 @@ export default function Map({
   plannedRoute = [],
   navigationActive = false,
   onNavigationStop,
+  showNearbyPanel = false,
 }: MapProps) {
   const mapContainer =
     useRef<HTMLDivElement | null>(null);
@@ -3522,7 +3524,7 @@ export default function Map({
           </div>
         </div>
       ) : null}
-      <div className="absolute left-3 top-3 z-[80] w-[min(360px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-hidden rounded-2xl border border-[#b8d5a5] bg-[#f4faf3]/95 text-[#183d32] shadow-xl backdrop-blur-md">
+      {showNearbyPanel ? <div className="absolute left-3 top-20 sm:top-24 z-[80] w-[min(360px,calc(100%-24px))] max-h-[calc(100%-104px)] overflow-hidden rounded-2xl border border-[#b8d5a5] bg-[#f4faf3]/95 text-[#183d32] shadow-xl backdrop-blur-md">
         <div className="p-3">
           <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold tracking-wider text-[#43875b]">KHÁM PHÁ QUANH ĐÂY</p><p className="text-sm font-black">Ăn uống · Nghỉ ngơi · Tiện ích</p></div><button type="button" onClick={() => { if (!navigator.geolocation) { setNearbyError("Trình duyệt không hỗ trợ GPS."); return; } setNearbyLoading(true); navigator.geolocation.getCurrentPosition((position) => { const location = { latitude: position.coords.latitude, longitude: position.coords.longitude }; setNearbyOrigin(location); map.current?.flyTo({ center: [location.longitude, location.latitude], zoom: 14, duration: 700 }); setNearbyError(""); }, () => { setNearbyLoading(false); setNearbyError("Chưa cấp quyền GPS. Hãy cho phép vị trí trong trình duyệt rồi thử lại."); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }); }} className="shrink-0 rounded-full border border-[#b8d5a5] bg-white px-2.5 py-2 text-[10px] font-extrabold text-[#285b43]">📍 GPS của tôi</button><span className="text-[10px] font-bold text-[#526b59]">{nearbyPlaces.length} nơi</span></div>
           <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
@@ -3535,7 +3537,7 @@ export default function Map({
           {!nearbyLoading && nearbyPlaces.map((place, index) => <button key={place.id} type="button" onClick={() => map.current?.flyTo({center:[place.longitude, place.latitude],zoom:16,duration:650})} className="flex w-full items-start gap-2 border-b border-[#e0e9dc] py-2.5 text-left last:border-0 hover:bg-[#e7f1e8]"><span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dcebd8] text-xs font-black text-[#285b43]">{index+1}</span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-extrabold text-[#183d32]">{place.name}</span><span className="mt-1 block text-[10px] text-[#526b59]">{place.distance < 1000 ? Math.round(place.distance) + " m" : (place.distance/1000).toFixed(1) + " km"} · {place.category.replace(/_/g," ")}</span></span><span className="pt-1 text-[#43875b]">↗</span></button>)}
           <p className="pt-2 text-[9px] leading-4 text-[#71816e]">Dữ liệu địa điểm từ OpenStreetMap contributors. Kết quả phụ thuộc dữ liệu được cập nhật.</p>
         </div>
-      </div>
+      </div> : null}
     </div>
   );
 }
