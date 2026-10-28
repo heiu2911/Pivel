@@ -1,4 +1,4 @@
-# TravelQuest
+# Pivel
 
 Ứng dụng khám phá địa điểm: xem bản đồ, check-in bằng GPS, tích lũy huy hiệu/XP, xây dựng hành trình và chia sẻ bài viết cùng cộng đồng.
 
