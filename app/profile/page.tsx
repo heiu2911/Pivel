@@ -175,6 +175,7 @@ export default function PersonalProfilePage() {
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => { setNameDraft(displayName); setAvatarDraft(null); setEditing((value) => !value); }} className="mb-1 rounded-full border border-[#dce3d2] bg-white px-4 py-2.5 text-sm font-bold">{editing ? "Đóng chỉnh sửa" : "✎ Chỉnh sửa hồ sơ"}</button>
                 <button onClick={() => router.push("/recap")} className="mb-1 rounded-full border border-[#dce3d2] bg-white px-4 py-2.5 text-sm font-bold">✧ Nhật ký</button>
+                <button onClick={() => router.push("/badges")} className="mb-1 rounded-full border border-[#dce3d2] bg-white px-4 py-2.5 text-sm font-bold">🏅 Huy hiệu</button>
                 <button onClick={() => router.push("/")} className="mb-1 rounded-full bg-[#245b43] px-4 py-2.5 text-sm font-bold text-white">✦ Khám phá</button>
               </div>
             </div>
