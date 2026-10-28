@@ -6963,19 +6963,19 @@ export default function Home() {
             onClick={() => setCheckpointDetailOpen(false)}
           >
             <div
-              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#fffdf6] text-[#183d32] border border-[#dce7d2] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#fff8e8] text-[#5c3b2b] border border-[#e8d9bd] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-[#f1f4eb] flex items-center justify-center text-4xl shrink-0">
+                  <div className="w-16 h-16 rounded-2xl bg-[#f4e6cc] flex items-center justify-center text-4xl shrink-0">
                     {selectedCheckpoint.icon ?? "📍"}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-xs text-[#43875b] font-semibold uppercase tracking-wider">
+                        <p className="text-xs text-[#805234] font-semibold uppercase tracking-wider">
                           Checkpoint
                         </p>
                         <h2 className="text-2xl font-black mt-1">
@@ -6985,7 +6985,7 @@ export default function Home() {
 
                       <button
                         onClick={() => setCheckpointDetailOpen(false)}
-                        className="w-9 h-9 rounded-full bg-white hover:bg-[#f1f4eb] text-[#71816e] hover:text-[#183d32] transition"
+                        className="w-9 h-9 rounded-full bg-white hover:bg-[#f4e6cc] text-[#92765c] hover:text-[#183d32] transition"
                       >
                         ✕
                       </button>
@@ -6993,13 +6993,13 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
-                        className="shrink-0 h-9 px-3 rounded-full bg-white hover:bg-[#f1f4eb] border border-[#e4e9dd] text-xs font-bold transition"
+                        className="shrink-0 h-9 px-3 rounded-full bg-white hover:bg-[#f4e6cc] border border-[#e4e9dd] text-xs font-bold transition"
                       >
                         {isSavedPlace(selectedCheckpoint.id) ? "🔖 Đã lưu" : "☆ Lưu"}
                       </button>
                     </div>
 
-                    <p className="text-sm text-[#526b56] mt-3 leading-relaxed">
+                    <p className="text-sm text-[#765640] mt-3 leading-relaxed">
                       {selectedCheckpoint.description ||
                         "Một điểm đến trong hành trình TravelQuest của bạn."}
                     </p>
@@ -7008,7 +7008,7 @@ export default function Home() {
 
                 <section className="mt-6">
                   <h3 className="text-lg font-black">Khám phá địa danh</h3>
-                  <p className="text-xs text-[#71816e] mt-1">
+                  <p className="text-xs text-[#92765c] mt-1">
                     Lịch sử, cảnh quan và những điều thú vị về địa điểm này.
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2 mt-3">
@@ -7052,13 +7052,13 @@ export default function Home() {
                     ].map((section) => (
                       <article
                         key={section.title}
-                        className="rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4"
+                        className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4"
                       >
-                        <p className="text-sm font-bold text-[#315b45]">
+                        <p className="text-sm font-bold text-[#70472f]">
                           <span className="mr-2">{section.icon}</span>
                           {section.title}
                         </p>
-                        <p className="text-sm text-[#526b56] mt-2 leading-relaxed whitespace-pre-line">
+                        <p className="text-sm text-[#765640] mt-2 leading-relaxed whitespace-pre-line">
                           {section.content}
                         </p>
                       </article>
@@ -7067,8 +7067,8 @@ export default function Home() {
                 </section>
 
                 <div className="grid grid-cols-2 gap-3 mt-6">
-                  <div className="rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
-                    <p className="text-[11px] text-[#71816e]">Trạng thái</p>
+                  <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
+                    <p className="text-[11px] text-[#92765c]">Trạng thái</p>
                     <p className="text-sm font-bold mt-1">
                       {isCheckedIn(selectedCheckpoint.id)
                         ? "✓ Đã chinh phục"
@@ -7076,8 +7076,8 @@ export default function Home() {
                     </p>
                   </div>
 
-                  <div className="rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
-                    <p className="text-[11px] text-[#71816e]">Khoảng cách</p>
+                  <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
+                    <p className="text-[11px] text-[#92765c]">Khoảng cách</p>
                     <p className="text-sm font-bold mt-1">
                       {distance !== null
                         ? `${distance}m`
@@ -7086,17 +7086,17 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
-                  <p className="text-[11px] text-[#71816e]">Huy hiệu nhận được</p>
+                <div className="mt-4 rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
+                  <p className="text-[11px] text-[#92765c]">Huy hiệu nhận được</p>
                   <p className="text-base font-bold mt-1">
                     {selectedCheckpoint.badge ||
                       `${selectedCheckpoint.icon ?? "🏆"} Huy hiệu ${selectedCheckpoint.name}`}
                   </p>
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-[#f7f9f1] border border-[#dce7d2] p-4">
-                  <p className="text-[11px] text-[#71816e]">Tọa độ</p>
-                  <p className="text-sm text-[#526b56] mt-1 font-mono">
+                <div className="mt-4 rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
+                  <p className="text-[11px] text-[#92765c]">Tọa độ</p>
+                  <p className="text-sm text-[#765640] mt-1 font-mono">
                     {selectedCheckpoint.latitude.toFixed(5)}, {selectedCheckpoint.longitude.toFixed(5)}
                   </p>
                 </div>
