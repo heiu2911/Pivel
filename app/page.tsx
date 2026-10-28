@@ -5621,6 +5621,59 @@ export default function Home() {
     setMessage(`🎁 +${reward} XP từ nhiệm vụ hôm nay!`);
   };
 
+  const checkedCheckpointNames = checkpoints
+    .filter((checkpoint) => checkins.some((checkin) => checkin.checkpoint_id === checkpoint.id))
+    .map((checkpoint) => checkpoint.name.toLocaleLowerCase("vi-VN"));
+  const matchingPlaces = (keys: string[]) => checkedCheckpointNames.filter((name) => keys.some((key) => name.includes(key))).length;
+  const badgeGroups = [
+    { title: "Khu vực", emoji: "🗺️", badges: [
+      { title: "Tây Bắc", emoji: "🏞️", goal: 1, progress: matchingPlaces(["sa pa", "sapa", "điện biên", "lai châu", "sơn la", "yên bái"]) },
+      { title: "Đông Bắc", emoji: "⛰️", goal: 1, progress: matchingPlaces(["hà giang", "cao bằng", "lạng sơn", "tuyên quang"]) },
+      { title: "Đồng bằng", emoji: "🌾", goal: 1, progress: matchingPlaces(["hà nội", "ninh bình", "nam định", "hải phòng"]) },
+      { title: "Bắc Trung Bộ", emoji: "🏯", goal: 1, progress: matchingPlaces(["thanh hóa", "nghệ an", "hà tĩnh", "huế", "quảng trị"]) },
+      { title: "Nam Trung Bộ", emoji: "🏖️", goal: 1, progress: matchingPlaces(["đà nẵng", "hội an", "quy nhơn", "nha trang", "phú yên"]) },
+      { title: "Tây Nguyên", emoji: "🌲", goal: 1, progress: matchingPlaces(["đà lạt", "buôn ma thuột", "pleiku", "kon tum"]) },
+      { title: "Đông Nam Bộ", emoji: "🌇", goal: 1, progress: matchingPlaces(["hồ chí minh", "sài gòn", "vũng tàu", "đồng nai"]) },
+      { title: "Miền Tây", emoji: "🛶", goal: 1, progress: matchingPlaces(["cần thơ", "an giang", "cà mau", "phú quốc", "chợ nổi"]) },
+    ]},
+    { title: "Địa danh nổi bật", emoji: "📍", badges: [
+      { title: "Hà Nội", emoji: "🏙️", goal: 1, progress: matchingPlaces(["hà nội", "hồ hoàn kiếm", "văn miếu"]) },
+      { title: "Hà Giang", emoji: "⛰️", goal: 1, progress: matchingPlaces(["hà giang", "mã pí lèng", "đồng văn"]) },
+      { title: "Hạ Long", emoji: "🌊", goal: 1, progress: matchingPlaces(["hạ long", "bãi cháy", "tuần châu"]) },
+      { title: "Hội An", emoji: "🏮", goal: 1, progress: matchingPlaces(["hội an", "chùa cầu"]) },
+      { title: "Huế", emoji: "🏯", goal: 1, progress: matchingPlaces(["huế", "đại nội", "kinh thành huế"]) },
+      { title: "Đà Lạt", emoji: "🌲", goal: 1, progress: matchingPlaces(["đà lạt", "langbiang", "xuân hương"]) },
+      { title: "Đà Nẵng", emoji: "🌉", goal: 1, progress: matchingPlaces(["đà nẵng", "bà nà", "cầu rồng"]) },
+      { title: "Phú Quốc", emoji: "🏝️", goal: 1, progress: matchingPlaces(["phú quốc", "dương đông"]) },
+    ]},
+    { title: "UGC & cộng đồng", emoji: "📸", badges: [
+      { title: "Nhiếp ảnh gia", emoji: "📸", goal: 1, progress: userPostCount },
+      { title: "Người kể chuyện", emoji: "📝", goal: 5, progress: userPostCount },
+      { title: "Kết nối cộng đồng", emoji: "🤝", goal: 3, progress: userPostCount },
+      { title: "Travel Creator", emoji: "🌟", goal: 10, progress: userPostCount },
+      { title: "Traveller tích cực", emoji: "💬", goal: 3, progress: followingUserIds.length },
+    ]},
+    { title: "Hành trình", emoji: "🥾", badges: [
+      { title: "Chuyến đi đầu tiên", emoji: "🚩", goal: 1, progress: checkins.length },
+      { title: "Nhà khám phá", emoji: "🎒", goal: 3, progress: checkins.length },
+      { title: "Chinh phục 5 điểm", emoji: "🥾", goal: 5, progress: checkins.length },
+      { title: "Đi xa hơn", emoji: "🧭", goal: 10, progress: checkins.length },
+      { title: "Bước chân không mỏi", emoji: "🛫", goal: 20, progress: checkins.length },
+      { title: "Kỷ lục 30 điểm", emoji: "🏆", goal: 30, progress: checkins.length },
+    ]},
+    { title: "Huy hiệu đặc biệt", emoji: "🏅", badges: [
+      { title: "Du lịch xanh", emoji: "💚", goal: 3, progress: checkins.length },
+      { title: "Bậc thầy khám phá", emoji: "💎", goal: 15, progress: checkins.length },
+      { title: "Vòng quanh Việt Nam", emoji: "🌏", goal: 5, progress: new Set(checkedCheckpointNames.map((name) => name.split(/[,-]/)[0].trim())).size },
+      { title: "Đại sứ du lịch", emoji: "🌐", goal: 10, progress: userPostCount },
+    ]},
+    { title: "Sự kiện & trải nghiệm", emoji: "🎉", badges: [
+      { title: "Lễ hội hoa", emoji: "🌸", goal: 1, progress: matchingPlaces(["đà lạt", "langbiang"]) },
+      { title: "Văn hóa bản địa", emoji: "🏕️", goal: 3, progress: checkins.length },
+      { title: "Tết truyền thống", emoji: "🏮", goal: 1, progress: matchingPlaces(["hội an", "văn miếu", "đại nội"]) },
+      { title: "Lễ hội sông nước", emoji: "🛶", goal: 1, progress: matchingPlaces(["cần thơ", "chợ nổi", "cái răng", "an giang"]) },
+    ]},
+  ];
   const rewardOffers = [
     { id: "coffee", icon: "☕", name: "Ưu đãi đồ uống", partner: "Voucher trải nghiệm", cost: 300, description: "Đổi điểm để nhận mã ưu đãi đồ uống tại đối tác." },
     { id: "museum", icon: "🏛️", name: "Vé tham quan", partner: "Văn hóa & khám phá", cost: 600, description: "Mở khóa voucher tham quan cho chuyến đi tiếp theo." },
@@ -7779,6 +7832,63 @@ export default function Home() {
                 })}
               </div>
             </div>
+
+            {/* ================= BADGE COLLECTION ================= */}
+            <section className="mb-6 rounded-3xl border border-[#e1e7d9] bg-[#fffdf7] p-5 shadow-sm">
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#527a55]">YOUR COLLECTION</p>
+                  <h3 className="mt-1 text-xl font-black">Bộ sưu tập huy hiệu</h3>
+                  <p className="mt-1 text-sm leading-5 text-[#718071]">Mở khóa huy hiệu khi check-in, khám phá địa danh và chia sẻ nội dung du lịch.</p>
+                </div>
+                <span className="text-3xl">🏅</span>
+              </div>
+              {(() => {
+                const allBadges = badgeGroups.flatMap((group) => group.badges);
+                const earnedCount = allBadges.filter((badge) => badge.progress >= badge.goal).length;
+                return (
+                  <div className="mb-5 rounded-2xl border border-[#e1e7d9] bg-[#f8f8f0] p-4">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-semibold text-[#526b59]">Tiến độ sưu tập</span>
+                      <span className="font-black text-[#203c2d]">{earnedCount}/{allBadges.length} huy hiệu</span>
+                    </div>
+                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#e8eddf]">
+                      <div className="h-full rounded-full bg-[#416c4b] transition-all" style={{ width: `${Math.round((earnedCount / allBadges.length) * 100)}%` }} />
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="space-y-5">
+                {badgeGroups.map((group) => (
+                  <div key={group.title}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="text-lg">{group.emoji}</span>
+                      <h4 className="text-sm font-black text-[#203c2d]">{group.title}</h4>
+                      <span className="text-xs text-[#718071]">({group.badges.filter((badge) => badge.progress >= badge.goal).length}/{group.badges.length})</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                      {group.badges.map((badge) => {
+                        const unlocked = badge.progress >= badge.goal;
+                        const progress = Math.min(badge.progress, badge.goal);
+                        return (
+                          <div key={badge.title} className={`flex min-w-0 flex-col items-center rounded-2xl border p-3 text-center transition ${unlocked ? "border-[#d3e2cb] bg-white" : "border-dashed border-[#d9dfd1] bg-[#f8f8f0]"}`}>
+                            <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-3xl ${unlocked ? "border-[#d3e2cb] bg-gradient-to-br from-white to-[#e0ecd9]" : "border-[#d9dfd1] bg-[#e9ebdf] grayscale"}`}>
+                              {badge.emoji}
+                              <span className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] text-white ${unlocked ? "bg-[#2c684c]" : "bg-[#879183]"}`}>{unlocked ? "✓" : "🔒"}</span>
+                            </div>
+                            <p className="mt-3 text-xs font-extrabold leading-snug text-[#234a39]">{badge.title}</p>
+                            <div className="mt-3 w-full">
+                              <div className="h-1.5 overflow-hidden rounded-full bg-[#e5e8df]"><div className="h-full rounded-full bg-[#4d8762]" style={{ width: `${Math.round((progress / badge.goal) * 100)}%` }} /></div>
+                              <p className="mt-1 text-[10px] font-bold tabular-nums text-[#71816e]">{progress}/{badge.goal}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
 
             {/* ================= STREAK ================= */}
 
