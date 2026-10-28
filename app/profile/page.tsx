@@ -153,7 +153,7 @@ export default function PersonalProfilePage() {
   });
 
   return (
-    <main className="min-h-screen bg-[#f7f4e8] px-4 pb-12 text-[#183d32]">
+    <main className="min-h-screen bg-[#faf9f1] px-4 pb-12 text-[#123f3a]">
       <div className="mx-auto max-w-3xl">
         <header className="flex items-center justify-between py-5">
           <Link href="/" className="flex items-center gap-2 text-sm font-bold text-[#245b43]"><span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#245b43] text-lg text-white">✈</span> Pivel</Link>
