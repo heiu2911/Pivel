@@ -6595,7 +6595,7 @@ export default function Home() {
                 checkpoints={
                   checkpoints
                 }
-                plannedRoute={journeyCheckpoints}
+                plannedRoute={showPlannedRoute || navigationActive ? journeyCheckpoints : []}
                 navigationActive={navigationActive}
                 onNavigationStop={() => { setNavigationActive(false); setJourneyStarted(false); setMessage("Đã dừng dẫn đường GPS."); }}
                 showNearbyPanel={showNearbyPanel}
