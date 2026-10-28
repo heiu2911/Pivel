@@ -51,6 +51,8 @@ type MapProps = {
   avatarEmoji?: string;
   friendLocations?: FriendLocation[];
   showCheckpoints?: boolean;
+  forceCheckpointView?: boolean;
+  focusCheckpoint?: Pick<Checkpoint, "id" | "name" | "longitude" | "latitude"> | null;
   onFriendMarkerClick?: (userId: string) => void;
   plannedRoute?: Array<Pick<Checkpoint, "id" | "name" | "longitude" | "latitude">>;
   navigationActive?: boolean;
@@ -2204,6 +2206,8 @@ export default function Map({
   avatarEmoji = "🧭",
   friendLocations = [],
   showCheckpoints = true,
+  forceCheckpointView = false,
+  focusCheckpoint = null,
   onFriendMarkerClick,
   plannedRoute = [],
   navigationActive = false,
@@ -3086,7 +3090,7 @@ export default function Map({
       }
 
       const showCities =
-        mapInstance.getZoom() <= CITY_ZOOM_LIMIT;
+        !forceCheckpointView && mapInstance.getZoom() <= CITY_ZOOM_LIMIT;
 
       const nextMode = showCities
         ? "cities"
@@ -3155,7 +3159,22 @@ export default function Map({
       clearCheckpointMarkers();
       currentMapMode.current = null;
     };
-  }, [checkpoints, showCheckpoints]);
+  }, [checkpoints, showCheckpoints, forceCheckpointView]);
+
+  // When a search result is chosen, move the map to that checkpoint and zoom in
+  // far enough that the individual marker is visible instead of only city clusters.
+  useEffect(() => {
+    const mapInstance = map.current;
+    if (!mapInstance || !mapReady || !focusCheckpoint) return;
+    if (!isValidCoordinate(focusCheckpoint.latitude, focusCheckpoint.longitude)) return;
+
+    mapInstance.flyTo({
+      center: [focusCheckpoint.longitude, focusCheckpoint.latitude],
+      zoom: Math.max(mapInstance.getZoom(), 14),
+      duration: 900,
+      essential: true,
+    });
+  }, [focusCheckpoint, mapReady]);
 
   // ========================================
   // FRIEND LOCATIONS
