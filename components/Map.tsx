@@ -42,6 +42,7 @@ type MapProps = {
   friendLocations?: FriendLocation[];
   showCheckpoints?: boolean;
   onFriendMarkerClick?: (userId: string) => void;
+  plannedRoute?: Array<Pick<Checkpoint, "id" | "name" | "longitude" | "latitude">>;
 };
 
 type CityDefinition = {
@@ -2191,6 +2192,7 @@ export default function Map({
   friendLocations = [],
   showCheckpoints = true,
   onFriendMarkerClick,
+  plannedRoute = [],
 }: MapProps) {
   const mapContainer =
     useRef<HTMLDivElement | null>(null);
@@ -2327,6 +2329,79 @@ export default function Map({
         false;
     };
   }, []);
+
+  // ========================================
+  // TUYẾN ĐƯỜNG ĐÃ LẬP TRONG TRAVELQUEST
+  // ========================================
+
+  useEffect(() => {
+    const mapInstance = map.current;
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    const sourceId = "travelquest-planned-route-source";
+    const layerId = "travelquest-planned-route-line";
+    let cancelled = false;
+
+    const removePlannedRoute = () => {
+      if (!mapInstance || !mapInstance.isStyleLoaded()) return;
+      if (mapInstance.getLayer(layerId)) mapInstance.removeLayer(layerId);
+      if (mapInstance.getSource(sourceId)) mapInstance.removeSource(sourceId);
+    };
+
+    if (!mapInstance || !mapReady || plannedRoute.length < 2 || !token) {
+      removePlannedRoute();
+      return;
+    }
+
+    const validStops = plannedRoute
+      .filter((stop) => isValidCoordinate(stop.latitude, stop.longitude))
+      .slice(0, 25);
+    if (validStops.length < 2) {
+      removePlannedRoute();
+      return;
+    }
+
+    const drawRoute = async () => {
+      try {
+        if (!mapInstance.isStyleLoaded()) {
+          await new Promise<void>((resolve) => mapInstance.once("load", () => resolve()));
+        }
+        if (cancelled) return;
+        const coordinates = validStops.map((stop) => String(stop.longitude) + "," + String(stop.latitude)).join(";");
+        const response = await fetch(
+          "https://api.mapbox.com/directions/v5/mapbox/driving/" + coordinates +
+          "?overview=full&geometries=geojson&steps=false&access_token=" + encodeURIComponent(token)
+        );
+        if (!response.ok) throw new Error("Không lấy được tuyến đường từ Mapbox.");
+        const data = await response.json() as {
+          routes?: Array<{ distance: number; duration: number; geometry: { type: "LineString"; coordinates: number[][] } }>;
+        };
+        const route = data.routes?.[0];
+        if (!route?.geometry?.coordinates?.length || cancelled) return;
+        removePlannedRoute();
+        mapInstance.addSource(sourceId, {
+          type: "geojson",
+          data: { type: "Feature", properties: {}, geometry: route.geometry },
+        });
+        mapInstance.addLayer({
+          id: layerId,
+          type: "line",
+          source: sourceId,
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#36a66b", "line-width": 6, "line-opacity": 0.95 },
+        });
+        const bounds = new mapboxgl.LngLatBounds();
+        route.geometry.coordinates.forEach(([longitude, latitude]) => bounds.extend([longitude, latitude]));
+        mapInstance.fitBounds(bounds, { padding: 90, maxZoom: 15, duration: 800 });
+      } catch (error) {
+        if (!cancelled) console.error("TravelQuest planned route error:", error);
+      }
+    };
+    void drawRoute();
+    return () => {
+      cancelled = true;
+      removePlannedRoute();
+    };
+  }, [mapReady, plannedRoute, checkpoints]);
 
   // ========================================
   // GOM CHECKPOINT THEO THÀNH PHỐ
