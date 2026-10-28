@@ -71,7 +71,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .tq-bottom-nav {
-  background: rgba(231,241,232,.96);
+  background: rgba(250,249,241,.96);
   backdrop-filter: blur(24px) saturate(1.15);
   -webkit-backdrop-filter: blur(24px) saturate(1.15);
   box-shadow: 0 -10px 30px rgba(36,66,46,.1);
@@ -81,12 +81,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   border-radius: 16px !important;
   padding: 0 !important;
   overflow: hidden;
-  background: #fffdf6 !important;
+  background: #fffef9 !important;
   color: #123f3a;
   box-shadow: 0 16px 45px rgba(36,66,46,.18) !important;
 }
 
- .mapboxgl-popup-tip { border-top-color: #fffdf6 !important; }
+ .mapboxgl-popup-tip { border-top-color: #fffef9 !important; }
 
 @media (max-width: 640px) {
   .tq-map-chip { min-height: 34px; padding-inline: 12px; }
