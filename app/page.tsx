@@ -8962,12 +8962,12 @@ export default function Home() {
             className="absolute inset-0 bg-black/30"
           />
 
-          <div className="relative w-full max-w-sm max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.5rem] border border-[#dce5d7] bg-[#fffef9] shadow-2xl">
+          <div className="relative w-full max-w-sm max-h-[calc(100dvh-1rem)] overflow-y-auto overflow-x-hidden rounded-[1.5rem] border border-[#dce5d7] bg-[#fffef9] text-[#3f3428] shadow-2xl">
 
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#dce5d7]">
 
               <div>
-                <p className="font-black text-lg">
+                <p className="font-black text-lg text-[#3f3428]">
                   🔔 Thông báo
                 </p>
                 <p className="text-[10px] text-[#81907c] mt-1">
@@ -8980,7 +8980,7 @@ export default function Home() {
                 onClick={() =>
                   setNotificationsOpen(false)
                 }
-                className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#123f3a] transition"
+                className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#3f3428] transition"
               >
                 ✕
               </button>
@@ -9039,7 +9039,7 @@ export default function Home() {
                             {notification.message}
                           </p>
 
-                          <p className="text-[10px] text-[#123f3a]/30 mt-1">
+                          <p className="text-[10px] text-[#3f3428]/30 mt-1">
                             {formatPostTime(
                               notification.created_at
                             )}
@@ -9133,7 +9133,7 @@ export default function Home() {
                     setPublicProfileOpen(false);
                     setPublicProfileMessage("");
                   }}
-                  className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#123f3a] transition"
+                  className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#3f3428] transition"
                 >
                   ✕
                 </button>
@@ -9208,8 +9208,8 @@ export default function Home() {
                         followingUserIds.includes(
                           publicProfile.user_id
                         )
-                          ? "bg-[#f1f3e8] border-[#dce5d7] text-[#123f3a]/70"
-                          : "bg-[#075b52] border-[#416c4b] text-[#123f3a] hover:bg-[#064940]"
+                          ? "bg-[#f1f3e8] border-[#dce5d7] text-[#3f3428]/70"
+                          : "bg-[#075b52] border-[#416c4b] text-[#3f3428] hover:bg-[#064940]"
                       }`}
                     >
                       {followLoading[
@@ -9373,7 +9373,7 @@ export default function Home() {
                       {profileName}
                     </p>
 
-                    <p className="text-xs text-[#123f3a]/45 truncate">
+                    <p className="text-xs text-[#3f3428]/45 truncate">
                       {user.email}
                     </p>
 
@@ -9384,7 +9384,7 @@ export default function Home() {
                       setAuthOpen(false);
                       setAuthMessage("");
                     }}
-                    className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#123f3a] transition"
+                    className="w-9 h-9 rounded-full bg-[#f1f3e8] text-[#687c70] hover:text-[#3f3428] transition"
                   >
                     ✕
                   </button>
@@ -9421,7 +9421,7 @@ export default function Home() {
                         }
                       }}
                       placeholder="Tên của bạn"
-                      className="min-w-0 flex-1 rounded-xl bg-black/20 border border-[#dce5d7] px-4 py-3 text-sm text-[#123f3a] placeholder:text-[#123f3a]/25 outline-none focus:border-blue-400/50 transition"
+                      className="min-w-0 flex-1 rounded-xl bg-black/20 border border-[#dce5d7] px-4 py-3 text-sm text-[#3f3428] placeholder:text-[#3f3428]/25 outline-none focus:border-blue-400/50 transition"
                     />
 
                     <button
@@ -9489,7 +9489,7 @@ export default function Home() {
                           <button
                             type="button"
                             onClick={removeAvatarImage}
-                            className="px-3 py-2 rounded-xl bg-[#f1f3e8] border border-[#dce5d7] text-[#123f3a]/60 text-xs font-bold hover:bg-[#e8eee0] hover:text-[#123f3a] transition"
+                            className="px-3 py-2 rounded-xl bg-[#f1f3e8] border border-[#dce5d7] text-[#3f3428]/60 text-xs font-bold hover:bg-[#e8eee0] hover:text-[#3f3428] transition"
                           >
                             Xóa ảnh
                           </button>
@@ -9531,7 +9531,7 @@ export default function Home() {
                       {checkins.length}
                     </p>
 
-                    <p className="text-[10px] text-[#123f3a]/30 mt-1">
+                    <p className="text-[10px] text-[#3f3428]/30 mt-1">
                       đã chinh phục
                     </p>
 
@@ -9547,7 +9547,7 @@ export default function Home() {
                       {userPostCount}
                     </p>
 
-                    <p className="text-[10px] text-[#123f3a]/30 mt-1">
+                    <p className="text-[10px] text-[#3f3428]/30 mt-1">
                       bài đã đăng
                     </p>
 
@@ -9585,7 +9585,7 @@ export default function Home() {
                     setAuthOpen(false);
                     setSettingsOpen(true);
                   }}
-                  className="w-full mt-4 py-3 rounded-xl bg-[#f1f3e8] hover:bg-[#e8eee0] border border-[#dce5d7] text-[#123f3a] font-bold transition"
+                  className="w-full mt-4 py-3 rounded-xl bg-[#f1f3e8] hover:bg-[#e8eee0] border border-[#dce5d7] text-[#3f3428] font-bold transition"
                 >
                   ⚙️ Cài đặt
                 </button>
@@ -9624,10 +9624,10 @@ export default function Home() {
 
       {routePlannerOpen && (
         <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl bg-[#faf9f1] text-[#123f3a] border border-[#b8d5a5] p-5 shadow-2xl">
-            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">TRAVELQUEST · ROUTE PLANNER</p><h3 className="text-xl font-black mt-1 text-[#123f3a]">🗺️ Lập tuyến</h3></div><button onClick={() => setRoutePlannerOpen(false)}>✕</button></div>
+          <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl bg-[#faf9f1] text-[#3f3428] border border-[#b8d5a5] p-5 shadow-2xl">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">TRAVELQUEST · ROUTE PLANNER</p><h3 className="text-xl font-black mt-1 text-[#3f3428]">🗺️ Lập tuyến</h3></div><button onClick={() => setRoutePlannerOpen(false)}>✕</button></div>
             <p className="text-xs leading-5 text-[#42634e] mt-3">Chọn thứ tự ghé các checkpoint. Khi bắt đầu, TravelQuest lấy GPS hiện tại, chọn điểm gần nhất trước và lần lượt dẫn đường đến từng điểm.</p>
-            <div className="space-y-2 mt-4">{journeyCheckpoints.map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl bg-[#f1f3e8] border border-[#cfe2ce] p-3"><span className="w-7 h-7 shrink-0 rounded-full bg-[#d5e8d6] text-[#075b52] flex items-center justify-center text-xs font-bold">{index + 1}</span><span className="min-w-0 flex-1 text-sm font-semibold text-[#123f3a]">{checkpoint.icon ?? "📍"} {checkpoint.name}</span><button type="button" disabled={index === 0} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " lên trước"}>↑</button><button type="button" disabled={index === journeyCheckpoints.length - 1} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm font-bold text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " xuống sau"}>↓</button><button type="button" onClick={() => setJourneyCheckpointIds((ids) => ids.filter((id) => id !== checkpoint.id))} className="rounded-lg px-2 py-1 text-sm text-[#a33b3b] hover:bg-[#fbe5e1]" aria-label={"Xóa " + checkpoint.name + " khỏi tuyến"}>×</button></div>)}</div>
+            <div className="space-y-2 mt-4">{journeyCheckpoints.map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl bg-[#f1f3e8] border border-[#cfe2ce] p-3"><span className="w-7 h-7 shrink-0 rounded-full bg-[#d5e8d6] text-[#075b52] flex items-center justify-center text-xs font-bold">{index + 1}</span><span className="min-w-0 flex-1 text-sm font-semibold text-[#3f3428]">{checkpoint.icon ?? "📍"} {checkpoint.name}</span><button type="button" disabled={index === 0} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " lên trước"}>↑</button><button type="button" disabled={index === journeyCheckpoints.length - 1} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm font-bold text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " xuống sau"}>↓</button><button type="button" onClick={() => setJourneyCheckpointIds((ids) => ids.filter((id) => id !== checkpoint.id))} className="rounded-lg px-2 py-1 text-sm text-[#a33b3b] hover:bg-[#fbe5e1]" aria-label={"Xóa " + checkpoint.name + " khỏi tuyến"}>×</button></div>)}</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4"><button type="button" disabled={journeyCheckpoints.length < 1} onClick={startGpsNavigation} className="rounded-xl bg-emerald-500 py-3 px-3 text-sm font-bold text-[#06251a] hover:bg-emerald-400 disabled:opacity-40">📍 Bắt đầu dẫn đường GPS</button><button type="button" disabled={journeyCheckpoints.length < 2} onClick={() => { setShowPlannedRoute(true); setRoutePlannerOpen(false); setActiveTab("map"); setMessage("🗺️ Đang hiển thị tuyến đường trong TravelQuest."); }} className="rounded-xl border border-[#b8d5a5] bg-[#f1f3e8] py-3 px-3 text-sm font-bold text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-40">🗺️ Xem tuyến trước</button></div><button type="button" onClick={() => { setRoutePlannerOpen(false); setJourneyOpen(true); }} className="w-full mt-2 rounded-xl border border-[#cfe2ce] bg-[#dcebd2] py-3 px-3 text-sm font-bold text-[#075b52] hover:bg-[#cfe2ce]">＋ Thêm điểm đến</button>
             {journeyCheckpoints.length < 2 && <p className="text-xs text-[#8a5a12] mt-3">Chọn ít nhất 2 checkpoint để xem trước tuyến đường. Có thể bắt đầu GPS với 1 checkpoint.</p>}
             {journeyCheckpoints.length > 25 && <p className="text-xs text-[#8a5a12] mt-3">Bản đồ hiển thị tối đa 25 điểm mỗi tuyến.</p>}
@@ -9638,15 +9638,15 @@ export default function Home() {
 
       {smartTravelOpen && (
         <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl bg-[#faf9f1] text-[#123f3a] border border-[#b8d5a5] p-5 shadow-2xl">
-            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">SMART TRAVEL</p><h3 className="text-xl font-black mt-1 text-[#123f3a]">✨ Trợ lý TravelQuest</h3></div><button onClick={() => setSmartTravelOpen(false)}>✕</button></div>
+          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl bg-[#faf9f1] text-[#3f3428] border border-[#b8d5a5] p-5 shadow-2xl">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">SMART TRAVEL</p><h3 className="text-xl font-black mt-1 text-[#3f3428]">✨ Trợ lý TravelQuest</h3></div><button onClick={() => setSmartTravelOpen(false)}>✕</button></div>
             <div className="grid grid-cols-2 gap-2 mt-4">
               <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-3"><p className="text-xs text-[#526b59]">Checkpoint tiếp theo</p><p className="text-sm font-bold mt-1">{checkpoints.find((checkpoint) => !isCheckedIn(checkpoint.id))?.name ?? "Đã hoàn thành"}</p></div>
               <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-3"><p className="text-xs text-[#526b59]">Tiến độ</p><p className="text-sm font-bold mt-1">{progress}% · Level {currentLevel}</p></div>
             </div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Gợi ý lịch trình</p><div className="mt-2 space-y-2">{checkpoints.filter((checkpoint) => !isCheckedIn(checkpoint.id)).slice(0, 4).map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 text-sm"><span className="w-7 h-7 rounded-full bg-[#dcebd8] flex items-center justify-center text-xs">{index + 1}</span><span>{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">🏆 Huy hiệu còn thiếu</p><p className="text-sm mt-1">{missingAchievements.length ? missingAchievements.map((item) => item.name).slice(0, 3).join(" · ") : "Bạn đã mở hết huy hiệu cơ bản."}</p></div>
-            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#123f3a] px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-[#075b52] text-[#123f3a] px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-[#075b52] mt-3">{assistantReply}</p>}</div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#3f3428] px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-[#075b52] text-[#3f3428] px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-[#075b52] mt-3">{assistantReply}</p>}</div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Journey Summary</p><p className="text-sm font-bold mt-1">{journeyName} · {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint · {journeyProgress}%</p><p className="text-[10px] text-[#71816e] mt-1">{journeyStartDate || "Chưa có ngày bắt đầu"} → {journeyEndDate || "Chưa có ngày kết thúc"}</p></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Travel services</p><div className="grid grid-cols-2 gap-2 mt-2">{bookingOptions.map((option) => <div key={option.title} className="rounded-xl bg-[#faf9f1] border border-[#cfe2ce] p-3"><p className="text-sm font-bold">{option.icon} {option.title}</p><div className="flex flex-wrap gap-2 mt-2">{option.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="text-[10px] text-[#43875b] hover:text-[#075b52]">{link.label}</a>)}</div></div>)}</div></div>
           </div>
