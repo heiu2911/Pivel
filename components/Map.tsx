@@ -2351,7 +2351,7 @@ export default function Map({
       if (mapInstance.getSource(sourceId)) mapInstance.removeSource(sourceId);
     };
 
-    if (!mapInstance || !mapReady || plannedRoute.length < 2 || !token) {
+    if (!mapInstance || !mapReady || navigationActive || plannedRoute.length < 2 || !token) {
       removePlannedRoute();
       return;
     }
@@ -2405,7 +2405,7 @@ export default function Map({
       cancelled = true;
       removePlannedRoute();
     };
-  }, [mapReady, plannedRoute, checkpoints]);
+  }, [mapReady, plannedRoute, checkpoints, navigationActive]);
 
   // ========================================
   // DẪN ĐƯỜNG GPS TRỰC TIẾP CHO HÀNH TRÌNH
@@ -2555,9 +2555,10 @@ export default function Map({
       const moved = lastRerouteLocation ? calculateDistance(lastRerouteLocation.latitude, lastRerouteLocation.longitude, location.latitude, location.longitude) ?? 0 : Infinity;
       const now = Date.now();
       if (!lastRerouteLocation || (moved >= 75 && now - lastRerouteAt >= 12000)) {
+        const isFirstFix = lastRerouteLocation === null;
         lastRerouteLocation = location;
         lastRerouteAt = now;
-        void fetchRoute(location, !lastRerouteLocation);
+        void fetchRoute(location, isFirstFix);
       }
     }, (error) => {
       paintBanner(error.code === 1 ? "GPS bị từ chối. Hãy bật quyền vị trí cho trình duyệt." : "Đang chờ tín hiệu GPS…");
