@@ -5974,11 +5974,11 @@ export default function Home() {
       ============================================ */}
 
       {authOpen && !user && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-[#f7f4e9] p-3 text-[#183d32] sm:p-6">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-[#f7f4e9] p-3 text-[#123f3a] sm:p-6">
           <button
             type="button"
             aria-label="Đóng cửa sổ đăng nhập"
-            className="absolute inset-0 cursor-default bg-[#183d32]/35 backdrop-blur-sm"
+            className="absolute inset-0 cursor-default bg-[#123f3a]/35 backdrop-blur-sm"
             onClick={() => {
               if (!authLoading) {
                 setAuthOpen(false);
@@ -6017,19 +6017,19 @@ export default function Home() {
                     setAuthMessage("");
                   }
                 }}
-                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-[#648075] transition hover:bg-[#edf1e8] hover:text-[#183d32] sm:right-6 sm:top-6"
+                className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full text-xl text-[#648075] transition hover:bg-[#edf1e8] hover:text-[#123f3a] sm:right-6 sm:top-6"
               >×</button>
 
               <div className="mx-auto w-full max-w-md">
                 <div className="mb-7 md:hidden">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3a65a] text-2xl text-[#183d32]">✦</span>
-                    <span className="text-xl font-black tracking-tight text-[#183d32]">TravelQuest</span>
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3a65a] text-2xl text-[#123f3a]">✦</span>
+                    <span className="text-xl font-black tracking-tight text-[#123f3a]">TravelQuest</span>
                   </div>
                 </div>
 
                 <p className="text-xs font-extrabold tracking-[0.22em] text-[#d77b35]">CHÀO MỪNG TRỞ LẠI</p>
-                <h2 className="mt-3 text-3xl font-black tracking-tight text-[#183d32] sm:text-4xl">
+                <h2 className="mt-3 text-3xl font-black tracking-tight text-[#123f3a] sm:text-4xl">
                   {authMode === "login" ? "Bắt đầu hành trình" : "Tạo tài khoản"}
                 </h2>
                 <p className="mt-3 max-w-sm text-sm leading-6 text-[#718176]">
@@ -6047,7 +6047,7 @@ export default function Home() {
                       onKeyDown={(event) => { if (event.key === "Enter") void handleAuth(); }}
                       placeholder="ban@example.com"
                       autoComplete="email"
-                      className="w-full rounded-2xl border border-[#dce4d8] bg-white px-4 py-3.5 text-sm text-[#183d32] outline-none transition placeholder:text-[#a3afa5] focus:border-[#4f8068] focus:ring-4 focus:ring-[#4f8068]/10"
+                      className="w-full rounded-2xl border border-[#dce4d8] bg-white px-4 py-3.5 text-sm text-[#123f3a] outline-none transition placeholder:text-[#a3afa5] focus:border-[#4f8068] focus:ring-4 focus:ring-[#4f8068]/10"
                     />
                   </div>
 
@@ -6066,14 +6066,14 @@ export default function Home() {
                       onKeyDown={(event) => { if (event.key === "Enter") void handleAuth(); }}
                       placeholder={authMode === "login" ? "Nhập mật khẩu của bạn" : "Ít nhất 6 ký tự"}
                       autoComplete={authMode === "login" ? "current-password" : "new-password"}
-                      className="w-full rounded-2xl border border-[#dce4d8] bg-white px-4 py-3.5 text-sm text-[#183d32] outline-none transition placeholder:text-[#a3afa5] focus:border-[#4f8068] focus:ring-4 focus:ring-[#4f8068]/10"
+                      className="w-full rounded-2xl border border-[#dce4d8] bg-white px-4 py-3.5 text-sm text-[#123f3a] outline-none transition placeholder:text-[#a3afa5] focus:border-[#4f8068] focus:ring-4 focus:ring-[#4f8068]/10"
                     />
                   </div>
                 </div>
 
                 {authMessage && (
                   <div role="status" aria-live="polite" className="mt-4 rounded-2xl border border-[#dce7d8] bg-[#f0f5ec] px-4 py-3">
-                    <p className="text-sm leading-5 text-[#315b45]">{authMessage}</p>
+                    <p className="text-sm leading-5 text-[#075b52]">{authMessage}</p>
                   </div>
                 )}
 
@@ -6081,7 +6081,7 @@ export default function Home() {
                   type="button"
                   onClick={() => void handleAuth()}
                   disabled={authLoading}
-                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#285b43] px-4 py-3.5 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(40,91,67,0.18)] transition hover:bg-[#1d4935] focus:outline-none focus:ring-4 focus:ring-[#4f8068]/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#075b52] px-4 py-3.5 text-sm font-extrabold text-white shadow-[0_8px_18px_rgba(40,91,67,0.18)] transition hover:bg-[#1d4935] focus:outline-none focus:ring-4 focus:ring-[#4f8068]/20 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {authLoading ? "Đang xử lý..." : authMode === "login" ? "Đăng nhập  →" : "Tạo tài khoản  →"}
                 </button>
@@ -6107,11 +6107,11 @@ export default function Home() {
                     type="button"
                     onClick={() => { setAuthMode(authMode === "login" ? "signup" : "login"); setAuthMessage(""); setAuthPassword(""); }}
                     disabled={authLoading}
-                    className="font-extrabold text-[#285b43] underline decoration-[#9db8a3] underline-offset-4 transition hover:text-[#d77b35] disabled:opacity-50"
+                    className="font-extrabold text-[#075b52] underline decoration-[#9db8a3] underline-offset-4 transition hover:text-[#d77b35] disabled:opacity-50"
                   >{authMode === "login" ? "Đăng ký ngay" : "Đăng nhập"}</button>
                 </p>
                 <p className="mt-6 text-center text-[11px] leading-5 text-[#a0aa9f]">Tiếp tục đồng nghĩa với việc bạn đồng ý khám phá có trách nhiệm cùng TravelQuest.</p>
-                <p className="mt-3 text-center text-xs text-[#849184]">Muốn dùng giao diện đăng nhập riêng?{" "}<a href="/login" className="font-bold text-[#285b43] underline underline-offset-4 hover:text-[#d77b35]">Mở trang đăng nhập</a></p>
+                <p className="mt-3 text-center text-xs text-[#849184]">Muốn dùng giao diện đăng nhập riêng?{" "}<a href="/login" className="font-bold text-[#075b52] underline underline-offset-4 hover:text-[#d77b35]">Mở trang đăng nhập</a></p>
               </div>
             </div>
           </section>
@@ -6198,28 +6198,28 @@ export default function Home() {
 
 
       {homeSearchOpen && activeTab === "home" && (
-        <div className="fixed inset-0 z-[300] overflow-y-auto bg-[#f7f4e8] text-[#183d32]" role="dialog" aria-modal="true" aria-label="Tìm kiếm TravelQuest">
+        <div className="fixed inset-0 z-[300] overflow-y-auto bg-[#faf9f1] text-[#123f3a]" role="dialog" aria-modal="true" aria-label="Tìm kiếm TravelQuest">
           <div className="mx-auto min-h-full w-full max-w-2xl">
-            <div className="sticky top-0 z-10 border-b border-[#dce3d2] bg-[#f7f4e8]/95 px-3 py-3 backdrop-blur-xl">
+            <div className="sticky top-0 z-10 border-b border-[#dce3d2] bg-[#faf9f1]/95 px-3 py-3 backdrop-blur-xl">
               <div className="flex items-center gap-3">
                 <button type="button" onClick={() => setHomeSearchOpen(false)} className="rounded-full px-1 py-2 text-sm font-semibold text-[#245b43]">‹ Quay lại</button>
                 <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-[#e9eddf] px-3 py-2.5">
                   <span className="text-lg text-[#526b56]">⌕</span>
-                  <input autoFocus value={homeSearchQuery} onChange={(event) => { const value = event.target.value; setHomeSearchQuery(value); void searchTravellers(value); }} placeholder="Tìm kiếm" className="min-w-0 flex-1 bg-transparent text-sm text-[#183d32] outline-none placeholder:text-[#71816e]" aria-label="Tìm kiếm địa điểm và Traveller" />
-                  {homeSearchQuery && <button type="button" onClick={() => setHomeSearchQuery("")} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#d7dfce] text-[#315b45]" aria-label="Xóa từ khóa">×</button>}
+                  <input autoFocus value={homeSearchQuery} onChange={(event) => { const value = event.target.value; setHomeSearchQuery(value); void searchTravellers(value); }} placeholder="Tìm kiếm" className="min-w-0 flex-1 bg-transparent text-sm text-[#123f3a] outline-none placeholder:text-[#71816e]" aria-label="Tìm kiếm địa điểm và Traveller" />
+                  {homeSearchQuery && <button type="button" onClick={() => setHomeSearchQuery("")} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#d7dfce] text-[#075b52]" aria-label="Xóa từ khóa">×</button>}
                 </label>
                 <button type="button" onClick={() => { setHomeSearchOpen(false); setMapSearchQuery(homeSearchQuery); setMapSearchActive(true); setActiveTab("map"); }} className="text-xs font-bold text-[#245b43]">Bản đồ</button>
               </div>
             </div>
             <div className="px-4 pb-8 pt-4">
               {!homeSearchQuery.trim() ? (
-                <div><h2 className="text-sm font-black">Khám phá TravelQuest</h2><p className="mt-1 text-xs text-[#71816e]">Tìm địa điểm hoặc Traveller theo tên.</p><div className="mt-4 flex flex-wrap gap-2">{["Hà Nội", "Đà Nẵng", "Hội An", "Huế"].map((term) => <button key={term} type="button" onClick={() => setHomeSearchQuery(term)} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-xs font-semibold text-[#315b45]">⌕ {term}</button>)}</div></div>
+                <div><h2 className="text-sm font-black">Khám phá TravelQuest</h2><p className="mt-1 text-xs text-[#71816e]">Tìm địa điểm hoặc Traveller theo tên.</p><div className="mt-4 flex flex-wrap gap-2">{["Hà Nội", "Đà Nẵng", "Hội An", "Huế"].map((term) => <button key={term} type="button" onClick={() => setHomeSearchQuery(term)} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-xs font-semibold text-[#075b52]">⌕ {term}</button>)}</div></div>
               ) : (
                 <>
                   <h2 className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#71816e]">Địa điểm</h2>
-                  {homeSearchResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeSearchResults.map((checkpoint) => <button key={checkpoint.id} type="button" onClick={() => { setHomeSearchOpen(false); setMapSearchQuery(""); setMapSearchActive(false); setActiveTab("map"); selectCheckpoint(checkpoint); setShowExplorePanel(false); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#f1f4eb]"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e9eddf] text-xl">{checkpoint.icon ?? "📍"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#183d32]">{checkpoint.name}</span><span className="mt-0.5 block truncate text-xs text-[#71816e]">{checkpoint.description || "Địa điểm khám phá"}</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Chưa tìm thấy địa điểm phù hợp.</p>}
+                  {homeSearchResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeSearchResults.map((checkpoint) => <button key={checkpoint.id} type="button" onClick={() => { setHomeSearchOpen(false); setMapSearchQuery(""); setMapSearchActive(false); setActiveTab("map"); selectCheckpoint(checkpoint); setShowExplorePanel(false); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#e8eee0]"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e9eddf] text-xl">{checkpoint.icon ?? "📍"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#123f3a]">{checkpoint.name}</span><span className="mt-0.5 block truncate text-xs text-[#71816e]">{checkpoint.description || "Địa điểm khám phá"}</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Chưa tìm thấy địa điểm phù hợp.</p>}
                   <h2 className="mb-2 mt-6 text-xs font-extrabold uppercase tracking-[0.12em] text-[#71816e]">Traveller</h2>
-                  {searchLoading ? <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Đang tìm Traveller...</p> : homeTravellerResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeTravellerResults.map((profile) => <button key={profile.user_id} type="button" onClick={() => { setHomeSearchOpen(false); setActiveTab("ugc"); selectUgcTraveller(profile.user_id); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#f1f4eb]"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9eddf] text-xl">🧭</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#183d32]">{profile.display_name}</span><span className="block text-xs text-[#71816e]">Traveller · Cấp {profile.level}</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Không tìm thấy Traveller trong danh sách hiện có.</p>}
+                  {searchLoading ? <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Đang tìm Traveller...</p> : homeTravellerResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeTravellerResults.map((profile) => <button key={profile.user_id} type="button" onClick={() => { setHomeSearchOpen(false); setActiveTab("ugc"); selectUgcTraveller(profile.user_id); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#e8eee0]"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9eddf] text-xl">🧭</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#123f3a]">{profile.display_name}</span><span className="block text-xs text-[#71816e]">Traveller · Cấp {profile.level}</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Không tìm thấy Traveller trong danh sách hiện có.</p>}
                 </>
               )}
             </div>
@@ -6229,9 +6229,9 @@ export default function Home() {
 
       {/* ================= HOME / TRAVEL FEED ================= */}
       {activeTab === "home" && (
-        <section className="fixed inset-0 z-40 overflow-y-auto bg-[#f7f4e8] text-[#183d32]">
+        <section className="fixed inset-0 z-40 overflow-y-auto bg-[#faf9f1] text-[#123f3a]">
           <div className="mx-auto min-h-full w-full max-w-2xl pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
-            <header className="sticky top-0 z-30 border-b border-[#dce3d2] bg-[#f7f4e8]/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.8rem)] backdrop-blur-xl">
+            <header className="sticky top-0 z-30 border-b border-[#dce3d2] bg-[#faf9f1]/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.8rem)] backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setActiveTab("home")} className="flex items-center gap-2 text-left" aria-label="Pivel - Trang chủ">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#245b43] text-xl text-[#fff7df]">✈</span>
@@ -6285,7 +6285,7 @@ export default function Home() {
                   <div className="p-4">
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eddf]">{avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : "👤"}</div>
-                      <textarea value={postContent} onChange={(event) => setPostContent(event.target.value)} placeholder="Cậu đang nghĩ gì? Chia sẻ hành trình của mình..." maxLength={1000} rows={3} className="min-w-0 flex-1 resize-y rounded-xl bg-[#f8f8f2] p-3 text-sm text-[#183d32] outline-none placeholder:text-[#9aa69a]" />
+                      <textarea value={postContent} onChange={(event) => setPostContent(event.target.value)} placeholder="Cậu đang nghĩ gì? Chia sẻ hành trình của mình..." maxLength={1000} rows={3} className="min-w-0 flex-1 resize-y rounded-xl bg-[#f8f8f2] p-3 text-sm text-[#123f3a] outline-none placeholder:text-[#9aa69a]" />
                     </div>
                     {imagePreview && (
                       <div className="relative mt-3 overflow-hidden rounded-xl bg-[#f1f3eb]">
@@ -6347,7 +6347,7 @@ export default function Home() {
 
               {commentOpenPostId !== null && activeTab === "home" && (
                 <div className="fixed inset-0 z-[200] bg-black/45" onClick={() => setCommentOpenPostId(null)}>
-                  <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#fdfcf6] text-[#183d32] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                  <div className="absolute inset-x-0 bottom-0 mx-auto flex h-[66dvh] max-h-[66dvh] max-w-md flex-col overflow-hidden rounded-t-[1.25rem] bg-[#fdfcf6] text-[#123f3a] shadow-2xl" onClick={(event) => event.stopPropagation()}>
                     <div className="flex shrink-0 items-center justify-between border-b border-[#e4e8dc] px-4 py-3">
                       <p className="text-sm font-black">Bình luận</p>
                       <button type="button" onClick={() => setCommentOpenPostId(null)} className="flex h-8 w-8 items-center justify-center rounded-full bg-[#edf0e6]">✕</button>
@@ -6380,7 +6380,7 @@ export default function Home() {
                 if (!morePost) return null;
                 return (
                   <div className="fixed inset-0 z-[220] bg-black/45" onClick={() => setUgcMorePostId(null)}>
-                    <div className="absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-[1.5rem] border border-[#dce3d2] bg-[#fffef9] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-[#183d32] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+                    <div className="absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-[1.5rem] border border-[#dce3d2] bg-[#fffef9] p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] text-[#123f3a] shadow-2xl" onClick={(event) => event.stopPropagation()}>
                       <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#dce3d2]" />
                       <p className="mb-3 text-sm font-black">Tùy chọn bài viết</p>
                       <button type="button" onClick={() => { void shareUgcPost(morePost); setUgcMorePostId(null); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold hover:bg-[#f1f3eb]">↗️ Chia sẻ bài viết</button>
@@ -6395,7 +6395,7 @@ export default function Home() {
 
               <div className="mt-4 flex items-center justify-between">
                 <h2 className="text-lg font-black">Bảng tin du lịch</h2>
-                <button type="button" onClick={() => { setFeedMode((current) => current === "all" ? "following" : "all"); }} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-[11px] font-bold text-[#315b45]">{feedMode === "all" ? "Tất cả bài viết ▾" : "Đang theo dõi ▾"}</button>
+                <button type="button" onClick={() => { setFeedMode((current) => current === "all" ? "following" : "all"); }} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-[11px] font-bold text-[#075b52]">{feedMode === "all" ? "Tất cả bài viết ▾" : "Đang theo dõi ▾"}</button>
               </div>
 
               <div className="mt-3 space-y-4">
@@ -6414,8 +6414,8 @@ export default function Home() {
                       {post.content && <p className="px-4 pb-3 text-sm leading-6 text-[#334b3b]">{post.content}</p>}
                       {post.image_url ? <button type="button" onClick={() => setUgcMorePostId(post.id)} className="block w-full bg-[#edf0e6]"><img src={post.image_url} alt="Ảnh trong bài đăng du lịch" loading="lazy" className="max-h-[440px] w-full object-cover" /></button> : <div className="flex min-h-40 items-center justify-center bg-gradient-to-br from-[#e8eddf] to-[#f9e8cf] text-5xl">🌿</div>}
                       <div className="flex items-center gap-5 px-4 py-3">
-                        <button type="button" onClick={() => void handleLike(post)} className="flex items-center gap-2 text-sm font-bold text-[#315b45]"><span className="text-xl">{likedPostIds.includes(post.id) ? "❤️" : "♡"}</span>{post.likes}</button>
-                        <button type="button" onClick={() => setCommentOpenPostId(post.id)} className="flex items-center gap-2 text-sm font-bold text-[#315b45]"><span className="text-xl">▢</span>{comments.filter((comment) => comment.post_id === post.id).length} bình luận</button>
+                        <button type="button" onClick={() => void handleLike(post)} className="flex items-center gap-2 text-sm font-bold text-[#075b52]"><span className="text-xl">{likedPostIds.includes(post.id) ? "❤️" : "♡"}</span>{post.likes}</button>
+                        <button type="button" onClick={() => setCommentOpenPostId(post.id)} className="flex items-center gap-2 text-sm font-bold text-[#075b52]"><span className="text-xl">▢</span>{comments.filter((comment) => comment.post_id === post.id).length} bình luận</button>
                         <button type="button" onClick={() => setUgcMorePostId(post.id)} className="ml-auto text-xl text-[#718176]" aria-label="Chia sẻ hoặc báo cáo">↗</button>
                       </div>
                     </article>
@@ -6459,31 +6459,31 @@ export default function Home() {
               className="flex items-center gap-2.5 text-left transition active:scale-[0.98]"
               aria-label="TravelQuest - Bản đồ"
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#dce3d2] bg-[#f1f4eb] text-xl shadow-lg backdrop-blur-xl">🧭</span>
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#dce3d2] bg-[#e8eee0] text-xl shadow-lg backdrop-blur-xl">🧭</span>
               <span>
-                <span className="block text-lg font-black tracking-tight text-[#183d32] drop-shadow">TravelQuest</span>
+                <span className="block text-lg font-black tracking-tight text-[#123f3a] drop-shadow">TravelQuest</span>
                 <span className="block text-[9px] font-semibold tracking-[0.16em] text-[#71816e]">EXPLORE • CHECK-IN • MOMENT</span>
               </span>
             </button>
             <div className="flex items-center gap-2">
               {authReady && user && (
-                <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/95 text-base shadow-lg backdrop-blur-xl transition hover:bg-[#f1f4eb]" title="Thông báo">
+                <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffef9]/95 text-base shadow-lg backdrop-blur-xl transition hover:bg-[#e8eee0]" title="Thông báo">
                   🔔
-                  {notifications.some((item) => !item.is_read) && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#fffdf6] bg-red-400" />}
+                  {notifications.some((item) => !item.is_read) && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#fffef9] bg-red-400" />}
                 </button>
               )}
               {authReady && (
-                <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#b8d5a5] bg-[#f1f4eb] shadow-lg backdrop-blur-xl transition hover:scale-[1.03]" title={user ? "Tài khoản" : "Đăng nhập"}>
+                <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#b8d5a5] bg-[#e8eee0] shadow-lg backdrop-blur-xl transition hover:scale-[1.03]" title={user ? "Tài khoản" : "Đăng nhập"}>
                   {user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-base">{user ? avatarEmoji : "🔐"}</span>}
                 </button>
               )}
             </div>
           </div>
 
-          <div className={`flex items-center gap-2 rounded-[1.6rem] border border-[#dce3d2] bg-[#fffdf6]/95 px-2 py-2 shadow-[0_12px_40px_rgba(36,66,46,0.10)] backdrop-blur-2xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
+          <div className={`flex items-center gap-2 rounded-[1.6rem] border border-[#dce3d2] bg-[#fffef9]/95 px-2 py-2 shadow-[0_12px_40px_rgba(36,66,46,0.10)] backdrop-blur-2xl sm:px-3 ${mapSearchActive ? "w-full" : ""}`}>
             <div data-map-search-box className="relative min-w-0 flex-1">
-              <div className="flex h-11 items-center gap-2 rounded-full border border-[#e2e5d9] bg-white px-3 text-[#183d32] shadow-inner backdrop-blur-sm">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eaf0e5] text-base text-[#315b45]">⌕</span>
+              <div className="flex h-11 items-center gap-2 rounded-full border border-[#e2e5d9] bg-white px-3 text-[#123f3a] shadow-inner backdrop-blur-sm">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eaf0e5] text-base text-[#075b52]">⌕</span>
                 <input
                   value={mapSearchQuery}
                   onChange={(event) => setMapSearchQuery(event.target.value)}
@@ -6492,14 +6492,14 @@ export default function Home() {
                     if (event.key === "Enter") setMapSearchActive(false);
                   }}
                   placeholder="Tìm địa điểm, checkpoint..."
-                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-[#183d32] outline-none placeholder:text-[#9aa69a]"
+                  className="min-w-0 flex-1 bg-transparent text-sm font-medium text-[#123f3a] outline-none placeholder:text-[#9aa69a]"
                   aria-label="Tìm địa điểm trên bản đồ"
                 />
                 {mapSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setMapSearchQuery("")}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f1f4eb] text-[#526b56] transition hover:bg-[#eaf0e5]"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e8eee0] text-[#526b56] transition hover:bg-[#eaf0e5]"
                     aria-label="Xóa tìm kiếm"
                   >
                     ×
@@ -6511,7 +6511,7 @@ export default function Home() {
                     updateLocation();
                     startWatchingGPS();
                   }}
-                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-[#183d32] transition hover:bg-[#f1f4eb]"
+                  className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-bold text-[#123f3a] transition hover:bg-[#e8eee0]"
                   title="Định vị tôi"
                 >
                   <span>⌖</span>
@@ -6520,7 +6520,7 @@ export default function Home() {
               </div>
 
               {mapSearchActive && mapSearchQuery.trim() && (
-                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[120] max-h-[min(62vh,440px)] overflow-y-auto rounded-2xl border border-[#dce3d2] bg-white p-1.5 text-[#183d32] shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[120] max-h-[min(62vh,440px)] overflow-y-auto rounded-2xl border border-[#dce3d2] bg-white p-1.5 text-[#123f3a] shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
                   {mapSearchResults.length === 0 ? (
                     <div className="px-4 py-5 text-center text-xs text-[#71816e]">
                       Chưa tìm thấy checkpoint phù hợp.
@@ -6536,13 +6536,13 @@ export default function Home() {
                           setMapSearchQuery("");
                           setMapFilter("none");
                         }}
-                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-[#f1f4eb]"
+                        className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-[#e8eee0]"
                       >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f1f4eb] text-xl">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e8eee0] text-xl">
                           {checkpoint.icon ?? "📍"}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-bold text-[#183d32]">{checkpoint.name}</span>
+                          <span className="block truncate text-sm font-bold text-[#123f3a]">{checkpoint.name}</span>
                           <span className="mt-0.5 block truncate text-[11px] text-[#71816e]">
                             {isCheckedIn(checkpoint.id) ? "✓ Đã chinh phục" : "Chưa chinh phục"}
                           </span>
@@ -6575,13 +6575,13 @@ export default function Home() {
 
             <div className={`shrink-0 items-center gap-1.5 ${mapSearchActive ? "hidden" : "flex"}`}>
                             {authReady && user && (
-                <button type="button" onClick={openSearch} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f1f4eb] text-base transition hover:bg-[#eaf0e5]" title="Tìm Traveller" aria-label="Tìm Traveller">👥</button>
+                <button type="button" onClick={openSearch} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e8eee0] text-base transition hover:bg-[#eaf0e5]" title="Tìm Traveller" aria-label="Tìm Traveller">👥</button>
               )}
 
               <div className="relative">
                 <button
                   type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eaf0e5] text-lg text-[#315b45] transition hover:bg-[#dce7d8]"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eaf0e5] text-lg text-[#075b52] transition hover:bg-[#dce7d8]"
                   onClick={() => setHeaderMenuOpen((value) => !value)}
                   title="Công cụ"
                   aria-label="Công cụ"
@@ -6590,15 +6590,15 @@ export default function Home() {
                 </button>
 
                 {headerMenuOpen && (
-                  <div className="absolute right-0 top-12 z-[90] max-h-[min(72dvh,520px)] w-60 overflow-y-auto rounded-2xl border border-[#cfe2ce] bg-[#f4faf3]/98 p-2 text-[#183d32] shadow-2xl backdrop-blur-xl">
+                  <div className="absolute right-0 top-12 z-[90] max-h-[min(72dvh,520px)] w-60 overflow-y-auto rounded-2xl border border-[#cfe2ce] bg-[#f1f3e8]/98 p-2 text-[#123f3a] shadow-2xl backdrop-blur-xl">
                     <p className="px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#43875b]">Công cụ TravelQuest</p>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setJourneyOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">🧭 Chọn checkpoint / hành trình</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setRoutePlannerOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">🗺️ Lập tuyến & bắt đầu GPS</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setShowNearbyPanel((value) => !value); if (!showNearbyPanel) { updateLocation(); startWatchingGPS(); } }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">{showNearbyPanel ? "✕ Ẩn địa điểm quanh đây" : "🍜 Ăn uống, nghỉ ngơi, tiện ích"}</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); setMessage("📍 Đang cập nhật vị trí GPS…"); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">📍 Cập nhật GPS</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setJourneyOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#123f3a] transition hover:bg-[#faf9f1]">🧭 Chọn checkpoint / hành trình</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setRoutePlannerOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#123f3a] transition hover:bg-[#faf9f1]">🗺️ Lập tuyến & bắt đầu GPS</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setShowNearbyPanel((value) => !value); if (!showNearbyPanel) { updateLocation(); startWatchingGPS(); } }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#123f3a] transition hover:bg-[#faf9f1]">{showNearbyPanel ? "✕ Ẩn địa điểm quanh đây" : "🍜 Ăn uống, nghỉ ngơi, tiện ích"}</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); setMessage("📍 Đang cập nhật vị trí GPS…"); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#123f3a] transition hover:bg-[#faf9f1]">📍 Cập nhật GPS</button>
                     <div className="my-1 border-t border-[#dce8d8]" />
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">✨ Smart Travel</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">💬 Traveller Chat</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#123f3a] transition hover:bg-[#faf9f1]">✨ Smart Travel</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#123f3a] transition hover:bg-[#faf9f1]">💬 Traveller Chat</button>
                   </div>
                 )}
               </div>
@@ -6673,7 +6673,7 @@ export default function Home() {
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
               <div className="fixed left-1/2 top-1/2 z-[80] w-[min(380px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-                <div className="pointer-events-auto max-h-[min(60vh,540px)] overflow-y-auto overscroll-contain rounded-3xl border border-[#dce5d6] bg-[#fffef9]/95 text-[#183d32] shadow-[0_24px_80px_rgba(24,61,50,.22)] backdrop-blur-2xl [scrollbar-width:thin]">
+                <div className="pointer-events-auto max-h-[min(60vh,540px)] overflow-y-auto overscroll-contain rounded-3xl border border-[#dce5d6] bg-[#fffef9]/95 text-[#123f3a] shadow-[0_24px_80px_rgba(24,61,50,.22)] backdrop-blur-2xl [scrollbar-width:thin]">
 
                 {/* SUMMARY */}
                 <div className="sticky top-0 z-10 border-b border-[#e4e9dd] bg-[#fffef9]/95 px-4 py-3 backdrop-blur-2xl">
@@ -6700,7 +6700,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setShowExplorePanel(false)}
-                    className="mt-3 w-full rounded-xl border border-[#e4e9dd] bg-white px-3 py-2 text-[10px] font-bold text-[#526b56] transition hover:bg-[#e9eddf] hover:text-[#183d32]"
+                    className="mt-3 w-full rounded-xl border border-[#e4e9dd] bg-white px-3 py-2 text-[10px] font-bold text-[#526b56] transition hover:bg-[#e9eddf] hover:text-[#123f3a]"
                   >
                     Ẩn phần khám phá ↑
                   </button>
@@ -6709,13 +6709,13 @@ export default function Home() {
                 {/* CHECKPOINTS — SHOW FEW BY DEFAULT */}
                 <div className="p-2.5">
                   <div className="flex items-center justify-between gap-2 px-1 pb-1.5">
-                    <p className="text-xs font-bold text-[#315b45]">📍 Điểm khám phá</p>
+                    <p className="text-xs font-bold text-[#075b52]">📍 Điểm khám phá</p>
                     <div className="flex items-center gap-2">
                       {checkpoints.length > 3 && (
                       <button
                         type="button"
                         onClick={() => setShowAllMapCheckpoints((value) => !value)}
-                        className="text-[10px] font-bold text-[#43875b] hover:text-[#315b45]"
+                        className="text-[10px] font-bold text-[#43875b] hover:text-[#075b52]"
                       >
                         {showAllMapCheckpoints ? "Thu gọn" : `Xem tất cả (${checkpoints.length})`}
                       </button>
@@ -6771,7 +6771,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setShowSavedPlaces((value) => !value)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#f1f4eb]"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#e8eee0]"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="text-lg">🔖</span>
@@ -6817,7 +6817,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setJourneyOpen(true)}
-                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#f1f4eb]"
+                    className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-[#e8eee0]"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="text-lg">🧭</span>
@@ -6874,7 +6874,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setShowMapCheckpoints((value) => !value)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/98 text-base text-[#183d32] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#edf5e7]"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffef9]/98 text-base text-[#123f3a] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#edf5e7]"
                   title={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
                   aria-label={showMapCheckpoints ? "Ẩn checkpoint" : "Hiện checkpoint"}
                 >
@@ -6883,7 +6883,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setShowExplorePanel(true)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffdf6]/98 text-base text-[#183d32] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#edf5e7]"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-[#e4e9dd] bg-[#fffef9]/98 text-base text-[#123f3a] shadow-[0_10px_30px_rgba(0,0,0,.3)] backdrop-blur-xl transition hover:bg-[#edf5e7]"
                   title="Hiện khám phá"
                   aria-label="Hiện khám phá"
                 >
@@ -6897,7 +6897,7 @@ export default function Home() {
             {selectedCheckpoint && !showCheckpointCard && (
               <div className="absolute inset-0 z-40 pointer-events-none flex items-end justify-end px-3 pb-[calc(92px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-5">
                 <div
-                  className="pointer-events-auto flex items-center gap-2 rounded-full border border-[#e4e9dd] bg-[#fffdf6]/95 px-2 py-2 shadow-[0_12px_35px_rgba(0,0,0,.3)] backdrop-blur-xl touch-pan-y select-none"
+                  className="pointer-events-auto flex items-center gap-2 rounded-full border border-[#e4e9dd] bg-[#fffef9]/95 px-2 py-2 shadow-[0_12px_35px_rgba(0,0,0,.3)] backdrop-blur-xl touch-pan-y select-none"
                   onPointerDown={(event) => {
                     checkpointRevealSwipeRef.current = {
                       startX: event.clientX,
@@ -6922,7 +6922,7 @@ export default function Home() {
                   }}
                   aria-label="Vuốt sang phải để hiện checkpoint"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e9eddf] text-[#183d32]/65 text-lg">→</span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e9eddf] text-[#123f3a]/65 text-lg">→</span>
                   <span className="pr-2 text-[10px] font-bold text-[#71816e]">Vuốt sang</span>
                 </div>
               </div>
@@ -6931,7 +6931,7 @@ export default function Home() {
             {selectedCheckpoint && showCheckpointCard && (
               <div className="fixed inset-x-0 bottom-0 z-[200] pointer-events-none flex justify-center px-3 pb-[calc(82px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
                 <div
-                  className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-[#dce3d2] bg-[#fffdf6]/98 shadow-[0_12px_35px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-manipulation select-none"
+                  className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-[#dce3d2] bg-[#fffef9]/98 shadow-[0_12px_35px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-manipulation select-none"
                   style={{ transform: `translate3d(${checkpointCardOffset.x}px, ${checkpointCardOffset.y}px, 0)` }}
                 >
                   <div className="flex items-center gap-2.5 px-2.5 py-2.5">
@@ -6951,7 +6951,7 @@ export default function Home() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <h2 className="truncate text-[13px] font-black leading-tight text-[#183d32]">
+                        <h2 className="truncate text-[13px] font-black leading-tight text-[#123f3a]">
                           {selectedCheckpoint.name}
                         </h2>
                         {isCheckedIn(selectedCheckpoint.id) && (
@@ -6977,7 +6977,7 @@ export default function Home() {
                         ) as HTMLElement | null;
                         marker?.click();
                       }}
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b8d5a5] bg-[#43875b]/15 text-base text-[#315b45] transition hover:bg-[#43875b]/25 active:scale-95"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#b8d5a5] bg-[#43875b]/15 text-base text-[#075b52] transition hover:bg-[#43875b]/25 active:scale-95"
                       title="Chỉ đường trên bản đồ"
                       aria-label="Chỉ đường trên bản đồ"
                     >
@@ -6988,7 +6988,7 @@ export default function Home() {
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={openCheckpointDetail}
-                      className="h-11 w-11 shrink-0 rounded-full bg-white text-sm text-[#526b56] transition hover:bg-[#e9eddf] hover:text-[#183d32] active:scale-95"
+                      className="h-11 w-11 shrink-0 rounded-full bg-white text-sm text-[#526b56] transition hover:bg-[#e9eddf] hover:text-[#123f3a] active:scale-95"
                       title="Xem chi tiết"
                       aria-label="Xem chi tiết"
                     >
@@ -7004,7 +7004,7 @@ export default function Home() {
                         setDistance(null);
                         setMessage("");
                       }}
-                      className="h-11 w-11 shrink-0 rounded-full bg-white text-xs text-[#84917e] transition hover:bg-[#e9eddf] hover:text-[#183d32] active:scale-95"
+                      className="h-11 w-11 shrink-0 rounded-full bg-white text-xs text-[#84917e] transition hover:bg-[#e9eddf] hover:text-[#123f3a] active:scale-95"
                       aria-label="Đóng checkpoint"
                     >
                       ✕
@@ -7021,8 +7021,8 @@ export default function Home() {
                         isCheckedIn(selectedCheckpoint.id)
                           ? "bg-[#edf5e7] text-[#43875b]"
                           : canCheckIn
-                          ? "bg-[#43875b] text-[#183d32]"
-                          : "bg-[#f1f4eb] text-[#183d32]/70"
+                          ? "bg-[#43875b] text-[#123f3a]"
+                          : "bg-[#e8eee0] text-[#123f3a]/70"
                       }`}
                     >
                       {checkingIn
@@ -7038,7 +7038,7 @@ export default function Home() {
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={() => toggleSavedPlace(selectedCheckpoint.id)}
-                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-[#84917e] transition hover:bg-[#f1f4eb] hover:text-[#183d32]/70"
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-[#84917e] transition hover:bg-[#e8eee0] hover:text-[#123f3a]/70"
                     >
                       {savedCheckpoints.some((item) => item.id === selectedCheckpoint.id) ? "🔖 Đã lưu" : "🔖 Lưu"}
                     </button>
@@ -7047,7 +7047,7 @@ export default function Home() {
                       type="button"
                       onPointerDown={(event) => event.stopPropagation()}
                       onClick={() => setShowCheckpointCard(false)}
-                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-[#84917e] transition hover:bg-[#f1f4eb] hover:text-[#526b56]"
+                      className="rounded-lg px-2 py-1 text-[9px] font-semibold text-[#84917e] transition hover:bg-[#e8eee0] hover:text-[#526b56]"
                     >
                       Ẩn
                     </button>
@@ -7072,7 +7072,7 @@ export default function Home() {
             onClick={() => setJourneyOpen(false)}
           >
             <div
-              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f4faf3] text-[#183d32] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f1f3e8] text-[#123f3a] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="p-6">
@@ -7089,7 +7089,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setJourneyOpen(false)}
-                    className="w-9 h-9 rounded-full bg-white hover:bg-[#f1f4eb] text-[#71816e] hover:text-[#183d32] transition"
+                    className="w-9 h-9 rounded-full bg-white hover:bg-[#e8eee0] text-[#71816e] hover:text-[#123f3a] transition"
                   >
                     ✕
                   </button>
@@ -7102,7 +7102,7 @@ export default function Home() {
                     value={journeyName}
                     maxLength={50}
                     onChange={(event) => setJourneyName(event.target.value)}
-                    className="w-full rounded-xl bg-[#f1f4eb] border border-[#e4e9dd] px-4 py-3 text-sm text-[#183d32] outline-none focus:border-[#43875b]/50 transition"
+                    className="w-full rounded-xl bg-[#e8eee0] border border-[#e4e9dd] px-4 py-3 text-sm text-[#123f3a] outline-none focus:border-[#43875b]/50 transition"
                     placeholder="Ví dụ: Hà Nội cuối tuần"
                   />
                 </div>
@@ -7111,12 +7111,12 @@ export default function Home() {
                   type="button"
                   onClick={startNewJourney}
                   disabled={!journeyName.trim() || journeyCheckpointIds.length === 0}
-                  className="mt-3 w-full rounded-xl border border-[#b8d5a5] bg-[#edf5e7] px-4 py-3 text-sm font-bold text-[#285b43] transition hover:bg-[#dcebd2] disabled:cursor-not-allowed disabled:opacity-45"
+                  className="mt-3 w-full rounded-xl border border-[#b8d5a5] bg-[#edf5e7] px-4 py-3 text-sm font-bold text-[#075b52] transition hover:bg-[#dcebd2] disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   💾 Lưu hành trình này
                 </button>
 
-                <div className="mt-5 rounded-2xl bg-[#e7f1e8] border border-[#cfe2ce] p-4 text-[#183d32]">
+                <div className="mt-5 rounded-2xl bg-[#faf9f1] border border-[#cfe2ce] p-4 text-[#123f3a]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-bold">Tiến độ</p>
@@ -7126,7 +7126,7 @@ export default function Home() {
                     </div>
                     <span className="text-lg font-black text-[#43875b]">{journeyProgress}%</span>
                   </div>
-                  <div className="h-2 rounded-full bg-[#f1f4eb] overflow-hidden mt-3">
+                  <div className="h-2 rounded-full bg-[#e8eee0] overflow-hidden mt-3">
                     <div
                       className="h-full bg-[#43875b] transition-all duration-500"
                       style={{ width: `${journeyProgress}%` }}
@@ -7152,14 +7152,14 @@ export default function Home() {
                           className={`w-full flex items-center gap-3 rounded-2xl border p-3 text-left transition ${
                             selected
                               ? "bg-[#43875b]/15 border-[#b8d5a5]"
-                              : "bg-[#f4faf3] border-[#cfe2ce] hover:bg-[#e7f1e8]"
+                              : "bg-[#f1f3e8] border-[#cfe2ce] hover:bg-[#faf9f1]"
                           }`}
                         >
-                          <span className="w-10 h-10 rounded-xl bg-[#e7f1e8] text-[#183d32] flex items-center justify-center text-xl shrink-0">
+                          <span className="w-10 h-10 rounded-xl bg-[#faf9f1] text-[#123f3a] flex items-center justify-center text-xl shrink-0">
                             {checkpoint.icon ?? "📍"}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-bold text-[#183d32] truncate">{checkpoint.name}</span>
+                            <span className="block text-sm font-bold text-[#123f3a] truncate">{checkpoint.name}</span>
                             <span className="block text-[10px] text-[#84917e] mt-1">
                               {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
                             </span>
@@ -7175,15 +7175,15 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-2 mt-6">
                   <div className="flex gap-2 mt-3">
-                    <button type="button" onClick={() => setRoutePlannerOpen(true)} className="flex-1 rounded-xl bg-[#f1f4eb] border border-[#dce3d2] px-3 py-2 text-xs font-bold">🗺️ Route planner</button>
-                    {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="flex-1 rounded-xl bg-[#f4faf3] border border-[#cfe2ce] px-3 py-2 text-xs font-bold text-[#285b43] text-center">📍 Google Maps</a>}
+                    <button type="button" onClick={() => setRoutePlannerOpen(true)} className="flex-1 rounded-xl bg-[#e8eee0] border border-[#dce3d2] px-3 py-2 text-xs font-bold">🗺️ Route planner</button>
+                    {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="flex-1 rounded-xl bg-[#f1f3e8] border border-[#cfe2ce] px-3 py-2 text-xs font-bold text-[#075b52] text-center">📍 Google Maps</a>}
                   </div>
 
                   {journeys.length > 0 && (
                     <div className="mt-4 rounded-2xl bg-white border border-[#e4e9dd] p-3">
                       <p className="text-[10px] text-[#71816e] font-bold">JOURNEY ĐÃ LƯU</p>
                       <div className="space-y-2 mt-2">
-                        {journeys.slice(0, 5).map((savedJourney) => <button key={savedJourney.id} type="button" onClick={() => { setJourneyName(savedJourney.name); setJourneyCheckpointIds(savedJourney.checkpointIds); setJourneyStarted(savedJourney.started); setJourneyStartDate(savedJourney.startDate); setJourneyEndDate(savedJourney.endDate); }} className="w-full text-left rounded-xl bg-[#f4faf3] hover:bg-[#dcebd2] border border-[#cfe2ce] p-3 text-[#183d32] transition"><p className="text-xs font-bold">{savedJourney.name}</p><p className="text-[10px] text-[#84917e] mt-1">{savedJourney.checkpointIds.length} checkpoint · {savedJourney.startDate || "chưa đặt ngày"}</p></button>)}
+                        {journeys.slice(0, 5).map((savedJourney) => <button key={savedJourney.id} type="button" onClick={() => { setJourneyName(savedJourney.name); setJourneyCheckpointIds(savedJourney.checkpointIds); setJourneyStarted(savedJourney.started); setJourneyStartDate(savedJourney.startDate); setJourneyEndDate(savedJourney.endDate); }} className="w-full text-left rounded-xl bg-[#f1f3e8] hover:bg-[#dcebd2] border border-[#cfe2ce] p-3 text-[#123f3a] transition"><p className="text-xs font-bold">{savedJourney.name}</p><p className="text-[10px] text-[#84917e] mt-1">{savedJourney.checkpointIds.length} checkpoint · {savedJourney.startDate || "chưa đặt ngày"}</p></button>)}
                       </div>
                     </div>
                   )}
@@ -7191,7 +7191,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={clearJourney}
-                    className="py-3 rounded-xl bg-[#f4faf3] hover:bg-[#e7f1e8] border border-[#cfe2ce] text-[#285b43] text-xs font-bold transition"
+                    className="py-3 rounded-xl bg-[#f1f3e8] hover:bg-[#faf9f1] border border-[#cfe2ce] text-[#075b52] text-xs font-bold transition"
                   >
                     🗑️ Xóa hành trình
                   </button>
@@ -7227,10 +7227,10 @@ export default function Home() {
             onClick={() => setCheckpointDetailOpen(false)}
           >
             <div
-              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f4faf3] text-[#183d32] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f1f3e8] text-[#123f3a] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="p-6 bg-gradient-to-b from-[#fff8e8] to-[#fffdf7]">
+              <div className="p-6 bg-gradient-to-b from-[#fffef9] to-[#fffdf7]">
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-[#f4e6cc] flex items-center justify-center text-4xl shrink-0">
                     {selectedCheckpoint.icon ?? "📍"}
@@ -7242,14 +7242,14 @@ export default function Home() {
                         <p className="text-xs text-[#805234] font-semibold uppercase tracking-wider">
                           Checkpoint
                         </p>
-                        <h2 className="text-2xl font-black mt-1 text-[#183d32]">
+                        <h2 className="text-2xl font-black mt-1 text-[#123f3a]">
                           {selectedCheckpoint.name}
                         </h2>
                       </div>
 
                       <button
                         onClick={() => setCheckpointDetailOpen(false)}
-                        className="w-9 h-9 rounded-full bg-[#f4e6cc] hover:bg-[#ead7b5] border border-[#e8d9bd] text-[#70472f] hover:text-[#183d32] transition"
+                        className="w-9 h-9 rounded-full bg-[#f4e6cc] hover:bg-[#ead7b5] border border-[#e8d9bd] text-[#70472f] hover:text-[#123f3a] transition"
                       >
                         ✕
                       </button>
@@ -7271,7 +7271,7 @@ export default function Home() {
                 </div>
 
                 <section className="mt-6">
-                  <h3 className="text-lg font-black text-[#183d32]">Khám phá địa danh</h3>
+                  <h3 className="text-lg font-black text-[#123f3a]">Khám phá địa danh</h3>
                   <p className="text-xs text-[#92765c] mt-1">
                     Lịch sử, cảnh quan và những điều thú vị về địa điểm này.
                   </p>
@@ -7333,7 +7333,7 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-3 mt-6">
                   <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                     <p className="text-[11px] text-[#92765c]">Trạng thái</p>
-                    <p className="text-sm font-bold mt-1 text-[#183d32]">
+                    <p className="text-sm font-bold mt-1 text-[#123f3a]">
                       {isCheckedIn(selectedCheckpoint.id)
                         ? "✓ Đã chinh phục"
                         : "🔒 Chưa chinh phục"}
@@ -7342,7 +7342,7 @@ export default function Home() {
 
                   <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                     <p className="text-[11px] text-[#92765c]">Khoảng cách</p>
-                    <p className="text-sm font-bold mt-1 text-[#183d32]">
+                    <p className="text-sm font-bold mt-1 text-[#123f3a]">
                       {distance !== null
                         ? `${distance}m`
                         : "Chưa xác định"}
@@ -7352,7 +7352,7 @@ export default function Home() {
 
                 <div className="mt-4 rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                   <p className="text-[11px] text-[#92765c]">Huy hiệu nhận được</p>
-                  <p className="text-base font-bold mt-1 text-[#183d32]">
+                  <p className="text-base font-bold mt-1 text-[#123f3a]">
                     {selectedCheckpoint.badge ||
                       `${selectedCheckpoint.icon ?? "🏆"} Huy hiệu ${selectedCheckpoint.name}`}
                   </p>
@@ -7367,7 +7367,7 @@ export default function Home() {
 
                 {/* ================= REVIEWS ================= */}
 
-                <div className="mt-4 rounded-2xl bg-[#e7f1e8] border border-[#cfe2ce] p-4">
+                <div className="mt-4 rounded-2xl bg-[#faf9f1] border border-[#cfe2ce] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] text-[#526b59]">
@@ -7396,7 +7396,7 @@ export default function Home() {
                         void loadCheckpointReviews(selectedCheckpoint.id)
                       }
                       disabled={reviewLoading}
-                      className="px-3 py-2 rounded-xl bg-[#e7f1e8] hover:bg-[#dcebd8] border border-[#cfe2ce] text-xs font-semibold disabled:opacity-50 transition"
+                      className="px-3 py-2 rounded-xl bg-[#faf9f1] hover:bg-[#dcebd8] border border-[#cfe2ce] text-xs font-semibold disabled:opacity-50 transition"
                     >
                       {reviewLoading ? "Đang tải..." : "↻ Làm mới"}
                     </button>
@@ -7434,7 +7434,7 @@ export default function Home() {
                           }
                           placeholder="Chia sẻ trải nghiệm của bạn tại checkpoint..."
                           rows={3}
-                          className="w-full mt-3 rounded-xl bg-[#e7f1e8] border border-[#cfe2ce] px-3 py-3 text-sm outline-none focus:border-[#43875b]/50 resize-none"
+                          className="w-full mt-3 rounded-xl bg-[#faf9f1] border border-[#cfe2ce] px-3 py-3 text-sm outline-none focus:border-[#43875b]/50 resize-none"
                         />
 
                         <div className="flex items-center justify-between gap-3 mt-2">
@@ -7458,7 +7458,7 @@ export default function Home() {
                               type="button"
                               onClick={() => void submitCheckpointReview()}
                               disabled={reviewSubmitting}
-                              className="px-4 py-2.5 rounded-xl bg-[#285b43] hover:bg-[#356e49] text-white text-xs font-bold disabled:opacity-50 transition"
+                              className="px-4 py-2.5 rounded-xl bg-[#075b52] hover:bg-[#356e49] text-white text-xs font-bold disabled:opacity-50 transition"
                             >
                               {reviewSubmitting
                                 ? "Đang lưu..."
@@ -7530,7 +7530,7 @@ export default function Home() {
 
                 {/* ================= WEATHER ================= */}
 
-                <div className="mt-4 rounded-2xl bg-[#fff8e8] border border-[#e8d9bd] p-4 text-[#6b422d]">
+                <div className="mt-4 rounded-2xl bg-[#fffef9] border border-[#e8d9bd] p-4 text-[#6b422d]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-[11px] text-[#8b6b53]">THỜI TIẾT TẠI CHECKPOINT</p>
@@ -7607,7 +7607,7 @@ export default function Home() {
 
                 {/* ================= BOOKING ================= */}
 
-                <div className="mt-4 rounded-2xl bg-[#e7f1e8] border border-[#cfe2ce] p-4">
+                <div className="mt-4 rounded-2xl bg-[#faf9f1] border border-[#cfe2ce] p-4">
                   <div>
                     <p className="text-[11px] text-[#526b59]">DỊCH VỤ QUANH CHECKPOINT</p>
                     <p className="text-sm font-bold mt-1">🏨 Đặt dịch vụ & trải nghiệm</p>
@@ -7623,7 +7623,7 @@ export default function Home() {
                         className="rounded-xl bg-black/10 border border-[#dce8d8] p-3"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#e7f1e8] flex items-center justify-center text-xl shrink-0">
+                          <div className="w-10 h-10 rounded-xl bg-[#faf9f1] flex items-center justify-center text-xl shrink-0">
                             {option.icon}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -7637,7 +7637,7 @@ export default function Home() {
                                   href={link.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#e7f1e8] hover:bg-[#dcebd8] border border-[#cfe2ce] text-xs font-semibold transition"
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#faf9f1] hover:bg-[#dcebd8] border border-[#cfe2ce] text-xs font-semibold transition"
                                 >
                                   {link.label}
                                   <span className="text-[#526b59]">↗</span>
@@ -7658,7 +7658,7 @@ export default function Home() {
                       updateLocation();
                     }}
                     disabled={locationLoading}
-                    className="flex-1 py-3 rounded-xl bg-[#e7f1e8] hover:bg-[#dcebd8] border border-[#cfe2ce] font-semibold transition disabled:opacity-50"
+                    className="flex-1 py-3 rounded-xl bg-[#faf9f1] hover:bg-[#dcebd8] border border-[#cfe2ce] font-semibold transition disabled:opacity-50"
                   >
                     {locationLoading ? "📡 Đang lấy vị trí..." : "📍 Kiểm tra GPS"}
                   </button>
@@ -7672,7 +7672,7 @@ export default function Home() {
                       checkingIn ||
                       isCheckedIn(selectedCheckpoint.id)
                     }
-                    className="flex-1 py-3 rounded-xl bg-[#285b43] hover:bg-[#356e49] disabled:bg-[#dcebd8] disabled:text-[#71816e] text-white font-bold transition"
+                    className="flex-1 py-3 rounded-xl bg-[#075b52] hover:bg-[#356e49] disabled:bg-[#dcebd8] disabled:text-[#71816e] text-white font-bold transition"
                   >
                     {isCheckedIn(selectedCheckpoint.id)
                       ? "✓ Đã check-in"
@@ -8184,7 +8184,7 @@ export default function Home() {
                   const redeemed = Boolean(redeemedRewards[reward.id]);
                   const canRedeem = availableRewardXP >= reward.cost && !redeemed;
                   return (
-                    <div key={reward.id} className="flex flex-col rounded-2xl border border-[#eadbc2] bg-[#fff8e8] p-4">
+                    <div key={reward.id} className="flex flex-col rounded-2xl border border-[#eadbc2] bg-[#fffef9] p-4">
                       <div className="flex items-start justify-between gap-2">
                         <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f4e6cc] text-2xl">{reward.icon}</span>
                         <span className="rounded-full bg-[#f8edd9] px-2 py-1 text-[10px] font-bold text-[#70472f]">{reward.cost} XP</span>
@@ -8629,7 +8629,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => setActiveTab("home")}
-              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "home" ? "bg-[#f7f4e8] text-[#245b43] shadow-lg" : "text-white/45 hover:text-white"}`}
+              className={`flex min-w-0 flex-1 flex-col items-center gap-1 rounded-[1.25rem] px-2 py-2 transition ${activeTab === "home" ? "bg-[#faf9f1] text-[#245b43] shadow-lg" : "text-white/45 hover:text-white"}`}
             >
               <span className="text-xl">⌂</span>
               <span className="text-[11px] font-semibold">Trang chủ</span>
@@ -9615,31 +9615,31 @@ export default function Home() {
 
       {routePlannerOpen && (
         <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl bg-[#e7f1e8] text-[#183d32] border border-[#b8d5a5] p-5 shadow-2xl">
-            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">TRAVELQUEST · ROUTE PLANNER</p><h3 className="text-xl font-black mt-1 text-[#183d32]">🗺️ Lập tuyến</h3></div><button onClick={() => setRoutePlannerOpen(false)}>✕</button></div>
+          <div className="w-full max-w-md max-h-[88dvh] overflow-y-auto rounded-3xl bg-[#faf9f1] text-[#123f3a] border border-[#b8d5a5] p-5 shadow-2xl">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">TRAVELQUEST · ROUTE PLANNER</p><h3 className="text-xl font-black mt-1 text-[#123f3a]">🗺️ Lập tuyến</h3></div><button onClick={() => setRoutePlannerOpen(false)}>✕</button></div>
             <p className="text-xs leading-5 text-[#42634e] mt-3">Chọn thứ tự ghé các checkpoint. Khi bắt đầu, TravelQuest lấy GPS hiện tại, chọn điểm gần nhất trước và lần lượt dẫn đường đến từng điểm.</p>
-            <div className="space-y-2 mt-4">{journeyCheckpoints.map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl bg-[#f4faf3] border border-[#cfe2ce] p-3"><span className="w-7 h-7 shrink-0 rounded-full bg-[#d5e8d6] text-[#285b43] flex items-center justify-center text-xs font-bold">{index + 1}</span><span className="min-w-0 flex-1 text-sm font-semibold text-[#183d32]">{checkpoint.icon ?? "📍"} {checkpoint.name}</span><button type="button" disabled={index === 0} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm text-[#285b43] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " lên trước"}>↑</button><button type="button" disabled={index === journeyCheckpoints.length - 1} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm font-bold text-[#285b43] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " xuống sau"}>↓</button><button type="button" onClick={() => setJourneyCheckpointIds((ids) => ids.filter((id) => id !== checkpoint.id))} className="rounded-lg px-2 py-1 text-sm text-[#a33b3b] hover:bg-[#fbe5e1]" aria-label={"Xóa " + checkpoint.name + " khỏi tuyến"}>×</button></div>)}</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4"><button type="button" disabled={journeyCheckpoints.length < 1} onClick={startGpsNavigation} className="rounded-xl bg-emerald-500 py-3 px-3 text-sm font-bold text-[#06251a] hover:bg-emerald-400 disabled:opacity-40">📍 Bắt đầu dẫn đường GPS</button><button type="button" disabled={journeyCheckpoints.length < 2} onClick={() => { setShowPlannedRoute(true); setRoutePlannerOpen(false); setActiveTab("map"); setMessage("🗺️ Đang hiển thị tuyến đường trong TravelQuest."); }} className="rounded-xl border border-[#b8d5a5] bg-[#f4faf3] py-3 px-3 text-sm font-bold text-[#285b43] hover:bg-[#dcebd2] disabled:opacity-40">🗺️ Xem tuyến trước</button></div><button type="button" onClick={() => { setRoutePlannerOpen(false); setJourneyOpen(true); }} className="w-full mt-2 rounded-xl border border-[#cfe2ce] bg-[#dcebd2] py-3 px-3 text-sm font-bold text-[#285b43] hover:bg-[#cfe2ce]">＋ Thêm điểm đến</button>
+            <div className="space-y-2 mt-4">{journeyCheckpoints.map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl bg-[#f1f3e8] border border-[#cfe2ce] p-3"><span className="w-7 h-7 shrink-0 rounded-full bg-[#d5e8d6] text-[#075b52] flex items-center justify-center text-xs font-bold">{index + 1}</span><span className="min-w-0 flex-1 text-sm font-semibold text-[#123f3a]">{checkpoint.icon ?? "📍"} {checkpoint.name}</span><button type="button" disabled={index === 0} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " lên trước"}>↑</button><button type="button" disabled={index === journeyCheckpoints.length - 1} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm font-bold text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " xuống sau"}>↓</button><button type="button" onClick={() => setJourneyCheckpointIds((ids) => ids.filter((id) => id !== checkpoint.id))} className="rounded-lg px-2 py-1 text-sm text-[#a33b3b] hover:bg-[#fbe5e1]" aria-label={"Xóa " + checkpoint.name + " khỏi tuyến"}>×</button></div>)}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4"><button type="button" disabled={journeyCheckpoints.length < 1} onClick={startGpsNavigation} className="rounded-xl bg-emerald-500 py-3 px-3 text-sm font-bold text-[#06251a] hover:bg-emerald-400 disabled:opacity-40">📍 Bắt đầu dẫn đường GPS</button><button type="button" disabled={journeyCheckpoints.length < 2} onClick={() => { setShowPlannedRoute(true); setRoutePlannerOpen(false); setActiveTab("map"); setMessage("🗺️ Đang hiển thị tuyến đường trong TravelQuest."); }} className="rounded-xl border border-[#b8d5a5] bg-[#f1f3e8] py-3 px-3 text-sm font-bold text-[#075b52] hover:bg-[#dcebd2] disabled:opacity-40">🗺️ Xem tuyến trước</button></div><button type="button" onClick={() => { setRoutePlannerOpen(false); setJourneyOpen(true); }} className="w-full mt-2 rounded-xl border border-[#cfe2ce] bg-[#dcebd2] py-3 px-3 text-sm font-bold text-[#075b52] hover:bg-[#cfe2ce]">＋ Thêm điểm đến</button>
             {journeyCheckpoints.length < 2 && <p className="text-xs text-[#8a5a12] mt-3">Chọn ít nhất 2 checkpoint để xem trước tuyến đường. Có thể bắt đầu GPS với 1 checkpoint.</p>}
             {journeyCheckpoints.length > 25 && <p className="text-xs text-[#8a5a12] mt-3">Bản đồ hiển thị tối đa 25 điểm mỗi tuyến.</p>}
-            {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="block text-center mt-3 rounded-xl border border-[#cfe2ce] py-2 text-xs font-semibold text-[#285b43] hover:bg-[#dcebd2]">Mở thêm bằng Google Maps ↗</a>}
+            {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="block text-center mt-3 rounded-xl border border-[#cfe2ce] py-2 text-xs font-semibold text-[#075b52] hover:bg-[#dcebd2]">Mở thêm bằng Google Maps ↗</a>}
           </div>
         </div>
       )}
 
       {smartTravelOpen && (
         <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl bg-[#e7f1e8] text-[#183d32] border border-[#b8d5a5] p-5 shadow-2xl">
-            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">SMART TRAVEL</p><h3 className="text-xl font-black mt-1 text-[#183d32]">✨ Trợ lý TravelQuest</h3></div><button onClick={() => setSmartTravelOpen(false)}>✕</button></div>
+          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-3xl bg-[#faf9f1] text-[#123f3a] border border-[#b8d5a5] p-5 shadow-2xl">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-[#43875b] font-bold">SMART TRAVEL</p><h3 className="text-xl font-black mt-1 text-[#123f3a]">✨ Trợ lý TravelQuest</h3></div><button onClick={() => setSmartTravelOpen(false)}>✕</button></div>
             <div className="grid grid-cols-2 gap-2 mt-4">
-              <div className="rounded-2xl bg-[#f4faf3] border border-[#cfe2ce] p-3"><p className="text-xs text-[#526b59]">Checkpoint tiếp theo</p><p className="text-sm font-bold mt-1">{checkpoints.find((checkpoint) => !isCheckedIn(checkpoint.id))?.name ?? "Đã hoàn thành"}</p></div>
-              <div className="rounded-2xl bg-[#f4faf3] border border-[#cfe2ce] p-3"><p className="text-xs text-[#526b59]">Tiến độ</p><p className="text-sm font-bold mt-1">{progress}% · Level {currentLevel}</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-3"><p className="text-xs text-[#526b59]">Checkpoint tiếp theo</p><p className="text-sm font-bold mt-1">{checkpoints.find((checkpoint) => !isCheckedIn(checkpoint.id))?.name ?? "Đã hoàn thành"}</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-3"><p className="text-xs text-[#526b59]">Tiến độ</p><p className="text-sm font-bold mt-1">{progress}% · Level {currentLevel}</p></div>
             </div>
-            <div className="rounded-2xl bg-[#f4faf3] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Gợi ý lịch trình</p><div className="mt-2 space-y-2">{checkpoints.filter((checkpoint) => !isCheckedIn(checkpoint.id)).slice(0, 4).map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 text-sm"><span className="w-7 h-7 rounded-full bg-[#dcebd8] flex items-center justify-center text-xs">{index + 1}</span><span>{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div></div>
-            <div className="rounded-2xl bg-[#f4faf3] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">🏆 Huy hiệu còn thiếu</p><p className="text-sm mt-1">{missingAchievements.length ? missingAchievements.map((item) => item.name).slice(0, 3).join(" · ") : "Bạn đã mở hết huy hiệu cơ bản."}</p></div>
-            <div className="rounded-2xl bg-[#f4faf3] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#183d32] px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-[#285b43] text-white px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-[#285b43] mt-3">{assistantReply}</p>}</div>
-            <div className="rounded-2xl bg-[#f4faf3] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Journey Summary</p><p className="text-sm font-bold mt-1">{journeyName} · {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint · {journeyProgress}%</p><p className="text-[10px] text-[#71816e] mt-1">{journeyStartDate || "Chưa có ngày bắt đầu"} → {journeyEndDate || "Chưa có ngày kết thúc"}</p></div>
-            <div className="rounded-2xl bg-[#f4faf3] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Travel services</p><div className="grid grid-cols-2 gap-2 mt-2">{bookingOptions.map((option) => <div key={option.title} className="rounded-xl bg-[#e7f1e8] border border-[#cfe2ce] p-3"><p className="text-sm font-bold">{option.icon} {option.title}</p><div className="flex flex-wrap gap-2 mt-2">{option.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="text-[10px] text-[#43875b] hover:text-[#285b43]">{link.label}</a>)}</div></div>)}</div></div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Gợi ý lịch trình</p><div className="mt-2 space-y-2">{checkpoints.filter((checkpoint) => !isCheckedIn(checkpoint.id)).slice(0, 4).map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 text-sm"><span className="w-7 h-7 rounded-full bg-[#dcebd8] flex items-center justify-center text-xs">{index + 1}</span><span>{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div></div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">🏆 Huy hiệu còn thiếu</p><p className="text-sm mt-1">{missingAchievements.length ? missingAchievements.map((item) => item.name).slice(0, 3).join(" · ") : "Bạn đã mở hết huy hiệu cơ bản."}</p></div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#123f3a] px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-[#075b52] text-white px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-[#075b52] mt-3">{assistantReply}</p>}</div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Journey Summary</p><p className="text-sm font-bold mt-1">{journeyName} · {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint · {journeyProgress}%</p><p className="text-[10px] text-[#71816e] mt-1">{journeyStartDate || "Chưa có ngày bắt đầu"} → {journeyEndDate || "Chưa có ngày kết thúc"}</p></div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Travel services</p><div className="grid grid-cols-2 gap-2 mt-2">{bookingOptions.map((option) => <div key={option.title} className="rounded-xl bg-[#faf9f1] border border-[#cfe2ce] p-3"><p className="text-sm font-bold">{option.icon} {option.title}</p><div className="flex flex-wrap gap-2 mt-2">{option.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="text-[10px] text-[#43875b] hover:text-[#075b52]">{link.label}</a>)}</div></div>)}</div></div>
           </div>
         </div>
       )}
