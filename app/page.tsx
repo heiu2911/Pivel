@@ -581,6 +581,7 @@ export default function Home() {
   const [routeShareMessage, setRouteShareMessage] = useState("");
   const [showPlannedRoute, setShowPlannedRoute] = useState(false);
   const [navigationActive, setNavigationActive] = useState(false);
+  const [showNearbyPanel, setShowNearbyPanel] = useState(false);
 
   // ============================================
   // CHECKPOINT DETAIL
@@ -6536,10 +6537,15 @@ export default function Home() {
                 </button>
 
                 {headerMenuOpen && (
-                  <div className="absolute right-0 top-12 z-[90] w-48 rounded-2xl border border-[#e4e9dd] bg-[#fffdf6]/98 p-2 shadow-2xl backdrop-blur-xl">
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-[#f1f4eb]">📍 Cập nhật GPS</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-[#f1f4eb]">✨ Smart Travel</button>
-                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32]/75 transition hover:bg-[#f1f4eb]">💬 Traveller Chat</button>
+                  <div className="absolute right-0 top-12 z-[90] max-h-[min(72dvh,520px)] w-60 overflow-y-auto rounded-2xl border border-[#cfe2ce] bg-[#f4faf3]/98 p-2 text-[#183d32] shadow-2xl backdrop-blur-xl">
+                    <p className="px-3 pb-1 pt-2 text-[10px] font-black uppercase tracking-[0.16em] text-[#43875b]">Công cụ TravelQuest</p>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setJourneyOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">🧭 Chọn checkpoint / hành trình</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setRoutePlannerOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">🗺️ Lập tuyến & bắt đầu GPS</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setShowNearbyPanel((value) => !value); if (!showNearbyPanel) { updateLocation(); startWatchingGPS(); } }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">{showNearbyPanel ? "✕ Ẩn địa điểm quanh đây" : "🍜 Ăn uống, nghỉ ngơi, tiện ích"}</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); updateLocation(); startWatchingGPS(); setMessage("📍 Đang cập nhật vị trí GPS…"); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">📍 Cập nhật GPS</button>
+                    <div className="my-1 border-t border-[#dce8d8]" />
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setSmartTravelOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">✨ Smart Travel</button>
+                    <button type="button" onClick={() => { setHeaderMenuOpen(false); setChatOpen(true); }} className="w-full rounded-xl px-3 py-2.5 text-left text-xs font-bold text-[#183d32] transition hover:bg-[#e7f1e8]">💬 Traveller Chat</button>
                   </div>
                 )}
               </div>
@@ -6591,7 +6597,8 @@ export default function Home() {
                 }
                 plannedRoute={journeyCheckpoints}
                 navigationActive={navigationActive}
-                onNavigationStop={() => setNavigationActive(false)}
+                onNavigationStop={() => { setNavigationActive(false); setJourneyStarted(false); setMessage("Đã dừng dẫn đường GPS."); }}
+                showNearbyPanel={showNearbyPanel}
                 avatarUrl={
                   avatarImageUrl
                 }
