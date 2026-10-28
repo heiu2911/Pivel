@@ -2205,6 +2205,7 @@ export default function Map({
     useRef<mapboxgl.Map | null>(null);
 
   const [mapReady, setMapReady] = useState(false);
+  const plannedRouteKey = plannedRoute.map((stop) => stop.id).join(",");
   const [mapError, setMapError] = useState<string | null>(null);
 
   const userMarker =
@@ -2405,7 +2406,7 @@ export default function Map({
       cancelled = true;
       removePlannedRoute();
     };
-  }, [mapReady, plannedRoute, checkpoints, navigationActive]);
+  }, [mapReady, plannedRouteKey, navigationActive]);
 
   // ========================================
   // DẪN ĐƯỜNG GPS TRỰC TIẾP CHO HÀNH TRÌNH
@@ -2552,6 +2553,21 @@ export default function Map({
     watchId = navigator.geolocation.watchPosition((position) => {
       const location: UserLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
       if (!isValidCoordinate(location.latitude, location.longitude)) return;
+      const target = stops[0];
+      if (target) {
+        const targetDistance = calculateDistance(location.latitude, location.longitude, target.latitude, target.longitude);
+        if (targetDistance !== null && targetDistance <= 60) {
+          stops.shift();
+          if (stops.length === 0) {
+            paintBanner("🏁 Đã đến điểm cuối của hành trình!");
+            stopWatch();
+            window.setTimeout(() => onNavigationStop?.(), 1800);
+            return;
+          }
+          latestInstruction = "Đã đến điểm. Tiếp tục đến " + stops[0].name;
+          lastRerouteLocation = null;
+        }
+      }
       const moved = lastRerouteLocation ? calculateDistance(lastRerouteLocation.latitude, lastRerouteLocation.longitude, location.latitude, location.longitude) ?? 0 : Infinity;
       const now = Date.now();
       if (!lastRerouteLocation || (moved >= 75 && now - lastRerouteAt >= 12000)) {
@@ -2570,7 +2586,7 @@ export default function Map({
       banner?.remove();
       removeRoute();
     };
-  }, [navigationActive, mapReady, plannedRoute, onNavigationStop]);
+  }, [navigationActive, mapReady, plannedRouteKey]);
 
   // ========================================
   // GOM CHECKPOINT THEO THÀNH PHỐ
