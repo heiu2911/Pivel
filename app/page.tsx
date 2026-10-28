@@ -7167,7 +7167,7 @@ export default function Home() {
             onClick={() => setCheckpointDetailOpen(false)}
           >
             <div
-              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#fff8e8] text-[#5c3b2b] border border-[#e8d9bd] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f4faf3] text-[#183d32] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="p-6 bg-gradient-to-b from-[#fff8e8] to-[#fffdf7]">
@@ -7182,14 +7182,14 @@ export default function Home() {
                         <p className="text-xs text-[#805234] font-semibold uppercase tracking-wider">
                           Checkpoint
                         </p>
-                        <h2 className="text-2xl font-black mt-1 text-[#5c3b2b]">
+                        <h2 className="text-2xl font-black mt-1 text-[#183d32]">
                           {selectedCheckpoint.name}
                         </h2>
                       </div>
 
                       <button
                         onClick={() => setCheckpointDetailOpen(false)}
-                        className="w-9 h-9 rounded-full bg-[#f4e6cc] hover:bg-[#ead7b5] border border-[#e8d9bd] text-[#70472f] hover:text-[#5c3b2b] transition"
+                        className="w-9 h-9 rounded-full bg-[#f4e6cc] hover:bg-[#ead7b5] border border-[#e8d9bd] text-[#70472f] hover:text-[#183d32] transition"
                       >
                         ✕
                       </button>
@@ -7211,7 +7211,7 @@ export default function Home() {
                 </div>
 
                 <section className="mt-6">
-                  <h3 className="text-lg font-black text-[#5c3b2b]">Khám phá địa danh</h3>
+                  <h3 className="text-lg font-black text-[#183d32]">Khám phá địa danh</h3>
                   <p className="text-xs text-[#92765c] mt-1">
                     Lịch sử, cảnh quan và những điều thú vị về địa điểm này.
                   </p>
@@ -7273,7 +7273,7 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-3 mt-6">
                   <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                     <p className="text-[11px] text-[#92765c]">Trạng thái</p>
-                    <p className="text-sm font-bold mt-1 text-[#5c3b2b]">
+                    <p className="text-sm font-bold mt-1 text-[#183d32]">
                       {isCheckedIn(selectedCheckpoint.id)
                         ? "✓ Đã chinh phục"
                         : "🔒 Chưa chinh phục"}
@@ -7282,7 +7282,7 @@ export default function Home() {
 
                   <div className="rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                     <p className="text-[11px] text-[#92765c]">Khoảng cách</p>
-                    <p className="text-sm font-bold mt-1 text-[#5c3b2b]">
+                    <p className="text-sm font-bold mt-1 text-[#183d32]">
                       {distance !== null
                         ? `${distance}m`
                         : "Chưa xác định"}
@@ -7292,7 +7292,7 @@ export default function Home() {
 
                 <div className="mt-4 rounded-2xl bg-[#f8edd9] border border-[#eadbc2] p-4">
                   <p className="text-[11px] text-[#92765c]">Huy hiệu nhận được</p>
-                  <p className="text-base font-bold mt-1 text-[#5c3b2b]">
+                  <p className="text-base font-bold mt-1 text-[#183d32]">
                     {selectedCheckpoint.badge ||
                       `${selectedCheckpoint.icon ?? "🏆"} Huy hiệu ${selectedCheckpoint.name}`}
                   </p>
@@ -7307,10 +7307,10 @@ export default function Home() {
 
                 {/* ================= REVIEWS ================= */}
 
-                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+                <div className="mt-4 rounded-2xl bg-[#e7f1e8] border border-[#cfe2ce] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-[11px] text-white/40">
+                      <p className="text-[11px] text-[#526b59]">
                         ĐÁNH GIÁ CHECKPOINT
                       </p>
                       <div className="flex items-center gap-2 mt-1">
@@ -7319,11 +7319,11 @@ export default function Home() {
                         </span>
                         <span className="text-yellow-300">
                           {"★".repeat(Math.round(reviewAverage || 0))}
-                          <span className="text-white/20">
+                          <span className="text-[#71816e]">
                             {"★".repeat(Math.max(0, 5 - Math.round(reviewAverage || 0)))}
                           </span>
                         </span>
-                        <span className="text-xs text-white/40">
+                        <span className="text-xs text-[#526b59]">
                           {checkpointReviews.length} đánh giá
                         </span>
                       </div>
@@ -7336,14 +7336,14 @@ export default function Home() {
                         void loadCheckpointReviews(selectedCheckpoint.id)
                       }
                       disabled={reviewLoading}
-                      className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold disabled:opacity-50 transition"
+                      className="px-3 py-2 rounded-xl bg-[#e7f1e8] hover:bg-[#dcebd8] border border-[#cfe2ce] text-xs font-semibold disabled:opacity-50 transition"
                     >
                       {reviewLoading ? "Đang tải..." : "↻ Làm mới"}
                     </button>
                   </div>
 
-                  <div className="mt-4 rounded-xl bg-black/10 border border-white/5 p-4">
-                    <p className="text-xs text-white/50 font-semibold">
+                  <div className="mt-4 rounded-xl bg-black/10 border border-[#dce8d8] p-4">
+                    <p className="text-xs text-[#526b59] font-semibold">
                       {user ? "Đánh giá của bạn" : "Đăng nhập để đánh giá"}
                     </p>
 
@@ -7359,7 +7359,7 @@ export default function Home() {
                               className={`text-3xl transition ${
                                 star <= reviewRating
                                   ? "text-yellow-300"
-                                  : "text-white/15 hover:text-white/30"
+                                  : "text-[#71816e] hover:text-[#71816e]"
                               }`}
                             >
                               ★
@@ -7374,11 +7374,11 @@ export default function Home() {
                           }
                           placeholder="Chia sẻ trải nghiệm của bạn tại checkpoint..."
                           rows={3}
-                          className="w-full mt-3 rounded-xl bg-white/5 border border-white/10 px-3 py-3 text-sm outline-none focus:border-blue-400/50 resize-none"
+                          className="w-full mt-3 rounded-xl bg-[#e7f1e8] border border-[#cfe2ce] px-3 py-3 text-sm outline-none focus:border-[#43875b]/50 resize-none"
                         />
 
                         <div className="flex items-center justify-between gap-3 mt-2">
-                          <span className="text-[10px] text-white/30">
+                          <span className="text-[10px] text-[#71816e]">
                             {reviewText.length}/500
                           </span>
 
@@ -7398,7 +7398,7 @@ export default function Home() {
                               type="button"
                               onClick={() => void submitCheckpointReview()}
                               disabled={reviewSubmitting}
-                              className="px-4 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold disabled:opacity-50 transition"
+                              className="px-4 py-2.5 rounded-xl bg-[#285b43] hover:bg-[#356e49] text-white text-xs font-bold disabled:opacity-50 transition"
                             >
                               {reviewSubmitting
                                 ? "Đang lưu..."
@@ -7410,13 +7410,13 @@ export default function Home() {
                         </div>
                       </>
                     ) : (
-                      <p className="text-xs text-white/40 mt-2">
+                      <p className="text-xs text-[#526b59] mt-2">
                         Hãy đăng nhập để chấm sao và viết đánh giá.
                       </p>
                     )}
 
                     {reviewMessage && (
-                      <p className="text-xs text-white/60 mt-3">{reviewMessage}</p>
+                      <p className="text-xs text-[#42634e] mt-3">{reviewMessage}</p>
                     )}
                   </div>
 
@@ -7425,7 +7425,7 @@ export default function Home() {
                       {checkpointReviews.slice(0, 5).map((item) => (
                         <div
                           key={item.id}
-                          className="rounded-xl bg-black/10 border border-white/5 p-3"
+                          className="rounded-xl bg-black/10 border border-[#dce8d8] p-3"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -7434,24 +7434,24 @@ export default function Home() {
                               </p>
                               <p className="text-yellow-300 text-sm mt-1">
                                 {"★".repeat(item.rating)}
-                                <span className="text-white/15">
+                                <span className="text-[#71816e]">
                                   {"★".repeat(5 - item.rating)}
                                 </span>
                               </p>
                             </div>
                             <div className="text-right shrink-0">
-                              <span className="text-[10px] text-white/25 block">
+                              <span className="text-[10px] text-[#71816e] block">
                                 {new Date(item.created_at).toLocaleDateString("vi-VN")}
                               </span>
                               {item.updated_at !== item.created_at && (
-                                <span className="text-[9px] text-white/20 block mt-0.5">
+                                <span className="text-[9px] text-[#71816e] block mt-0.5">
                                   Đã cập nhật
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          <p className="text-xs text-white/60 mt-2 leading-relaxed">
+                          <p className="text-xs text-[#42634e] mt-2 leading-relaxed">
                             {item.review}
                           </p>
                         </div>
@@ -7462,7 +7462,7 @@ export default function Home() {
                   {!reviewLoading &&
                     checkpointReviews.length === 0 &&
                     !reviewMessage && (
-                      <p className="text-xs text-white/30 mt-4 text-center">
+                      <p className="text-xs text-[#71816e] mt-4 text-center">
                         Chưa có đánh giá. Hãy là người đầu tiên!
                       </p>
                     )}
@@ -7497,19 +7497,19 @@ export default function Home() {
                     <>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
                         <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
-                          <p className="text-[10px] text-white/40">Nhiệt độ</p>
+                          <p className="text-[10px] text-[#526b59]">Nhiệt độ</p>
                           <p className="text-lg font-black mt-1">{Math.round(weather.current.temperature)}°C</p>
                         </div>
                         <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
-                          <p className="text-[10px] text-white/40">Cảm nhận</p>
+                          <p className="text-[10px] text-[#526b59]">Cảm nhận</p>
                           <p className="text-lg font-black mt-1">{Math.round(weather.current.apparentTemperature)}°C</p>
                         </div>
                         <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
-                          <p className="text-[10px] text-white/40">Độ ẩm</p>
+                          <p className="text-[10px] text-[#526b59]">Độ ẩm</p>
                           <p className="text-lg font-black mt-1">{weather.current.humidity}%</p>
                         </div>
                         <div className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-3">
-                          <p className="text-[10px] text-white/40">Gió</p>
+                          <p className="text-[10px] text-[#526b59]">Gió</p>
                           <p className="text-lg font-black mt-1">{Math.round(weather.current.windSpeed)} km/h</p>
                         </div>
                       </div>
@@ -7527,10 +7527,10 @@ export default function Home() {
                           const description = weatherDescription(day.weatherCode);
                           return (
                             <div key={day.date} className="rounded-xl bg-[#f8edd9] border border-[#eadbc2] p-2 text-center">
-                              <p className="text-[10px] text-white/40">{formatWeatherDate(day.date)}</p>
+                              <p className="text-[10px] text-[#526b59]">{formatWeatherDate(day.date)}</p>
                               <div className="text-xl my-2">{description.icon}</div>
                               <p className="text-xs font-bold">{Math.round(day.temperatureMax)}°</p>
-                              <p className="text-[10px] text-white/40">{Math.round(day.temperatureMin)}°</p>
+                              <p className="text-[10px] text-[#526b59]">{Math.round(day.temperatureMin)}°</p>
                             </div>
                           );
                         })}
@@ -7547,11 +7547,11 @@ export default function Home() {
 
                 {/* ================= BOOKING ================= */}
 
-                <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+                <div className="mt-4 rounded-2xl bg-[#e7f1e8] border border-[#cfe2ce] p-4">
                   <div>
-                    <p className="text-[11px] text-white/40">DỊCH VỤ QUANH CHECKPOINT</p>
+                    <p className="text-[11px] text-[#526b59]">DỊCH VỤ QUANH CHECKPOINT</p>
                     <p className="text-sm font-bold mt-1">🏨 Đặt dịch vụ & trải nghiệm</p>
-                    <p className="text-xs text-white/40 mt-1">
+                    <p className="text-xs text-[#526b59] mt-1">
                       Mở nền tảng bên ngoài để xem lựa chọn và thực hiện đặt dịch vụ. TravelQuest không xử lý thanh toán trong MVP.
                     </p>
                   </div>
@@ -7560,15 +7560,15 @@ export default function Home() {
                     {bookingOptions.map((option) => (
                       <div
                         key={option.title}
-                        className="rounded-xl bg-black/10 border border-white/5 p-3"
+                        className="rounded-xl bg-black/10 border border-[#dce8d8] p-3"
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-xl shrink-0">
+                          <div className="w-10 h-10 rounded-xl bg-[#e7f1e8] flex items-center justify-center text-xl shrink-0">
                             {option.icon}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="font-bold text-sm">{option.title}</p>
-                            <p className="text-xs text-white/40 mt-1">{option.description}</p>
+                            <p className="text-xs text-[#526b59] mt-1">{option.description}</p>
 
                             <div className="flex flex-wrap gap-2 mt-3">
                               {option.links.map((link) => (
@@ -7577,10 +7577,10 @@ export default function Home() {
                                   href={link.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold transition"
+                                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#e7f1e8] hover:bg-[#dcebd8] border border-[#cfe2ce] text-xs font-semibold transition"
                                 >
                                   {link.label}
-                                  <span className="text-white/40">↗</span>
+                                  <span className="text-[#526b59]">↗</span>
                                 </a>
                               ))}
                             </div>
@@ -7598,7 +7598,7 @@ export default function Home() {
                       updateLocation();
                     }}
                     disabled={locationLoading}
-                    className="flex-1 py-3 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 font-semibold transition disabled:opacity-50"
+                    className="flex-1 py-3 rounded-xl bg-white/10 hover:bg-[#dcebd8] border border-[#cfe2ce] font-semibold transition disabled:opacity-50"
                   >
                     {locationLoading ? "📡 Đang lấy vị trí..." : "📍 Kiểm tra GPS"}
                   </button>
@@ -7612,7 +7612,7 @@ export default function Home() {
                       checkingIn ||
                       isCheckedIn(selectedCheckpoint.id)
                     }
-                    className="flex-1 py-3 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:bg-emerald-500/20 disabled:text-emerald-300 text-white font-bold transition"
+                    className="flex-1 py-3 rounded-xl bg-[#285b43] hover:bg-[#356e49] disabled:bg-[#dcebd8] disabled:text-[#71816e] text-white font-bold transition"
                   >
                     {isCheckedIn(selectedCheckpoint.id)
                       ? "✓ Đã check-in"
