@@ -576,6 +576,7 @@ export default function Home() {
   const [journeyStartDate, setJourneyStartDate] = useState("");
   const [journeyEndDate, setJourneyEndDate] = useState("");
   const [routeShareMessage, setRouteShareMessage] = useState("");
+  const [showPlannedRoute, setShowPlannedRoute] = useState(false);
 
   // ============================================
   // CHECKPOINT DETAIL
@@ -4047,9 +4048,9 @@ export default function Home() {
     );
   };
 
-  const journeyCheckpoints = checkpoints.filter((checkpoint) =>
-    journeyCheckpointIds.includes(checkpoint.id)
-  );
+  const journeyCheckpoints = journeyCheckpointIds
+    .map((checkpointId) => checkpoints.find((checkpoint) => checkpoint.id === checkpointId))
+    .filter((checkpoint): checkpoint is Checkpoint => Boolean(checkpoint));
 
   const mapSearchResults = checkpoints
     .filter((checkpoint) => {
@@ -6486,6 +6487,7 @@ export default function Home() {
                 checkpoints={
                   checkpoints
                 }
+                plannedRoute={showPlannedRoute ? journeyCheckpoints : []}
                 avatarUrl={
                   avatarImageUrl
                 }
@@ -9394,9 +9396,12 @@ export default function Home() {
         <div className="fixed inset-0 z-[250] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-3xl bg-[#07182a] border border-white/10 p-5">
             <div className="flex items-center justify-between"><div><p className="text-xs text-emerald-300 font-bold">ROUTE PLANNER</p><h3 className="text-xl font-black mt-1">🗺️ Lập tuyến</h3></div><button onClick={() => setRoutePlannerOpen(false)}>✕</button></div>
-            <p className="text-xs text-white/45 mt-3">{journeyCheckpointIds.length} checkpoint trong tuyến. Kéo thứ tự bằng cách bỏ/chọn lại checkpoint trong Journey.</p>
-            <div className="space-y-2 mt-4">{journeyCheckpoints.map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 rounded-xl bg-white/5 border border-white/5 p-3"><span className="w-7 h-7 rounded-full bg-blue-500/15 flex items-center justify-center text-xs">{index + 1}</span><span className="text-sm font-semibold">{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div>
-            {buildRouteUrl() ? <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="block text-center mt-4 rounded-xl bg-blue-500 py-3 font-bold text-sm">🚗 Mở tuyến trên Google Maps</a> : <p className="text-xs text-yellow-300 mt-4">Chọn ít nhất 2 checkpoint để tạo tuyến.</p>}
+            <p className="text-xs text-white/65 mt-3">Sắp xếp thứ tự ghé từng điểm. Tuyến đường lái xe sẽ hiển thị trực tiếp trên bản đồ TravelQuest.</p>
+            <div className="space-y-2 mt-4">{journeyCheckpoints.map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-2 rounded-xl bg-[#12372d] border border-emerald-900/70 p-3"><span className="w-7 h-7 shrink-0 rounded-full bg-emerald-400/15 text-emerald-200 flex items-center justify-center text-xs font-bold">{index + 1}</span><span className="min-w-0 flex-1 text-sm font-semibold text-white">{checkpoint.icon ?? "📍"} {checkpoint.name}</span><button type="button" disabled={index === 0} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index - 1], next[index]] = [next[index], next[index - 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm text-emerald-100 hover:bg-white/10 disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " lên trước"}>↑</button><button type="button" disabled={index === journeyCheckpoints.length - 1} onClick={() => setJourneyCheckpointIds((ids) => { const next = [...ids]; [next[index + 1], next[index]] = [next[index], next[index + 1]]; return next; })} className="rounded-lg px-2 py-1 text-sm text-emerald-100 hover:bg-white/10 disabled:opacity-25" aria-label={"Đưa " + checkpoint.name + " xuống sau"}>↓</button><button type="button" onClick={() => setJourneyCheckpointIds((ids) => ids.filter((id) => id !== checkpoint.id))} className="rounded-lg px-2 py-1 text-sm text-rose-200 hover:bg-rose-400/10" aria-label={"Xóa " + checkpoint.name + " khỏi tuyến"}>×</button></div>)}</div>
+            <div className="grid grid-cols-2 gap-2 mt-4"><button type="button" disabled={journeyCheckpoints.length < 2} onClick={() => { setShowPlannedRoute(true); setRoutePlannerOpen(false); setActiveTab("map"); setMessage("🗺️ Đang hiển thị tuyến đường trong TravelQuest."); }} className="rounded-xl bg-emerald-500 py-3 px-3 text-sm font-bold text-[#06251a] hover:bg-emerald-400 disabled:opacity-40">🗺️ Xem tuyến trong app</button><button type="button" onClick={() => { setRoutePlannerOpen(false); setJourneyOpen(true); }} className="rounded-xl border border-white/15 bg-white/5 py-3 px-3 text-sm font-bold text-white hover:bg-white/10">＋ Thêm điểm</button></div>
+            {journeyCheckpoints.length < 2 && <p className="text-xs text-amber-200 mt-3">Chọn ít nhất 2 checkpoint để vẽ tuyến đường.</p>}
+            {journeyCheckpoints.length > 25 && <p className="text-xs text-amber-200 mt-3">Bản đồ hiển thị tối đa 25 điểm mỗi tuyến.</p>}
+            {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="block text-center mt-3 rounded-xl border border-white/10 py-2 text-xs text-emerald-200 hover:bg-white/5">Mở thêm bằng Google Maps ↗</a>}
           </div>
         </div>
       )}
