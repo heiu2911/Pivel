@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -4048,9 +4049,12 @@ export default function Home() {
     );
   };
 
-  const journeyCheckpoints = journeyCheckpointIds
-    .map((checkpointId) => checkpoints.find((checkpoint) => checkpoint.id === checkpointId))
-    .filter((checkpoint): checkpoint is Checkpoint => Boolean(checkpoint));
+  const journeyCheckpoints = useMemo(
+    () => journeyCheckpointIds
+      .map((checkpointId) => checkpoints.find((checkpoint) => checkpoint.id === checkpointId))
+      .filter((checkpoint): checkpoint is Checkpoint => Boolean(checkpoint)),
+    [journeyCheckpointIds, checkpoints]
+  );
 
   const mapSearchResults = checkpoints
     .filter((checkpoint) => {
