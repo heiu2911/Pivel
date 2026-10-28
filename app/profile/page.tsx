@@ -27,7 +27,6 @@ export default function PersonalProfilePage() {
   const [editing, setEditing] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
-  const [avatarEmoji, setAvatarEmoji] = useState("🧭");
   const [savingProfile, setSavingProfile] = useState(false);
   const [postFilter, setPostFilter] = useState<"all" | "photos" | "text">("all");
   const avatarInputRef = useRef<HTMLInputElement>(null);
