@@ -130,15 +130,21 @@ a {
 }
 
 
-/* Keep readable dark text whenever a light card accidentally inherits white text. */
-[class~="bg-white"][class~="text-white"],
-[class*="bg-[#fffdf6]"][class~="text-white"],
-[class*="bg-[#fff8e8]"][class~="text-white"],
-[class~="bg-white"] [class~="text-white"],
-[class*="bg-[#fffdf6]"] [class~="text-white"],
-[class*="bg-[#fff8e8]"] [class~="text-white"] {
+/* Prevent unreadable white-on-white combinations, including opacity variants such as text-white/60. */
+[class*="bg-white"][class*="text-white"],
+[class*="bg-[#fffdf6]"][class*="text-white"],
+[class*="bg-[#fff8e8]"][class*="text-white"],
+[class*="bg-white"] [class*="text-white"],
+[class*="bg-[#fffdf6]"] [class*="text-white"],
+[class*="bg-[#fff8e8]"] [class*="text-white"] {
   color: #183d32 !important;
 }
+
+/* Green app surfaces for common light cards and controls. */
+[class~="bg-white"] {
+  border-color: rgba(40, 91, 67, 0.16);
+}
+
 
 /* TravelQuest green-tinted canvas and surfaces for a consistent visual theme. */
 :root {
