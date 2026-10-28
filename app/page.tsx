@@ -7840,6 +7840,65 @@ export default function Home() {
               </div>
             </div>
 
+            {/* ================= BADGE COLLECTION ================= */}
+            <section className="mb-6 rounded-3xl border border-[#dce5d7] bg-[#fffef9] p-5 shadow-sm">
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#075b52]">BADGE COLLECTION</p>
+                  <h3 className="mt-1 text-xl font-black">Bộ sưu tập huy hiệu</h3>
+                  <p className="mt-1 text-sm leading-5 text-[#687c70]">Khám phá địa danh, check-in và chia sẻ trải nghiệm để mở khóa huy hiệu.</p>
+                </div>
+                <span className="text-3xl">🏅</span>
+              </div>
+              {(() => {
+                const allBadges = badgeGroups.flatMap((group) => group.badges);
+                const earnedCount = allBadges.filter((badge) => badge.progress >= badge.goal).length;
+                return (
+                  <div className="mb-5 rounded-2xl border border-[#dce5d7] bg-[#f1f3e8] p-4">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="font-semibold text-[#526b59]">Tiến độ sưu tập</span>
+                      <span className="font-black text-[#123f3a]">{earnedCount}/{allBadges.length} huy hiệu</span>
+                    </div>
+                    <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#e8eee0]">
+                      <div className="h-full rounded-full bg-[#075b52] transition-all" style={{ width: `${Math.round((earnedCount / allBadges.length) * 100)}%` }} />
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="space-y-5">
+                {badgeGroups.map((group) => (
+                  <div key={group.title}>
+                    <div className="mb-3 flex items-center gap-2">
+                      <span className="text-lg">{group.emoji}</span>
+                      <h4 className="text-sm font-black text-[#123f3a]">{group.title}</h4>
+                      <span className="text-xs text-[#687c70]">({group.badges.filter((badge) => badge.progress >= badge.goal).length}/{group.badges.length})</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                      {group.badges.map((badge) => {
+                        const unlocked = badge.progress >= badge.goal;
+                        const progressValue = Math.min(badge.progress, badge.goal);
+                        return (
+                          <div key={badge.title} className={`flex min-w-0 flex-col items-center rounded-2xl border p-3 text-center transition ${unlocked ? "border-[#d6e2d6] bg-white" : "border-dashed border-[#dce5d7] bg-[#f1f3e8]"}`}>
+                            <div className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border-2 text-3xl ${unlocked ? "border-[#d6e2d6] bg-gradient-to-br from-white to-[#e8eee0]" : "border-[#dce5d7] bg-[#e8eee0] grayscale"}`}>
+                              {badge.emoji}
+                              <span className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white text-[10px] text-white ${unlocked ? "bg-[#075b52]" : "bg-[#879183]"}`}>{unlocked ? "✓" : "🔒"}</span>
+                            </div>
+                            <p className="mt-3 text-xs font-extrabold leading-snug text-[#234a39]">{badge.title}</p>
+                            <div className="mt-3 w-full">
+                              <div className="h-1.5 overflow-hidden rounded-full bg-[#e5e8df]">
+                                <div className="h-full rounded-full bg-[#075b52]" style={{ width: `${Math.round((progressValue / badge.goal) * 100)}%` }} />
+                              </div>
+                              <p className="mt-1 text-[10px] font-bold tabular-nums text-[#687c70]">{progressValue}/{badge.goal}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             {/* ================= STREAK ================= */}
 
             <div className="bg-[#fffef9] border border-[#dce5d7] shadow-sm rounded-3xl p-5 mb-6">
