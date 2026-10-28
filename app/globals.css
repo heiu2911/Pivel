@@ -130,50 +130,37 @@ a {
 }
 
 
-/* Prevent unreadable white-on-white combinations, including opacity variants such as text-white/60. */
-[class*="bg-white"][class*="text-white"],
-[class*="bg-[#fffdf6]"][class*="text-white"],
-[class*="bg-[#fff8e8]"][class*="text-white"],
-[class*="bg-white"] [class*="text-white"],
-[class*="bg-[#fffdf6]"] [class*="text-white"],
-[class*="bg-[#fff8e8]"] [class*="text-white"] {
-  color: #183d32 !important;
-}
-
-/* Green app surfaces for common light cards and controls. */
-[class~="bg-white"] {
-  border-color: rgba(40, 91, 67, 0.16);
-}
-
-
-/* TravelQuest green-tinted canvas and surfaces for a consistent visual theme. */
+/* TravelQuest palette: pale green surfaces must always use dark-green text. */
 :root {
   --tq-canvas: #e7f1e8;
   --tq-surface-green: #f4faf3;
 }
 
-/* High-contrast typography for every cream/white panel and modal across the app. */
+[class~="bg-white"],
+[class*="bg-[#fffdf6]"],
+[class*="bg-[#fff8e8]"],
+[class*="bg-[#f7f4e8]"],
+[class*="bg-[#f1f4eb]"],
+[class*="bg-[#f4faf3]"],
+[class*="bg-[#e7f1e8]"] {
+  border-color: rgba(40, 91, 67, 0.16);
+}
+
+/* Fix white/low-opacity white labels inside light cards, checkpoint lists and modals. */
+[class*="bg-white"] [class*="text-white"],
 [class*="bg-[#fffdf6]"] [class*="text-white"],
 [class*="bg-[#fff8e8]"] [class*="text-white"],
 [class*="bg-[#f7f4e8]"] [class*="text-white"],
 [class*="bg-[#f1f4eb]"] [class*="text-white"],
 [class*="bg-[#f4faf3]"] [class*="text-white"],
-[class*="bg-[#e7f1e8]"] [class*="text-white"],
-[class*="bg-white"] [class*="text-white"],
-[class*="bg-white/"] [class*="text-white"],
-[class*="bg-[#fffdf6]"] [class*="text-white/"],
-[class*="bg-[#fff8e8]"] [class*="text-white/"],
-[class*="bg-[#f7f4e8]"] [class*="text-white/"],
-[class*="bg-[#f1f4eb]"] [class*="text-white/"] {
-  color: #6b4328 !important;
-  font-weight: 750 !important;
+[class*="bg-[#e7f1e8]"] [class*="text-white"] {
+  color: #183d32 !important;
 }
 
-/* Keep headings and labels readable on the pale-green / cream interface. */
+/* Keep modal headings, labels and descriptions readable on pale-green surfaces. */
 [class*="bg-[#fffdf6]"] h1, [class*="bg-[#fffdf6]"] h2, [class*="bg-[#fffdf6]"] h3,
 [class*="bg-[#fffdf6]"] label, [class*="bg-[#fffdf6]"] p,
-[class*="bg-[#fff8e8]"] h1, [class*="bg-[#fff8e8]"] h2, [class*="bg-[#fff8e8]"] h3,
-[class*="bg-[#fff8e8]"] label {
-  color: #6b4328;
-  font-weight: 700;
+[class*="bg-[#f4faf3]"] h1, [class*="bg-[#f4faf3]"] h2, [class*="bg-[#f4faf3]"] h3,
+[class*="bg-[#f4faf3]"] label {
+  color: #183d32;
 }
