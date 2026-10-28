@@ -4113,12 +4113,7 @@ export default function Home() {
     })
     .slice(0, 8);
 
-  const homeTravellerResults = friendProfiles
-    .filter((profile) => {
-      const query = normalizeSearchText(homeSearchQuery.trim());
-      return Boolean(query) && normalizeSearchText(profile.display_name ?? "").includes(query);
-    })
-    .slice(0, 8);
+  const homeTravellerResults = searchResults.slice(0, 8);
 
   const journeyCompletedCount = journeyCheckpoints.filter((checkpoint) =>
     isCheckedIn(checkpoint.id)
@@ -6156,7 +6151,7 @@ export default function Home() {
                 <button type="button" onClick={() => setHomeSearchOpen(false)} className="rounded-full px-1 py-2 text-sm font-semibold text-[#245b43]">‹ Quay lại</button>
                 <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-[#e9eddf] px-3 py-2.5">
                   <span className="text-lg text-[#526b56]">⌕</span>
-                  <input autoFocus value={homeSearchQuery} onChange={(event) => setHomeSearchQuery(event.target.value)} placeholder="Tìm kiếm" className="min-w-0 flex-1 bg-transparent text-sm text-[#183d32] outline-none placeholder:text-[#71816e]" aria-label="Tìm kiếm địa điểm và Traveller" />
+                  <input autoFocus value={homeSearchQuery} onChange={(event) => { const value = event.target.value; setHomeSearchQuery(value); void searchTravellers(value); }} placeholder="Tìm kiếm" className="min-w-0 flex-1 bg-transparent text-sm text-[#183d32] outline-none placeholder:text-[#71816e]" aria-label="Tìm kiếm địa điểm và Traveller" />
                   {homeSearchQuery && <button type="button" onClick={() => setHomeSearchQuery("")} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#d7dfce] text-[#315b45]" aria-label="Xóa từ khóa">×</button>}
                 </label>
                 <button type="button" onClick={() => { setHomeSearchOpen(false); setMapSearchQuery(homeSearchQuery); setMapSearchActive(true); setActiveTab("map"); }} className="text-xs font-bold text-[#245b43]">Bản đồ</button>
@@ -6170,7 +6165,7 @@ export default function Home() {
                   <h2 className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#71816e]">Địa điểm</h2>
                   {homeSearchResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeSearchResults.map((checkpoint) => <button key={checkpoint.id} type="button" onClick={() => { setHomeSearchOpen(false); setMapSearchQuery(""); setMapSearchActive(false); setActiveTab("map"); selectCheckpoint(checkpoint); setShowExplorePanel(false); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#f1f4eb]"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e9eddf] text-xl">{checkpoint.icon ?? "📍"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#183d32]">{checkpoint.name}</span><span className="mt-0.5 block truncate text-xs text-[#71816e]">{checkpoint.description || "Địa điểm khám phá"}</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Chưa tìm thấy địa điểm phù hợp.</p>}
                   <h2 className="mb-2 mt-6 text-xs font-extrabold uppercase tracking-[0.12em] text-[#71816e]">Traveller</h2>
-                  {homeTravellerResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeTravellerResults.map((profile) => <button key={profile.user_id} type="button" onClick={() => { setHomeSearchOpen(false); setActiveTab("ugc"); selectUgcTraveller(profile.user_id); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#f1f4eb]"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9eddf] text-xl">{profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#183d32]">{profile.display_name}</span><span className="block text-xs text-[#71816e]">Traveller trên TravelQuest</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Không tìm thấy Traveller trong danh sách hiện có.</p>}
+                  {searchLoading ? <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Đang tìm Traveller...</p> : homeTravellerResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeTravellerResults.map((profile) => <button key={profile.user_id} type="button" onClick={() => { setHomeSearchOpen(false); setActiveTab("ugc"); selectUgcTraveller(profile.user_id); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#f1f4eb]"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9eddf] text-xl">🧭</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#183d32]">{profile.display_name}</span><span className="block text-xs text-[#71816e]">Traveller · Cấp {profile.level}</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Không tìm thấy Traveller trong danh sách hiện có.</p>}
                 </>
               )}
             </div>
@@ -6578,8 +6573,11 @@ export default function Home() {
         {activeTab === "map" && (
           <section
             className="relative h-[100dvh] min-h-0 overflow-hidden"
-            onPointerDownCapture={() => {
-              if (mapSearchActive) setMapSearchActive(false);
+            onPointerDownCapture={(event) => {
+              const target = event.target as HTMLElement;
+              if (mapSearchActive && !target.closest("[data-map-search-box]")) {
+                setMapSearchActive(false);
+              }
             }}
           >
 
