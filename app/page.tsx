@@ -7598,7 +7598,7 @@ export default function Home() {
                       updateLocation();
                     }}
                     disabled={locationLoading}
-                    className="flex-1 py-3 rounded-xl bg-white/10 hover:bg-[#dcebd8] border border-[#cfe2ce] font-semibold transition disabled:opacity-50"
+                    className="flex-1 py-3 rounded-xl bg-[#e7f1e8] hover:bg-[#dcebd8] border border-[#cfe2ce] font-semibold transition disabled:opacity-50"
                   >
                     {locationLoading ? "📡 Đang lấy vị trí..." : "📍 Kiểm tra GPS"}
                   </button>
