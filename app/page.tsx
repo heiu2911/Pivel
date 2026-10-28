@@ -557,6 +557,8 @@ export default function Home() {
 
   const [mapSearchQuery, setMapSearchQuery] = useState("");
   const [mapSearchActive, setMapSearchActive] = useState(false);
+  const [homeSearchOpen, setHomeSearchOpen] = useState(false);
+  const [homeSearchQuery, setHomeSearchQuery] = useState("");
   const [mapFilter, setMapFilter] = useState<"none" | "all" | "nearby" | "unvisited" | "saved">("none");
 
   const [headerMenuOpen, setHeaderMenuOpen] =
@@ -4094,7 +4096,29 @@ export default function Home() {
 
       return true;
     })
-    .slice(0, 6);
+    .sort((a, b) => {
+      const query = normalizeSearchText(mapSearchQuery.trim());
+      if (!query) return a.name.localeCompare(b.name, "vi");
+      const aStarts = normalizeSearchText(a.name).startsWith(query);
+      const bStarts = normalizeSearchText(b.name).startsWith(query);
+      if (aStarts !== bStarts) return aStarts ? -1 : 1;
+      return a.name.localeCompare(b.name, "vi");
+    })
+    .slice(0, 8);
+
+  const homeSearchResults = checkpoints
+    .filter((checkpoint) => {
+      const query = normalizeSearchText(homeSearchQuery.trim());
+      return Boolean(query) && normalizeSearchText(checkpoint.name + " " + (checkpoint.description ?? "")).includes(query);
+    })
+    .slice(0, 8);
+
+  const homeTravellerResults = friendProfiles
+    .filter((profile) => {
+      const query = normalizeSearchText(homeSearchQuery.trim());
+      return Boolean(query) && normalizeSearchText(profile.display_name ?? "").includes(query);
+    })
+    .slice(0, 8);
 
   const journeyCompletedCount = journeyCheckpoints.filter((checkpoint) =>
     isCheckedIn(checkpoint.id)
@@ -6124,6 +6148,36 @@ export default function Home() {
       )}
 
 
+      {homeSearchOpen && activeTab === "home" && (
+        <div className="fixed inset-0 z-[300] overflow-y-auto bg-[#f7f4e8] text-[#183d32]" role="dialog" aria-modal="true" aria-label="Tìm kiếm TravelQuest">
+          <div className="mx-auto min-h-full w-full max-w-2xl">
+            <div className="sticky top-0 z-10 border-b border-[#dce3d2] bg-[#f7f4e8]/95 px-3 py-3 backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setHomeSearchOpen(false)} className="rounded-full px-1 py-2 text-sm font-semibold text-[#245b43]">‹ Quay lại</button>
+                <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl bg-[#e9eddf] px-3 py-2.5">
+                  <span className="text-lg text-[#526b56]">⌕</span>
+                  <input autoFocus value={homeSearchQuery} onChange={(event) => setHomeSearchQuery(event.target.value)} placeholder="Tìm kiếm" className="min-w-0 flex-1 bg-transparent text-sm text-[#183d32] outline-none placeholder:text-[#71816e]" aria-label="Tìm kiếm địa điểm và Traveller" />
+                  {homeSearchQuery && <button type="button" onClick={() => setHomeSearchQuery("")} className="flex h-6 w-6 items-center justify-center rounded-full bg-[#d7dfce] text-[#315b45]" aria-label="Xóa từ khóa">×</button>}
+                </label>
+                <button type="button" onClick={() => { setHomeSearchOpen(false); setMapSearchQuery(homeSearchQuery); setMapSearchActive(true); setActiveTab("map"); }} className="text-xs font-bold text-[#245b43]">Bản đồ</button>
+              </div>
+            </div>
+            <div className="px-4 pb-8 pt-4">
+              {!homeSearchQuery.trim() ? (
+                <div><h2 className="text-sm font-black">Khám phá TravelQuest</h2><p className="mt-1 text-xs text-[#71816e]">Tìm địa điểm hoặc Traveller theo tên.</p><div className="mt-4 flex flex-wrap gap-2">{["Hà Nội", "Đà Nẵng", "Hội An", "Huế"].map((term) => <button key={term} type="button" onClick={() => setHomeSearchQuery(term)} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-xs font-semibold text-[#315b45]">⌕ {term}</button>)}</div></div>
+              ) : (
+                <>
+                  <h2 className="mb-2 text-xs font-extrabold uppercase tracking-[0.12em] text-[#71816e]">Địa điểm</h2>
+                  {homeSearchResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeSearchResults.map((checkpoint) => <button key={checkpoint.id} type="button" onClick={() => { setHomeSearchOpen(false); setMapSearchQuery(""); setMapSearchActive(false); setActiveTab("map"); selectCheckpoint(checkpoint); setShowExplorePanel(false); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#f1f4eb]"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e9eddf] text-xl">{checkpoint.icon ?? "📍"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#183d32]">{checkpoint.name}</span><span className="mt-0.5 block truncate text-xs text-[#71816e]">{checkpoint.description || "Địa điểm khám phá"}</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Chưa tìm thấy địa điểm phù hợp.</p>}
+                  <h2 className="mb-2 mt-6 text-xs font-extrabold uppercase tracking-[0.12em] text-[#71816e]">Traveller</h2>
+                  {homeTravellerResults.length ? <div className="overflow-hidden rounded-2xl border border-[#e1e5d8] bg-white">{homeTravellerResults.map((profile) => <button key={profile.user_id} type="button" onClick={() => { setHomeSearchOpen(false); setActiveTab("ugc"); selectUgcTraveller(profile.user_id); }} className="flex w-full items-center gap-3 border-b border-[#edf0e7] px-3 py-3 text-left last:border-b-0 hover:bg-[#f1f4eb]"><span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e9eddf] text-xl">{profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-bold text-[#183d32]">{profile.display_name}</span><span className="block text-xs text-[#71816e]">Traveller trên TravelQuest</span></span><span className="text-[#9aa69a]">›</span></button>)}</div> : <p className="rounded-xl bg-white px-3 py-4 text-xs text-[#71816e]">Không tìm thấy Traveller trong danh sách hiện có.</p>}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ================= HOME / TRAVEL FEED ================= */}
       {activeTab === "home" && (
         <section className="fixed inset-0 z-40 overflow-y-auto bg-[#f7f4e8] text-[#183d32]">
@@ -6135,7 +6189,7 @@ export default function Home() {
                   <span><span className="block text-xl font-black tracking-tight text-[#1d604b]">Pivel</span><span className="block text-[9px] font-bold tracking-[0.18em] text-[#7b8977]">CÙNG NHAU KHÁM PHÁ VIỆT NAM</span></span>
                 </button>
                 <div className="flex items-center gap-2">
-                  <button type="button" onClick={() => { setActiveTab("map"); }} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3d2] bg-white text-lg" aria-label="Tìm địa điểm">⌕</button>
+                  <button type="button" onClick={() => { setHomeSearchOpen(true); setHomeSearchQuery(""); }} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3d2] bg-white text-lg text-[#245b43]" aria-label="Tìm kiếm">⌕</button>
                   <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3d2] bg-white text-lg" aria-label="Thông báo">♧{notifications.some((item) => !item.is_read) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#e78328]" />}</button>
                   <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#dce3d2] bg-[#e9eddf] text-lg" aria-label="Tài khoản">{user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span>{user ? avatarEmoji : "👤"}</span>}</button>
                 </div>
@@ -6143,11 +6197,10 @@ export default function Home() {
             </header>
 
             <div className="px-4 pt-4">
-              <label className="flex items-center gap-3 rounded-2xl border border-[#e1e5d8] bg-white px-4 py-3 shadow-sm">
+              <button type="button" onClick={() => { setHomeSearchOpen(true); setHomeSearchQuery(""); }} className="flex w-full items-center gap-3 rounded-2xl border border-[#e1e5d8] bg-white px-4 py-3 text-left shadow-sm transition hover:bg-[#fbfcf8]">
                 <span className="text-xl text-[#688273]">⌕</span>
-                <input value={mapSearchQuery} onChange={(event) => setMapSearchQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") setActiveTab("map"); }} placeholder="Tìm kiếm điểm đến, người dùng..." className="min-w-0 flex-1 bg-transparent text-sm text-[#183d32] outline-none placeholder:text-[#9aa69a]" aria-label="Tìm điểm đến hoặc người dùng" />
-                <button type="button" onClick={() => setActiveTab("map")} className="rounded-xl bg-[#eaf0e5] px-3 py-2 text-xs font-bold text-[#245b43]">Tìm</button>
-              </label>
+                <span className="text-sm text-[#9aa69a]">Tìm kiếm địa điểm, Traveller...</span>
+              </button>
 
               <div className="mt-5 flex items-center justify-between">
                 <div><h2 className="text-base font-black">Khoảnh khắc quanh bạn</h2><p className="mt-0.5 text-xs text-[#7d8b7d]">Chia sẻ những nơi đáng nhớ</p></div>
@@ -6417,8 +6470,8 @@ export default function Home() {
                 </button>
               </div>
 
-              {(mapSearchQuery.trim() || mapFilter !== "none") && (
-                <div className="fixed right-3 top-[104px] z-[90] w-[min(320px,calc(100vw-24px))] max-h-72 overflow-y-auto rounded-2xl border border-[#dce3d2] bg-white p-1.5 text-[#183d32] shadow-[0_18px_50px_rgba(0,0,0,0.25)] sm:top-[68px] sm:right-4">
+              {mapSearchActive && mapSearchQuery.trim() && (
+                <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[120] max-h-[min(62vh,440px)] overflow-y-auto rounded-2xl border border-[#dce3d2] bg-white p-1.5 text-[#183d32] shadow-[0_18px_50px_rgba(0,0,0,0.25)]">
                   {mapSearchResults.length === 0 ? (
                     <div className="px-4 py-5 text-center text-xs text-[#71816e]">
                       Chưa tìm thấy checkpoint phù hợp.
