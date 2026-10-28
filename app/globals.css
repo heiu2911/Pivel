@@ -128,4 +128,20 @@ a {
     min-height: 40px;
   }
 }
-\n\n/* Keep readable dark text whenever a light card accidentally inherits white text. */\n[class~="bg-white"][class~="text-white"],\n[class*="bg-[#fffdf6]"][class~="text-white"],\n[class*="bg-[#fff8e8]"][class~="text-white"],\n[class~="bg-white"] [class~="text-white"],\n[class*="bg-[#fffdf6]"] [class~="text-white"],\n[class*="bg-[#fff8e8]"] [class~="text-white"] {\n  color: #183d32 !important;\n}\n\n/* TravelQuest green-tinted canvas and surfaces for a consistent visual theme. */\n:root {\n  --tq-canvas: #e7f1e8;\n  --tq-surface-green: #f4faf3;\n}\n
+
+
+/* Keep readable dark text whenever a light card accidentally inherits white text. */
+[class~="bg-white"][class~="text-white"],
+[class*="bg-[#fffdf6]"][class~="text-white"],
+[class*="bg-[#fff8e8]"][class~="text-white"],
+[class~="bg-white"] [class~="text-white"],
+[class*="bg-[#fffdf6]"] [class~="text-white"],
+[class*="bg-[#fff8e8]"] [class~="text-white"] {
+  color: #183d32 !important;
+}
+
+/* TravelQuest green-tinted canvas and surfaces for a consistent visual theme. */
+:root {
+  --tq-canvas: #e7f1e8;
+  --tq-surface-green: #f4faf3;
+}
