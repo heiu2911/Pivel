@@ -4107,6 +4107,17 @@ export default function Home() {
     })
     .slice(0, 8);
 
+  const mapDisplayCheckpoints = checkpoints.filter((checkpoint) => {
+    if (mapFilter === "unvisited" && isCheckedIn(checkpoint.id)) return false;
+    if (mapFilter === "saved" && !isSavedPlace(checkpoint.id)) return false;
+    if (mapFilter === "nearby") {
+      if (!userLocation) return false;
+      const distance = getValidGpsDistance(userLocation, checkpoint);
+      if (distance === null || distance > 50000) return false;
+    }
+    return true;
+  });
+
   const homeSearchResults = checkpoints
     .filter((checkpoint) => {
       const query = normalizeSearchText(homeSearchQuery.trim());
@@ -6496,7 +6507,18 @@ export default function Home() {
                   onChange={(event) => setMapSearchQuery(event.target.value)}
                   onFocus={() => setMapSearchActive(true)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") setMapSearchActive(false);
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      if (mapSearchResults[0]) {
+                        selectCheckpoint(mapSearchResults[0]);
+                        setShowExplorePanel(false);
+                        setMapSearchQuery("");
+                        setMapSearchActive(false);
+                        setMapFilter("none");
+                      } else {
+                        setMessage("Không tìm thấy checkpoint phù hợp. Thử tên địa điểm khác nhé.");
+                      }
+                    }
                   }}
                   placeholder="Tìm địa điểm, checkpoint..."
                   className="min-w-0 flex-1 bg-transparent text-sm font-medium text-[#123f3a] outline-none placeholder:text-[#9aa69a]"
@@ -6653,7 +6675,7 @@ export default function Home() {
                   userLocation
                 }
                 checkpoints={
-                  checkpoints
+                  mapDisplayCheckpoints
                 }
                 plannedRoute={showPlannedRoute || navigationActive ? journeyCheckpoints : []}
                 navigationActive={navigationActive}
