@@ -4082,20 +4082,7 @@ export default function Home() {
 
       if (!matchesQuery) return false;
 
-      if (mapFilter === "unvisited") {
-        return !isCheckedIn(checkpoint.id);
-      }
-
-      if (mapFilter === "saved") {
-        return isSavedPlace(checkpoint.id);
-      }
-
-      if (mapFilter === "nearby") {
-        if (!userLocation) return false;
-        const checkpointDistance = getValidGpsDistance(userLocation, checkpoint);
-        return checkpointDistance !== null && checkpointDistance <= 50000;
-      }
-
+      // Search is independent of the selected map filter so a query can always find a place.
       return true;
     })
     .sort((a, b) => {
@@ -6597,7 +6584,14 @@ export default function Home() {
                 <button
                   key={value}
                   type="button"
-                  onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
+                  onClick={() => {
+                    const nextFilter = mapFilter === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved";
+                    setMapFilter(nextFilter);
+                    if (nextFilter === "nearby") {
+                      updateLocation();
+                      startWatchingGPS();
+                    }
+                  }}
                   className={`tq-map-chip ${mapFilter === value ? "tq-map-chip-active" : ""}`}
                 >
                   {label}
