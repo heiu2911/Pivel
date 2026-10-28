@@ -525,6 +525,10 @@ export default function Home() {
   const [authReady, setAuthReady] =
     useState(false);
 
+  // Prevent default React state from overwriting saved data before it has loaded.
+  const [localDataLoadedUserId, setLocalDataLoadedUserId] =
+    useState<string | null>(null);
+
   const authUserIdRef = useRef<string | null>(null);
 
   const [savedPlaceIds, setSavedPlaceIds] =
@@ -654,7 +658,7 @@ export default function Home() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || localDataLoadedUserId !== user.id) return;
 
     try {
       window.localStorage.setItem(
@@ -664,7 +668,7 @@ export default function Home() {
     } catch {
       // Ignore localStorage failures.
     }
-  }, [savedPlaceIds, user?.id]);
+  }, [savedPlaceIds, user?.id, localDataLoadedUserId]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -674,43 +678,42 @@ export default function Home() {
       return;
     }
 
-    queueMicrotask(() => {
-      try {
-        const raw = window.localStorage.getItem(
-          `travelquest-journey:${user.id}`
-        );
-        if (!raw) {
-          setJourneyName("Hành trình Hà Nội");
-          setJourneyCheckpointIds([]);
-          setJourneyStarted(false);
-          return;
-        }
-        const parsed: unknown = JSON.parse(raw);
-        if (!parsed || typeof parsed !== "object") return;
-        const data = parsed as {
-          name?: unknown;
-          checkpointIds?: unknown;
-          started?: unknown;
-        };
-        if (typeof data.name === "string" && data.name.trim()) {
-          setJourneyName(data.name);
-        }
-        if (Array.isArray(data.checkpointIds)) {
-          setJourneyCheckpointIds(
-            data.checkpointIds.filter((id): id is number => typeof id === "number")
-          );
-        }
-        if (typeof data.started === "boolean") {
-          setJourneyStarted(data.started);
-        }
-      } catch {
-        // Ignore invalid local journey data.
+    // Read synchronously before any persistence effect is allowed to write.
+    try {
+      const raw = window.localStorage.getItem(
+        `travelquest-journey:${user.id}`
+      );
+      if (!raw) {
+        setJourneyName("Hành trình Hà Nội");
+        setJourneyCheckpointIds([]);
+        setJourneyStarted(false);
+        return;
       }
-    });
+      const parsed: unknown = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return;
+      const data = parsed as {
+        name?: unknown;
+        checkpointIds?: unknown;
+        started?: unknown;
+      };
+      if (typeof data.name === "string" && data.name.trim()) {
+        setJourneyName(data.name);
+      }
+      if (Array.isArray(data.checkpointIds)) {
+        setJourneyCheckpointIds(
+          data.checkpointIds.filter((id): id is number => typeof id === "number")
+        );
+      }
+      if (typeof data.started === "boolean") {
+        setJourneyStarted(data.started);
+      }
+    } catch {
+      // Ignore invalid local journey data.
+    }
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || localDataLoadedUserId !== user.id) return;
 
     try {
       window.localStorage.setItem(
@@ -724,7 +727,7 @@ export default function Home() {
     } catch {
       // Ignore localStorage failures.
     }
-  }, [journeyName, journeyCheckpointIds, journeyStarted, user?.id]);
+  }, [journeyName, journeyCheckpointIds, journeyStarted, user?.id, localDataLoadedUserId]);
 
   // ============================================
   // AUTH
@@ -990,7 +993,7 @@ export default function Home() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user?.id || !rewardStorageLoaded) return;
+    if (!user?.id || !rewardStorageLoaded || localDataLoadedUserId !== user.id) return;
     try {
       window.localStorage.setItem(
         `travelquest-rewards:${user.id}`,
@@ -999,7 +1002,7 @@ export default function Home() {
     } catch {
       // Local persistence may be unavailable in private browsing.
     }
-  }, [user?.id, rewardStorageLoaded, rewardXPSpent, redeemedRewards]);
+  }, [user?.id, rewardStorageLoaded, rewardXPSpent, redeemedRewards, localDataLoadedUserId]);
 
   const [routePlannerOpen, setRoutePlannerOpen] = useState(false);
   const [smartTravelOpen, setSmartTravelOpen] = useState(false);
@@ -1021,11 +1024,12 @@ export default function Home() {
       setSavedPostIds([]);
       setAvatarEmoji("🧭");
       setAvatarImageUrl(null);
+      setLocalDataLoadedUserId(null);
       return;
     }
 
-    queueMicrotask(() => {
-      try {
+    setLocalDataLoadedUserId(null);
+    try {
         const savedPosts = window.localStorage.getItem("travelquest-saved-posts");
         if (savedPosts) {
           const parsed: unknown = JSON.parse(savedPosts);
@@ -1064,14 +1068,14 @@ export default function Home() {
           const parsed: unknown = JSON.parse(chatRaw);
           if (Array.isArray(parsed)) setChatMessages(parsed as ChatMessage[]);
         }
-      } catch {
-        // Ignore invalid local feature data.
-      }
-    });
+    } catch {
+      // Ignore invalid local feature data.
+    }
+    setLocalDataLoadedUserId(user.id);
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || localDataLoadedUserId !== user.id) return;
 
     try {
       window.localStorage.setItem("travelquest-saved-posts", JSON.stringify(savedPostIds));
@@ -1085,7 +1089,7 @@ export default function Home() {
     } catch {
       // Ignore localStorage failures.
     }
-  }, [user?.id, savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages]);
+  }, [user?.id, savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages, localDataLoadedUserId]);
 
   useEffect(() => {
     if (!chatOpen || !user?.id) return;
