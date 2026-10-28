@@ -2560,14 +2560,24 @@ export default function Map({
         const targetDistance = calculateDistance(location.latitude, location.longitude, target.latitude, target.longitude);
         if (targetDistance !== null && targetDistance <= 60) {
           stops.shift();
+          // Invalidate any in-flight request to the previous destination.
+          requestId += 1;
+          rerouting = false;
+          lastRerouteLocation = null;
+          lastRerouteAt = 0;
           if (stops.length === 0) {
             paintBanner("🏁 Đã đến điểm cuối của hành trình!");
             stopWatch();
             window.setTimeout(() => onNavigationStop?.(), 1800);
             return;
           }
-          latestInstruction = "Đã đến điểm. Tiếp tục đến " + stops[0].name;
-          lastRerouteLocation = null;
+          latestInstruction = "Đã đến điểm. Đang chuyển tuyến đến " + stops[0].name;
+          latestDistance = 0;
+          latestDuration = 0;
+          paintBanner();
+          // Re-route immediately from the latest GPS fix to the next stop.
+          void fetchRoute(location, true);
+          return;
         }
       }
       const moved = lastRerouteLocation ? calculateDistance(lastRerouteLocation.latitude, lastRerouteLocation.longitude, location.latitude, location.longitude) ?? 0 : Infinity;
