@@ -6959,7 +6959,7 @@ export default function Home() {
             onClick={() => setJourneyOpen(false)}
           >
             <div
-              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#fffdf6] border border-[#e4e9dd] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f4faf3] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="p-6">
@@ -7003,7 +7003,7 @@ export default function Home() {
                   💾 Lưu hành trình này
                 </button>
 
-                <div className="mt-5 rounded-2xl bg-white border border-[#e4e9dd] p-4">
+                <div className="mt-5 rounded-2xl bg-[#e7f1e8] border border-[#cfe2ce] p-4 text-[#183d32]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-bold">Tiến độ</p>
@@ -7039,14 +7039,14 @@ export default function Home() {
                           className={`w-full flex items-center gap-3 rounded-2xl border p-3 text-left transition ${
                             selected
                               ? "bg-[#43875b]/15 border-[#b8d5a5]"
-                              : "bg-white border-[#e4e9dd] hover:bg-[#f1f4eb]"
+                              : "bg-[#f4faf3] border-[#cfe2ce] hover:bg-[#e7f1e8]"
                           }`}
                         >
-                          <span className="w-10 h-10 rounded-xl bg-[#f1f4eb] flex items-center justify-center text-xl shrink-0">
+                          <span className="w-10 h-10 rounded-xl bg-[#e7f1e8] text-[#183d32] flex items-center justify-center text-xl shrink-0">
                             {checkpoint.icon ?? "📍"}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <span className="block text-sm font-bold truncate">{checkpoint.name}</span>
+                            <span className="block text-sm font-bold text-[#183d32] truncate">{checkpoint.name}</span>
                             <span className="block text-[10px] text-[#84917e] mt-1">
                               {checked ? "✓ Đã chinh phục" : "Chưa chinh phục"}
                             </span>
@@ -7063,14 +7063,14 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-2 mt-6">
                   <div className="flex gap-2 mt-3">
                     <button type="button" onClick={() => setRoutePlannerOpen(true)} className="flex-1 rounded-xl bg-[#f1f4eb] border border-[#dce3d2] px-3 py-2 text-xs font-bold">🗺️ Route planner</button>
-                    {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="flex-1 rounded-xl bg-white border border-[#e4e9dd] px-3 py-2 text-xs font-bold text-center">📍 Google Maps</a>}
+                    {buildRouteUrl() && <a href={buildRouteUrl()} target="_blank" rel="noreferrer" className="flex-1 rounded-xl bg-[#f4faf3] border border-[#cfe2ce] px-3 py-2 text-xs font-bold text-[#285b43] text-center">📍 Google Maps</a>}
                   </div>
 
                   {journeys.length > 0 && (
                     <div className="mt-4 rounded-2xl bg-white border border-[#e4e9dd] p-3">
                       <p className="text-[10px] text-[#71816e] font-bold">JOURNEY ĐÃ LƯU</p>
                       <div className="space-y-2 mt-2">
-                        {journeys.slice(0, 5).map((savedJourney) => <button key={savedJourney.id} type="button" onClick={() => { setJourneyName(savedJourney.name); setJourneyCheckpointIds(savedJourney.checkpointIds); setJourneyStarted(savedJourney.started); setJourneyStartDate(savedJourney.startDate); setJourneyEndDate(savedJourney.endDate); }} className="w-full text-left rounded-xl bg-black/10 border border-[#edf0e7] p-3"><p className="text-xs font-bold">{savedJourney.name}</p><p className="text-[10px] text-[#84917e] mt-1">{savedJourney.checkpointIds.length} checkpoint · {savedJourney.startDate || "chưa đặt ngày"}</p></button>)}
+                        {journeys.slice(0, 5).map((savedJourney) => <button key={savedJourney.id} type="button" onClick={() => { setJourneyName(savedJourney.name); setJourneyCheckpointIds(savedJourney.checkpointIds); setJourneyStarted(savedJourney.started); setJourneyStartDate(savedJourney.startDate); setJourneyEndDate(savedJourney.endDate); }} className="w-full text-left rounded-xl bg-[#f4faf3] hover:bg-[#dcebd2] border border-[#cfe2ce] p-3 text-[#183d32] transition"><p className="text-xs font-bold">{savedJourney.name}</p><p className="text-[10px] text-[#84917e] mt-1">{savedJourney.checkpointIds.length} checkpoint · {savedJourney.startDate || "chưa đặt ngày"}</p></button>)}
                       </div>
                     </div>
                   )}
@@ -7078,7 +7078,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={clearJourney}
-                    className="py-3 rounded-xl bg-white hover:bg-[#f1f4eb] border border-[#e4e9dd] text-xs font-bold transition"
+                    className="py-3 rounded-xl bg-[#f4faf3] hover:bg-[#e7f1e8] border border-[#cfe2ce] text-[#285b43] text-xs font-bold transition"
                   >
                     🗑️ Xóa hành trình
                   </button>
@@ -7095,7 +7095,7 @@ export default function Home() {
                       type="button"
                       onClick={startJourney}
                       disabled={journeyCheckpointIds.length === 0 || !journeyName.trim()}
-                      className="py-3 rounded-xl bg-[#43875b] hover:bg-[#43875b] disabled:opacity-40 text-[#183d32] text-xs font-bold transition"
+                      className="py-3 rounded-xl bg-[#43875b] hover:bg-[#356e49] disabled:opacity-40 text-white text-xs font-bold transition"
                     >
                       🧭 Bắt đầu hành trình
                     </button>
