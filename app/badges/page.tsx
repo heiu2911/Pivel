@@ -45,9 +45,9 @@ function createBadge(title: string, emoji: string, description: string, progress
   return { title, emoji, description, progress: Math.min(progress, goal), goal, unlocked: progress >= goal, category };
 }
 
-function BadgeTile({ badge }: { badge: Badge }) {
+function BadgeTile({ badge, onSelect }: { badge: Badge; onSelect: (badge: Badge) => void }) {
   return (
-    <article className={`group flex min-w-0 flex-col items-center rounded-2xl border p-3 text-center transition hover:-translate-y-0.5 hover:shadow-md sm:p-4 ${badge.unlocked ? "border-[#dce6d2] bg-white" : "border-dashed border-[#d8ddd1] bg-[#f1f1e9]/80"}`}>
+    <button type="button" onClick={() => onSelect(badge)} aria-label={`Xem chi tiết huy hiệu ${badge.title}`} className={`group flex min-w-0 flex-col items-center rounded-2xl border p-3 text-center transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#4d8762] sm:p-4 ${badge.unlocked ? "border-[#dce6d2] bg-white" : "border-dashed border-[#d8ddd1] bg-[#f1f1e9]/80"}`}>
       <div className={`relative flex h-16 w-16 items-center justify-center rounded-[1.35rem] border-2 text-3xl shadow-sm sm:h-[4.5rem] sm:w-[4.5rem] sm:text-4xl ${badge.unlocked ? "border-[#d7e5c8] bg-gradient-to-br from-[#fffef6] to-[#dcebd3]" : "border-[#d9ddd1] bg-gradient-to-br from-[#f2f1e9] to-[#e3e4d9] grayscale"}`}>
         <span aria-hidden="true">{badge.emoji}</span>
         {!badge.unlocked && <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#879183] text-xs text-white">🔒</span>}
@@ -61,11 +61,11 @@ function BadgeTile({ badge }: { badge: Badge }) {
         </div>
         <p className="mt-1 text-[10px] font-bold tabular-nums text-[#71816e]">{badge.progress}/{badge.goal}</p>
       </div>
-    </article>
+    </button>
   );
 }
 
-function BadgeSection({ title, emoji, badges, wide = false }: { title: string; emoji: string; badges: Badge[]; wide?: boolean }) {
+function BadgeSection({ title, emoji, badges, wide = false, onSelect }: { title: string; emoji: string; badges: Badge[]; wide?: boolean; onSelect: (badge: Badge) => void }) {
   const earned = badges.filter((badge) => badge.unlocked).length;
   return (
     <section className={`rounded-[1.6rem] border border-[#e5e7dc] bg-[#fffef9]/95 p-4 shadow-[0_5px_20px_rgba(43,68,48,0.04)] sm:p-5 ${wide ? "md:col-span-2" : ""}`}>
@@ -77,7 +77,7 @@ function BadgeSection({ title, emoji, badges, wide = false }: { title: string; e
         <span className="shrink-0 rounded-full bg-[#eef1e8] px-2.5 py-1 text-xs font-extrabold tabular-nums text-[#66806b]">{earned}/{badges.length}</span>
       </div>
       <div className={`grid grid-cols-2 gap-2.5 sm:grid-cols-3 ${wide ? "lg:grid-cols-5" : ""}`}>
-        {badges.map((badge) => <BadgeTile key={badge.title} badge={badge} />)}
+        {badges.map((badge) => <BadgeTile key={badge.title} badge={badge} onSelect={onSelect} />)}
       </div>
     </section>
   );
@@ -90,6 +90,7 @@ export default function BadgesPage() {
   const [postCount, setPostCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "earned" | "locked">("all");
+  const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -161,7 +162,7 @@ export default function BadgesPage() {
     return [
       { key: "region", title: "Huy hiệu theo khu vực", emoji: "🗺️", badges: regionBadges },
       { key: "destination", title: "Huy hiệu địa danh nổi bật", emoji: "🏞️", badges: destinationBadges },
-      { key: "activity", title: "Huy hiệu hoạt động", emoji: "📸", badges: activityBadges },
+      { key: "activity", title: "Huy hiệu UGC & hoạt động cộng đồng", emoji: "📸", badges: activityBadges },
       { key: "journey", title: "Huy hiệu hành trình", emoji: "🥾", badges: journeyBadges },
       { key: "special", title: "Huy hiệu đặc biệt", emoji: "🏅", badges: specialBadges },
       { key: "advanced", title: "Huy hiệu nâng cao", emoji: "🏆", badges: advancedBadges },
@@ -215,8 +216,9 @@ export default function BadgesPage() {
 
         {loading && <div className="mb-4 rounded-2xl border border-[#e0e5d8] bg-white p-4 text-sm text-[#71816e]">Đang tải thành tích của cậu…</div>}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {visibleSections.map((section) => <BadgeSection key={section.key} title={section.title} emoji={section.emoji} badges={section.badges} wide={section.key === "region" || section.key === "destination"} />)}
+          {visibleSections.map((section) => <BadgeSection key={section.key} title={section.title} emoji={section.emoji} badges={section.badges} wide={section.key === "region" || section.key === "destination"} onSelect={setSelectedBadge} />)}
         </div>
+        {selectedBadge && <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#173629]/55 p-4" role="presentation" onClick={() => setSelectedBadge(null)}><section role="dialog" aria-modal="true" aria-labelledby="badge-detail-title" className="w-full max-w-md rounded-[1.8rem] border border-[#e1e5d9] bg-[#fffef9] p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-start justify-between gap-4"><div className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl border-2 text-4xl ${selectedBadge.unlocked ? "border-[#d7e5c8] bg-gradient-to-br from-[#fffef6] to-[#dcebd3]" : "border-[#d9ddd1] bg-[#e9eadf] grayscale"}`}>{selectedBadge.emoji}</div><button type="button" onClick={() => setSelectedBadge(null)} aria-label="Đóng chi tiết" className="rounded-full bg-[#edf2e8] px-3 py-2 text-sm font-black text-[#315b45]">✕</button></div><p className="mt-4 text-xs font-black uppercase tracking-[0.18em] text-[#82917c]">Chi tiết huy hiệu</p><h2 id="badge-detail-title" className="mt-1 text-2xl font-black text-[#234a39]">{selectedBadge.title}</h2><p className="mt-2 text-sm leading-6 text-[#71816e]">{selectedBadge.description}.</p><div className="mt-5 rounded-2xl border border-[#e1e5d9] bg-white p-4"><div className="flex items-center justify-between gap-3"><span className="text-sm font-extrabold">Tiến độ mở khóa</span><span className="text-sm font-black tabular-nums text-[#315b45]">{selectedBadge.progress}/{selectedBadge.goal}</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-[#e5e8df]"><div className="h-full rounded-full bg-[#4d8762] transition-all" style={{ width: `${Math.round((selectedBadge.progress / selectedBadge.goal) * 100)}%` }} /></div><p className="mt-3 text-sm font-bold text-[#315b45]">{selectedBadge.unlocked ? "✓ Đã mở khóa thành công" : `Còn ${Math.max(selectedBadge.goal - selectedBadge.progress, 0)} bước để mở khóa`}</p></div><p className="mt-3 text-xs leading-5 text-[#82917c]">Tiến độ được tính từ dữ liệu check-in và bài đăng hiện có. Ngày nhận huy hiệu sẽ hiển thị khi hệ thống lưu riêng lịch sử trao huy hiệu.</p><button type="button" onClick={() => setSelectedBadge(null)} className="mt-5 w-full rounded-full bg-[#245b43] px-4 py-3 text-sm font-extrabold text-white">Đã hiểu</button></section></div>}
         {!visibleSections.length && <div className="rounded-2xl border border-dashed border-[#cdd8c5] bg-white p-10 text-center"><p className="text-3xl">🏅</p><p className="mt-3 font-extrabold">Chưa có huy hiệu trong mục này</p><p className="mt-1 text-sm text-[#71816e]">Tiếp tục hành trình để mở khóa thành tích nhé.</p></div>}
         <footer className="mt-7 rounded-2xl border border-[#e1e5d9] bg-white/80 p-4 text-xs leading-5 text-[#71816e]">Thành tích được tính dựa trên dữ liệu check-in và bài đăng hiện có. Một số huy hiệu theo sự kiện là thành tích mô phỏng theo địa danh, chưa gắn với lịch sự kiện thời gian thực.</footer>
       </div>
