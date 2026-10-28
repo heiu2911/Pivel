@@ -2351,6 +2351,13 @@ export default function Map({
     };
   }, []);
 
+  // Keep nearby search aligned with the latest GPS location already obtained by the app.
+  useEffect(() => {
+    if (userLocation && isValidCoordinate(userLocation.latitude, userLocation.longitude)) {
+      setNearbyOrigin(userLocation);
+    }
+  }, [userLocation]);
+
   // ========================================
   // ĐỊA ĐIỂM ĂN UỐNG, NGHỈ NGƠI VÀ TIỆN ÍCH GẦN GPS
   // ========================================
