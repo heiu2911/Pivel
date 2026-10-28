@@ -151,3 +151,29 @@ a {
   --tq-canvas: #e7f1e8;
   --tq-surface-green: #f4faf3;
 }
+
+/* High-contrast typography for every cream/white panel and modal across the app. */
+[class*="bg-[#fffdf6]"] [class*="text-white"],
+[class*="bg-[#fff8e8]"] [class*="text-white"],
+[class*="bg-[#f7f4e8]"] [class*="text-white"],
+[class*="bg-[#f1f4eb]"] [class*="text-white"],
+[class*="bg-[#f4faf3]"] [class*="text-white"],
+[class*="bg-[#e7f1e8]"] [class*="text-white"],
+[class*="bg-white"] [class*="text-white"],
+[class*="bg-white/"] [class*="text-white"],
+[class*="bg-[#fffdf6]"] [class*="text-white/"],
+[class*="bg-[#fff8e8]"] [class*="text-white/"],
+[class*="bg-[#f7f4e8]"] [class*="text-white/"],
+[class*="bg-[#f1f4eb]"] [class*="text-white/"] {
+  color: #6b4328 !important;
+  font-weight: 750 !important;
+}
+
+/* Keep headings and labels readable on the pale-green / cream interface. */
+[class*="bg-[#fffdf6]"] h1, [class*="bg-[#fffdf6]"] h2, [class*="bg-[#fffdf6]"] h3,
+[class*="bg-[#fffdf6]"] label, [class*="bg-[#fffdf6]"] p,
+[class*="bg-[#fff8e8]"] h1, [class*="bg-[#fff8e8]"] h2, [class*="bg-[#fff8e8]"] h3,
+[class*="bg-[#fff8e8]"] label {
+  color: #6b4328;
+  font-weight: 700;
+}
