@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TravelQuest | Khám phá và check-in",
+  title: "Pivel | Khám phá theo cách của bạn",
   description:
-    "Khám phá các điểm đến, check-in bằng GPS và lưu lại hành trình của bạn.",
+    "Pivel giúp bạn khám phá địa điểm, check-in, lưu hành trình và chia sẻ trải nghiệm du lịch.",
 };
 
 export default function RootLayout({
