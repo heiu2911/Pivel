@@ -27,6 +27,7 @@ export default function PersonalProfilePage() {
   const [editing, setEditing] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
+  const [avatarEmoji, setAvatarEmoji] = useState("🧭");
   const [savingProfile, setSavingProfile] = useState(false);
   const [postFilter, setPostFilter] = useState<"all" | "photos" | "text">("all");
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -156,7 +157,7 @@ export default function PersonalProfilePage() {
     <main className="min-h-screen bg-[#faf9f1] px-4 pb-12 text-[#123f3a]">
       <div className="mx-auto max-w-3xl">
         <header className="flex items-center justify-between py-5">
-          <Link href="/" className="flex items-center gap-2 text-sm font-bold text-[#245b43]"><span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#245b43] text-lg text-white">✈</span> Pivel</Link>
+          <Link href="/" className="flex items-center gap-2 text-sm font-bold text-[#075b52]"><span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#075b52] text-lg text-white">✈</span> Pivel</Link>
           <button onClick={() => router.push("/")} className="rounded-full border border-[#dce3d2] bg-white px-4 py-2 text-sm font-bold">← Về trang chủ</button>
         </header>
 
@@ -165,7 +166,7 @@ export default function PersonalProfilePage() {
           <div className="px-5 pb-6 sm:px-8">
             <div className="-mt-14 flex flex-col gap-4 sm:flex-row sm:items-end">
               <div className="flex min-w-0 items-end gap-4">
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-[#fffef9] bg-[#e4ebdc] text-4xl font-black text-[#245b43] shadow-sm sm:h-28 sm:w-28">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-[#fffef9] bg-[#e4ebdc] text-4xl font-black text-[#075b52] shadow-sm sm:h-28 sm:w-28">
                   {(avatarDraft || avatarUrl) ? <img src={avatarDraft || avatarUrl || ""} alt="Ảnh đại diện" className="h-full w-full object-cover" /> : initials}
                 </div>
                 <div className="min-w-0 flex-1 pb-1">
@@ -177,37 +178,37 @@ export default function PersonalProfilePage() {
               <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto sm:justify-end">
                 <button onClick={() => { setNameDraft(displayName); setAvatarDraft(null); setEditing((value) => !value); }} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2.5 text-xs font-bold sm:px-4 sm:text-sm">{editing ? "Đóng chỉnh sửa" : "✎ Chỉnh sửa hồ sơ"}</button>
                 <button onClick={() => router.push("/recap")} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2.5 text-xs font-bold sm:px-4 sm:text-sm">✧ Nhật ký</button>
-                <button onClick={() => router.push("/")} className="rounded-full bg-[#245b43] px-3 py-2.5 text-xs font-bold text-white sm:px-4 sm:text-sm">✦ Khám phá</button>
+                <button onClick={() => router.push("/")} className="rounded-full bg-[#075b52] px-3 py-2.5 text-xs font-bold text-white sm:px-4 sm:text-sm">✦ Khám phá</button>
               </div>
             </div>
 
             {editing && user && (
-              <div className="mt-5 rounded-2xl border border-[#dce3d2] bg-[#f8f8f0] p-4">
+              <div className="mt-5 rounded-2xl border border-[#dce3d2] bg-[#f1f3e8] p-4">
                 <label className="block text-xs font-bold text-[#71816e]">Tên hiển thị</label>
-                <input value={nameDraft} onChange={(event) => setNameDraft(event.target.value)} maxLength={30} className="mt-2 w-full rounded-xl border border-[#dce3d2] bg-white px-3 py-3 text-sm outline-none focus:border-[#245b43]" placeholder="Tên của cậu" />
+                <input value={nameDraft} onChange={(event) => setNameDraft(event.target.value)} maxLength={30} className="mt-2 w-full rounded-xl border border-[#dce3d2] bg-white px-3 py-3 text-sm outline-none focus:border-[#075b52]" placeholder="Tên của cậu" />
                 <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={(event) => void chooseAvatar(event.target.files?.[0])} />
                 <button type="button" onClick={() => avatarInputRef.current?.click()} className="mt-3 rounded-xl border border-[#cdd8c5] bg-white px-4 py-2.5 text-sm font-bold">📷 Chọn ảnh đại diện</button>
                 {avatarDraft && <p className="mt-2 text-xs text-[#71816e]">Ảnh mới đã chọn, hãy lưu để áp dụng.</p>}
-                <button type="button" disabled={savingProfile} onClick={() => void saveProfile()} className="mt-4 w-full rounded-xl bg-[#245b43] px-4 py-3 text-sm font-black text-white disabled:opacity-50">{savingProfile ? "Đang lưu…" : "Lưu thay đổi"}</button>
+                <button type="button" disabled={savingProfile} onClick={() => void saveProfile()} className="mt-4 w-full rounded-xl bg-[#075b52] px-4 py-3 text-sm font-black text-white disabled:opacity-50">{savingProfile ? "Đang lưu…" : "Lưu thay đổi"}</button>
               </div>
             )}
 
-            <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-2xl bg-[#f0f3e9] p-3 text-center"><p className="text-2xl font-black">{posts.length}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Bài đăng</p></div>
-              <div className="rounded-2xl bg-[#f0f3e9] p-3 text-center"><p className="text-2xl font-black">{checkinCount}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt check-in</p></div>
-              <div className="rounded-2xl bg-[#f0f3e9] p-3 text-center"><p className="text-2xl font-black">{totalLikes}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt thích</p></div>
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{checkinCount}</p><p className="mt-1 text-xs font-semibold text-[#687c70]">Checkpoint</p><p className="mt-1 text-[10px] text-[#81907c]">đã chinh phục</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{posts.length}</p><p className="mt-1 text-xs font-semibold text-[#687c70]">UGC</p><p className="mt-1 text-[10px] text-[#81907c]">bài đã đăng</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{totalLikes}</p><p className="mt-1 text-xs font-semibold text-[#687c70]">Lượt thích</p><p className="mt-1 text-[10px] text-[#81907c]">trên bài đăng</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{user ? "●" : "○"}</p><p className="mt-1 text-xs font-semibold text-[#687c70]">Trạng thái</p><p className="mt-1 text-[10px] text-[#81907c]">{user ? "Đang đăng nhập" : "Chưa đăng nhập"}</p></div>
             </div>
-            <button type="button" onClick={() => router.push("/badges")} className="mt-4 flex w-full flex-col gap-3 rounded-2xl border border-[#dce3d2] bg-gradient-to-r from-[#f7f8ef] to-[#eaf0e3] p-4 text-left transition hover:border-[#b8cbb0] hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm">🏅</div>
-                <div className="min-w-0">
-                  <p className="text-sm font-black text-[#245b43]">Bộ sưu tập huy hiệu</p>
-                  <p className="mt-1 text-xs leading-5 text-[#71816e]">Theo dõi thành tích check-in, khám phá và chia sẻ hành trình của cậu.</p>
-                  <div className="mt-2 flex items-center gap-1.5 text-lg" aria-hidden="true"><span>🗺️</span><span>📸</span><span>🥾</span><span>🌟</span><span>🔒</span></div>
-                </div>
-              </div>
-              <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#245b43] px-4 py-2.5 text-xs font-extrabold text-white">Xem huy hiệu →</span>
-            </button>
+            {user && <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => router.push("/settings")} className="flex-1 rounded-xl border border-[#dce5d7] bg-white px-4 py-3 text-sm font-bold hover:bg-[#f1f3e8]">⚙️ Cài đặt</button>
+              <button type="button" onClick={async () => { await supabase.auth.signOut(); router.push("/login"); router.refresh(); }} className="flex-1 rounded-xl border border-[#f0cfc5] bg-[#fff3ef] px-4 py-3 text-sm font-bold text-[#b94d3b] hover:bg-[#ffebe4]">🚪 Đăng xuất</button>
+            </div>}
+            <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{posts.length}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Bài đăng</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{checkinCount}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt check-in</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{totalLikes}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt thích</p></div>
+            </div>
+   </button>
           </div>
         </section>
 
@@ -216,7 +217,7 @@ export default function PersonalProfilePage() {
             <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#84917e]">Nhật ký hành trình</p><h2 className="mt-1 text-xl font-black">Bài đăng của tớ</h2></div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-[#71816e]">{visiblePosts.length} bài</span>
-              <button type="button" onClick={() => window.location.reload()} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-xs font-bold hover:bg-[#f0f3e9]" aria-label="Tải lại trang cá nhân">↻ Làm mới</button>
+              <button type="button" onClick={() => window.location.reload()} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2 text-xs font-bold hover:bg-[#f1f3e8]" aria-label="Tải lại trang cá nhân">↻ Làm mới</button>
             </div>
           </div>
           <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Lọc bài đăng">
@@ -225,12 +226,12 @@ export default function PersonalProfilePage() {
               ["photos", "Có ảnh"],
               ["text", "Bài viết chữ"],
             ] as const).map(([filter, label]) => (
-              <button key={filter} type="button" onClick={() => setPostFilter(filter)} aria-pressed={postFilter === filter} className={`rounded-full px-4 py-2 text-sm font-bold transition ${postFilter === filter ? "bg-[#245b43] text-white" : "border border-[#dce3d2] bg-white text-[#526b54] hover:bg-[#f0f3e9]"}`}>{label}</button>
+              <button key={filter} type="button" onClick={() => setPostFilter(filter)} aria-pressed={postFilter === filter} className={`rounded-full px-4 py-2 text-sm font-bold transition ${postFilter === filter ? "bg-[#075b52] text-white" : "border border-[#dce3d2] bg-white text-[#526b54] hover:bg-[#f1f3e8]"}`}>{label}</button>
             ))}
           </div>
-          {!user && !loading && <div className="rounded-2xl border border-[#e0e5d8] bg-[#fffef9] p-6 text-center"><p className="font-bold">Cậu chưa đăng nhập</p><p className="mt-2 text-sm text-[#71816e]">{message}</p><button onClick={() => router.push("/login")} className="mt-4 rounded-full bg-[#245b43] px-5 py-3 text-sm font-bold text-white">Đăng nhập / Đăng ký</button></div>}
+          {!user && !loading && <div className="rounded-2xl border border-[#e0e5d8] bg-[#fffef9] p-6 text-center"><p className="font-bold">Cậu chưa đăng nhập</p><p className="mt-2 text-sm text-[#71816e]">{message}</p><button onClick={() => router.push("/login")} className="mt-4 rounded-full bg-[#075b52] px-5 py-3 text-sm font-bold text-white">Đăng nhập / Đăng ký</button></div>}
           {loading && <div className="rounded-2xl bg-[#fffef9] p-8 text-center text-sm text-[#71816e]">Đang tải trang cá nhân…</div>}
-          {!loading && user && posts.length === 0 && <div className="rounded-2xl border border-dashed border-[#cdd8c5] bg-[#fffef9] p-8 text-center"><div className="text-4xl">📷</div><p className="mt-3 font-bold">Chưa có bài đăng nào</p><p className="mt-1 text-sm text-[#71816e]">Chia sẻ khoảnh khắc đầu tiên trong chuyến đi của cậu nhé.</p><button onClick={() => router.push("/")} className="mt-4 rounded-full bg-[#245b43] px-5 py-3 text-sm font-bold text-white">Chia sẻ khoảnh khắc</button></div>}
+          {!loading && user && posts.length === 0 && <div className="rounded-2xl border border-dashed border-[#cdd8c5] bg-[#fffef9] p-8 text-center"><div className="text-4xl">📷</div><p className="mt-3 font-bold">Chưa có bài đăng nào</p><p className="mt-1 text-sm text-[#71816e]">Chia sẻ khoảnh khắc đầu tiên trong chuyến đi của cậu nhé.</p><button onClick={() => router.push("/")} className="mt-4 rounded-full bg-[#075b52] px-5 py-3 text-sm font-bold text-white">Chia sẻ khoảnh khắc</button></div>}
           {message && user && !loading && <p className="mb-3 text-sm text-amber-700">{message}</p>}
           {!loading && user && posts.length > 0 && visiblePosts.length === 0 && <div className="rounded-2xl border border-dashed border-[#cdd8c5] bg-[#fffef9] p-6 text-center text-sm text-[#71816e]">Không có bài đăng phù hợp với bộ lọc này.</div>}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
