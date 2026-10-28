@@ -2218,6 +2218,7 @@ export default function Map({
   const plannedRouteKey = plannedRoute.map((stop) => stop.id).join(",");
   const [mapError, setMapError] = useState<string | null>(null);
   const [nearbyCategory, setNearbyCategory] = useState<"food" | "rest" | "toilets" | "fuel" | "shops">("food");
+  const [nearbyOrigin, setNearbyOrigin] = useState<UserLocation | null>(userLocation);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState("");
@@ -2350,6 +2351,11 @@ export default function Map({
     };
   }, []);
 
+  // Keep nearby search centered on the latest shared GPS position when available.
+  useEffect(() => {
+    if (userLocation) setNearbyOrigin(userLocation);
+  }, [userLocation]);
+
   // ========================================
   // ĐỊA ĐIỂM ĂN UỐNG, NGHỈ NGƠI VÀ TIỆN ÍCH GẦN GPS
   // ========================================
@@ -2360,7 +2366,7 @@ export default function Map({
     setNearbyPlaces([]);
     setNearbyError("");
     if (!mapInstance || !mapReady) return;
-    if (!userLocation || !Number.isFinite(userLocation.latitude) || !Number.isFinite(userLocation.longitude)) {
+    if (!nearbyOrigin || !Number.isFinite(nearbyOrigin.latitude) || !Number.isFinite(nearbyOrigin.longitude)) {
       setNearbyError("Bật GPS để tìm địa điểm gần vị trí của cậu.");
       setNearbyLoading(false);
       return;
@@ -2375,8 +2381,8 @@ export default function Map({
       shops: ['["shop"~"supermarket|convenience"]'],
     };
     const selectors = categoryFilters[nearbyCategory].map((filter) =>
-      "node" + filter + "(around:5000," + userLocation.latitude + "," + userLocation.longitude + ");" +
-      "way" + filter + "(around:5000," + userLocation.latitude + "," + userLocation.longitude + ");"
+      "node" + filter + "(around:5000," + nearbyOrigin.latitude + "," + nearbyOrigin.longitude + ");" +
+      "way" + filter + "(around:5000," + nearbyOrigin.latitude + "," + nearbyOrigin.longitude + ");"
     ).join("\n");
     const query = "[out:json][timeout:20];(" + selectors + ");out center tags;";
     const loadNearby = async () => {
@@ -2397,9 +2403,9 @@ export default function Map({
           const tags = element.tags ?? {};
           const name = tags.name || tags["name:vi"] || tags.brand || tags.operator;
           if (!name) return [];
-          const dLat = radians(latitude - userLocation.latitude);
-          const dLon = radians(longitude - userLocation.longitude);
-          const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(userLocation.latitude)) * Math.cos(radians(latitude)) * Math.sin(dLon / 2) ** 2;
+          const dLat = radians(latitude - nearbyOrigin.latitude);
+          const dLon = radians(longitude - nearbyOrigin.longitude);
+          const a = Math.sin(dLat / 2) ** 2 + Math.cos(radians(nearbyOrigin.latitude)) * Math.cos(radians(latitude)) * Math.sin(dLon / 2) ** 2;
           const distance = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
           return [{ id: element.type + "-" + element.id, name, category: tags.amenity || tags.tourism || tags.shop || "place", latitude, longitude, distance, address: [tags["addr:street"], tags["addr:city"]].filter(Boolean).join(", ") }];
         }).sort((a, b) => a.distance - b.distance).slice(0, 18);
@@ -2413,7 +2419,7 @@ export default function Map({
     };
     void loadNearby();
     return () => { cancelled = true; };
-  }, [mapReady, userLocation, nearbyCategory]);
+  }, [mapReady, nearbyOrigin, nearbyCategory]);
 
   useEffect(() => {
     const mapInstance = map.current;
@@ -3513,7 +3519,7 @@ export default function Map({
       ) : null}
       <div className="absolute left-3 top-3 z-[80] w-[min(360px,calc(100%-24px))] max-h-[calc(100%-24px)] overflow-hidden rounded-2xl border border-[#b8d5a5] bg-[#f4faf3]/95 text-[#183d32] shadow-xl backdrop-blur-md">
         <div className="p-3">
-          <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold tracking-wider text-[#43875b]">KHÁM PHÁ QUANH ĐÂY</p><p className="text-sm font-black">Ăn uống · Nghỉ ngơi · Tiện ích</p></div><span className="text-[10px] font-bold text-[#526b59]">{nearbyPlaces.length} nơi</span></div>
+          <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold tracking-wider text-[#43875b]">KHÁM PHÁ QUANH ĐÂY</p><p className="text-sm font-black">Ăn uống · Nghỉ ngơi · Tiện ích</p></div><button type="button" onClick={() => { if (!navigator.geolocation) { setNearbyError("Trình duyệt không hỗ trợ GPS."); return; } setNearbyLoading(true); navigator.geolocation.getCurrentPosition((position) => { const location = { latitude: position.coords.latitude, longitude: position.coords.longitude }; setNearbyOrigin(location); map.current?.flyTo({ center: [location.longitude, location.latitude], zoom: 14, duration: 700 }); setNearbyError(""); }, () => { setNearbyLoading(false); setNearbyError("Chưa cấp quyền GPS. Hãy cho phép vị trí trong trình duyệt rồi thử lại."); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }); }} className="shrink-0 rounded-full border border-[#b8d5a5] bg-white px-2.5 py-2 text-[10px] font-extrabold text-[#285b43]">📍 GPS của tôi</button><span className="text-[10px] font-bold text-[#526b59]">{nearbyPlaces.length} nơi</span></div>
           <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
             {([{id:"food",label:"🍜 Ăn uống"},{id:"rest",label:"🛏️ Nghỉ ngơi"},{id:"toilets",label:"🚻 WC"},{id:"fuel",label:"⛽ Xăng"},{id:"shops",label:"🛒 Cửa hàng"}] as const).map((item) => <button key={item.id} type="button" onClick={() => setNearbyCategory(item.id)} className={"shrink-0 rounded-full border px-2.5 py-2 text-[11px] font-extrabold " + (nearbyCategory === item.id ? "border-[#285b43] bg-[#285b43] text-white" : "border-[#cbdcc7] bg-white text-[#285b43]")}>{item.label}</button>)}
           </div>
