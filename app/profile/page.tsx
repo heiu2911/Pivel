@@ -163,20 +163,22 @@ export default function PersonalProfilePage() {
         <section className="overflow-hidden rounded-[2rem] border border-[#e0e5d8] bg-[#fffef9] shadow-sm">
           <div className="h-32 bg-gradient-to-r from-[#b8cbb0] via-[#e6e8d3] to-[#d4dfc8]" />
           <div className="px-5 pb-6 sm:px-8">
-            <div className="-mt-14 flex flex-wrap items-end gap-4">
-              <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-[#fffef9] bg-[#e4ebdc] text-4xl font-black text-[#245b43] shadow-sm">
-                {(avatarDraft || avatarUrl) ? <img src={avatarDraft || avatarUrl || ""} alt="Ảnh đại diện" className="h-full w-full object-cover" /> : initials}
+            <div className="-mt-14 flex flex-col gap-4 sm:flex-row sm:items-end">
+              <div className="flex min-w-0 items-end gap-4">
+                <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-[#fffef9] bg-[#e4ebdc] text-4xl font-black text-[#245b43] shadow-sm sm:h-28 sm:w-28">
+                  {(avatarDraft || avatarUrl) ? <img src={avatarDraft || avatarUrl || ""} alt="Ảnh đại diện" className="h-full w-full object-cover" /> : initials}
+                </div>
+                <div className="min-w-0 flex-1 pb-1">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#81907c]">Trang cá nhân</p>
+                  <h1 className="mt-1 break-words [overflow-wrap:anywhere] text-2xl font-black leading-tight sm:text-3xl">{displayName}</h1>
+                  <p className="mt-1 break-all text-xs leading-5 text-[#7b8977] sm:text-sm">{user?.email ?? "Cùng lưu lại những hành trình đáng nhớ."}</p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1 pb-1">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#81907c]">Trang cá nhân</p>
-                <h1 className="mt-1 break-words text-2xl font-black">{displayName}</h1>
-                <p className="mt-1 text-sm text-[#7b8977]">{user?.email ?? "Cùng lưu lại những hành trình đáng nhớ."}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => { setNameDraft(displayName); setAvatarDraft(null); setEditing((value) => !value); }} className="mb-1 rounded-full border border-[#dce3d2] bg-white px-4 py-2.5 text-sm font-bold">{editing ? "Đóng chỉnh sửa" : "✎ Chỉnh sửa hồ sơ"}</button>
-                <button onClick={() => router.push("/recap")} className="mb-1 rounded-full border border-[#dce3d2] bg-white px-4 py-2.5 text-sm font-bold">✧ Nhật ký</button>
-                <button onClick={() => router.push("/badges")} className="mb-1 rounded-full border border-[#dce3d2] bg-white px-4 py-2.5 text-sm font-bold">🏅 Huy hiệu</button>
-                <button onClick={() => router.push("/")} className="mb-1 rounded-full bg-[#245b43] px-4 py-2.5 text-sm font-bold text-white">✦ Khám phá</button>
+              <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto sm:justify-end">
+                <button onClick={() => { setNameDraft(displayName); setAvatarDraft(null); setEditing((value) => !value); }} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2.5 text-xs font-bold sm:px-4 sm:text-sm">{editing ? "Đóng chỉnh sửa" : "✎ Chỉnh sửa hồ sơ"}</button>
+                <button onClick={() => router.push("/recap")} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2.5 text-xs font-bold sm:px-4 sm:text-sm">✧ Nhật ký</button>
+                <button onClick={() => router.push("/badges")} className="rounded-full border border-[#dce3d2] bg-white px-3 py-2.5 text-xs font-bold sm:px-4 sm:text-sm">🏅 Huy hiệu</button>
+                <button onClick={() => router.push("/")} className="rounded-full bg-[#245b43] px-3 py-2.5 text-xs font-bold text-white sm:px-4 sm:text-sm">✦ Khám phá</button>
               </div>
             </div>
 
@@ -196,6 +198,17 @@ export default function PersonalProfilePage() {
               <div className="rounded-2xl bg-[#f0f3e9] p-3 text-center"><p className="text-2xl font-black">{checkinCount}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt check-in</p></div>
               <div className="rounded-2xl bg-[#f0f3e9] p-3 text-center"><p className="text-2xl font-black">{totalLikes}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt thích</p></div>
             </div>
+            <button type="button" onClick={() => router.push("/badges")} className="mt-4 flex w-full flex-col gap-3 rounded-2xl border border-[#dce3d2] bg-gradient-to-r from-[#f7f8ef] to-[#eaf0e3] p-4 text-left transition hover:border-[#b8cbb0] hover:shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm">🏅</div>
+                <div className="min-w-0">
+                  <p className="text-sm font-black text-[#245b43]">Bộ sưu tập huy hiệu</p>
+                  <p className="mt-1 text-xs leading-5 text-[#71816e]">Theo dõi thành tích check-in, khám phá và chia sẻ hành trình của cậu.</p>
+                  <div className="mt-2 flex items-center gap-1.5 text-lg" aria-hidden="true"><span>🗺️</span><span>📸</span><span>🥾</span><span>🌟</span><span>🔒</span></div>
+                </div>
+              </div>
+              <span className="inline-flex shrink-0 items-center justify-center rounded-full bg-[#245b43] px-4 py-2.5 text-xs font-extrabold text-white">Xem huy hiệu →</span>
+            </button>
           </div>
         </section>
 
