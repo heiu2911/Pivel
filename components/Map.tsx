@@ -2217,7 +2217,7 @@ export default function Map({
   const [mapReady, setMapReady] = useState(false);
   const plannedRouteKey = plannedRoute.map((stop) => stop.id).join(",");
   const [mapError, setMapError] = useState<string | null>(null);
-  const [nearbyCategory, setNearbyCategory] = useState<"food" | "rest" | "toilets" | "fuel" | "shops">("food");
+  const [nearbyCategory, setNearbyCategory] = useState<"food" | "rest" | "toilets" | "fuel" | "shops" | "pharmacy" | "parking" | "attractions">("food");
   const [nearbyOrigin, setNearbyOrigin] = useState<UserLocation | null>(userLocation);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
@@ -2374,6 +2374,9 @@ export default function Map({
       toilets: ['["amenity"="toilets"]'],
       fuel: ['["amenity"="fuel"]'],
       shops: ['["shop"~"supermarket|convenience"]'],
+      pharmacy: ['["amenity"="pharmacy"]'],
+      parking: ['["amenity"="parking"]'],
+      attractions: ['["tourism"~"attraction|museum|viewpoint|gallery|zoo|theme_park"]', '["leisure"~"park|garden"]'],
     };
     const selectors = categoryFilters[nearbyCategory].map((filter) =>
       "node" + filter + "(around:5000," + nearbyOrigin.latitude + "," + nearbyOrigin.longitude + ");" +
@@ -2436,7 +2439,7 @@ export default function Map({
       element.style.alignItems = "center";
       element.style.justifyContent = "center";
       element.style.fontSize = "17px";
-      element.textContent = nearbyCategory === "food" ? "🍜" : nearbyCategory === "rest" ? "🛏️" : nearbyCategory === "toilets" ? "🚻" : nearbyCategory === "fuel" ? "⛽" : "🛒";
+      element.textContent = nearbyCategory === "food" ? "🍜" : nearbyCategory === "rest" ? "🛏️" : nearbyCategory === "toilets" ? "🚻" : nearbyCategory === "fuel" ? "⛽" : nearbyCategory === "pharmacy" ? "💊" : nearbyCategory === "parking" ? "🅿️" : nearbyCategory === "attractions" ? "🏞️" : "🛒";
       element.addEventListener("click", () => mapInstance.flyTo({ center: [place.longitude, place.latitude], zoom: 16, duration: 650 }));
       const distanceLabel = place.distance < 1000 ? Math.round(place.distance) + " m" : (place.distance / 1000).toFixed(1) + " km";
       const popupHtml = "<div style=\"padding:12px;color:#183d32;font-family:system-ui,sans-serif\"><strong>" + String(index + 1) + ". " + escapeHtml(place.name) + "</strong><div style=\"font-size:12px;margin-top:5px\">Cách đây " + distanceLabel + "</div></div>";
@@ -3516,7 +3519,7 @@ export default function Map({
         <div className="p-3">
           <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold tracking-wider text-[#43875b]">KHÁM PHÁ QUANH ĐÂY</p><p className="text-sm font-black">Ăn uống · Nghỉ ngơi · Tiện ích</p></div><button type="button" onClick={() => { if (!navigator.geolocation) { setNearbyError("Trình duyệt không hỗ trợ GPS."); return; } setNearbyLoading(true); navigator.geolocation.getCurrentPosition((position) => { const location = { latitude: position.coords.latitude, longitude: position.coords.longitude }; setNearbyOrigin(location); map.current?.flyTo({ center: [location.longitude, location.latitude], zoom: 14, duration: 700 }); setNearbyError(""); }, () => { setNearbyLoading(false); setNearbyError("Chưa cấp quyền GPS. Hãy cho phép vị trí trong trình duyệt rồi thử lại."); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }); }} className="shrink-0 rounded-full border border-[#b8d5a5] bg-white px-2.5 py-2 text-[10px] font-extrabold text-[#285b43]">📍 GPS của tôi</button><span className="text-[10px] font-bold text-[#526b59]">{nearbyPlaces.length} nơi</span></div>
           <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
-            {([{id:"food",label:"🍜 Ăn uống"},{id:"rest",label:"🛏️ Nghỉ ngơi"},{id:"toilets",label:"🚻 WC"},{id:"fuel",label:"⛽ Xăng"},{id:"shops",label:"🛒 Cửa hàng"}] as const).map((item) => <button key={item.id} type="button" onClick={() => setNearbyCategory(item.id)} className={"shrink-0 rounded-full border px-2.5 py-2 text-[11px] font-extrabold " + (nearbyCategory === item.id ? "border-[#285b43] bg-[#285b43] text-white" : "border-[#cbdcc7] bg-white text-[#285b43]")}>{item.label}</button>)}
+            {([{id:"food",label:"🍜 Ăn uống"},{id:"rest",label:"🛏️ Nghỉ ngơi"},{id:"attractions",label:"🏞️ Tham quan"},{id:"parking",label:"🅿️ Bãi đỗ xe"},{id:"pharmacy",label:"💊 Nhà thuốc"},{id:"toilets",label:"🚻 WC"},{id:"fuel",label:"⛽ Xăng"},{id:"shops",label:"🛒 Cửa hàng"}] as const).map((item) => <button key={item.id} type="button" onClick={() => setNearbyCategory(item.id)} className={"shrink-0 rounded-full border px-2.5 py-2 text-[11px] font-extrabold " + (nearbyCategory === item.id ? "border-[#285b43] bg-[#285b43] text-white" : "border-[#cbdcc7] bg-white text-[#285b43]")}>{item.label}</button>)}
           </div>
         </div>
         <div className="max-h-[min(42dvh,360px)] overflow-y-auto border-t border-[#dce8d8] px-3 py-2">
