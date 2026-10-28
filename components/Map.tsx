@@ -2517,7 +2517,9 @@ export default function Map({
       rerouting = true;
       const thisRequest = ++requestId;
       try {
-        const coords = [String(origin.longitude) + "," + String(origin.latitude), ...stops.map((stop) => String(stop.longitude) + "," + String(stop.latitude))].join(";");
+        const activeStop = stops[0];
+        if (!activeStop) return;
+        const coords = String(origin.longitude) + "," + String(origin.latitude) + ";" + String(activeStop.longitude) + "," + String(activeStop.latitude);
         const response = await fetch("https://api.mapbox.com/directions/v5/mapbox/driving/" + coords + "?overview=full&geometries=geojson&steps=true&language=vi&access_token=" + encodeURIComponent(token || ""));
         if (!response.ok) throw new Error("Không lấy được tuyến đường. Kiểm tra kết nối hoặc Mapbox token.");
         const data = await response.json() as { routes?: Array<{ distance: number; duration: number; geometry: { type: "LineString"; coordinates: [number, number][] }; legs?: Array<{ steps?: Array<{ distance: number; duration: number; name?: string; maneuver?: { instruction?: string } }> }> }> };
@@ -2527,7 +2529,7 @@ export default function Map({
         latestDistance = route.distance;
         latestDuration = route.duration;
         const nextStep = route.legs?.flatMap((leg) => leg.steps || []).find((step) => step.maneuver?.instruction || step.name);
-        latestInstruction = nextStep?.maneuver?.instruction || (nextStep?.name ? "Đi theo " + nextStep.name : "Tiếp tục theo tuyến đường");
+        latestInstruction = "Đến " + activeStop.name + ": " + (nextStep?.maneuver?.instruction || (nextStep?.name ? "Đi theo " + nextStep.name : "Tiếp tục theo tuyến đường")) + (stops.length > 1 ? " · Còn " + (stops.length - 1) + " điểm sau đó" : "");
         removeRoute();
         mapInstance?.addSource(sourceId, { type: "geojson", data: { type: "Feature", properties: {}, geometry: route.geometry } });
         mapInstance?.addLayer({ id: layerId, type: "line", source: sourceId, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#16884b", "line-width": 8, "line-opacity": 0.96 } });
