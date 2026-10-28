@@ -7012,7 +7012,7 @@ export default function Home() {
             onClick={() => setJourneyOpen(false)}
           >
             <div
-              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f4faf3] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
+              className="w-full sm:max-w-2xl max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-y-auto bg-[#f4faf3] text-[#183d32] border border-[#cfe2ce] rounded-t-3xl sm:rounded-3xl shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="p-6">
