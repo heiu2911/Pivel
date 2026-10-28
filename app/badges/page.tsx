@@ -120,9 +120,7 @@ export default function BadgesPage() {
   const badges = useMemo(() => {
     const checked = checkpoints.filter((checkpoint) => checkedIds.includes(checkpoint.id));
     const names = checked.map((checkpoint) => checkpoint.name.toLocaleLowerCase("vi-VN"));
-    const allNames = checkpoints.map((checkpoint) => checkpoint.name.toLocaleLowerCase("vi-VN"));
     const countMatches = (keys: string[]) => names.filter((name) => keys.some((key) => name.includes(key))).length;
-    const countAllMatches = (keys: string[]) => allNames.filter((name) => keys.some((key) => name.includes(key))).length;
     const regionBadges = regions.map((region) => createBadge(region.title, region.emoji, "Check-in tại khu vực này", countMatches(region.keys), 1, "region"));
     const destinationBadges = featured.map((place) => createBadge(place.title, place.emoji, "Khám phá địa danh nổi bật", countMatches(place.keys), 1, "destination"));
     const activityBadges = [
