@@ -5641,15 +5641,25 @@ export default function Home() {
   };
 
   const startNewJourney = () => {
+    const trimmedName = journeyName.trim();
+    if (!trimmedName) {
+      setMessage("Hãy đặt tên cho hành trình trước khi lưu.");
+      return;
+    }
+    if (journeyCheckpointIds.length === 0) {
+      setMessage("Hãy chọn ít nhất một checkpoint trước khi lưu hành trình.");
+      return;
+    }
+
     const record: JourneyRecord = {
       id: crypto.randomUUID ? crypto.randomUUID() : `journey-${Date.now()}`,
-      name: journeyName.trim() || `Hành trình ${journeys.length + 1}`,
-      checkpointIds: journeyCheckpointIds,
+      name: trimmedName,
+      checkpointIds: [...journeyCheckpointIds],
       started: journeyStarted,
       startDate: journeyStartDate,
       endDate: journeyEndDate,
     };
-    setJourneys((current) => [record, ...current]);
+    setJourneys((current) => [record, ...current.filter((item) => item.id !== record.id)].slice(0, 20));
     setMessage(`🧭 Đã lưu ${record.name}.`);
   };
 
@@ -6930,6 +6940,15 @@ export default function Home() {
                     placeholder="Ví dụ: Hà Nội cuối tuần"
                   />
                 </div>
+
+                <button
+                  type="button"
+                  onClick={startNewJourney}
+                  disabled={!journeyName.trim() || journeyCheckpointIds.length === 0}
+                  className="mt-3 w-full rounded-xl border border-[#b8d5a5] bg-[#edf5e7] px-4 py-3 text-sm font-bold text-[#285b43] transition hover:bg-[#dcebd2] disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  💾 Lưu hành trình này
+                </button>
 
                 <div className="mt-5 rounded-2xl bg-white border border-[#e4e9dd] p-4">
                   <div className="flex items-center justify-between gap-3">
