@@ -5649,12 +5649,19 @@ export default function Home() {
       setActiveTab("map");
       setMessage("📍 Đã sắp xếp các điểm theo khoảng cách gần nhất. Dẫn đường sẽ lần lượt đến từng điểm; hãy bật quyền GPS.");
     };
-    if (userLocation) { beginWithLocation(userLocation); return; }
-    if (!navigator.geolocation) { setMessage("Trình duyệt này không hỗ trợ GPS."); return; }
+    // Luôn lấy GPS mới ngay lúc bắt đầu, không dùng vị trí cũ trong state.
+    if (!navigator.geolocation) {
+      setMessage("Trình duyệt này không hỗ trợ GPS.");
+      return;
+    }
+    setMessage("📍 Đang lấy vị trí GPS hiện tại để chọn điểm gần nhất…");
     navigator.geolocation.getCurrentPosition(
-      (position) => beginWithLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
-      () => setMessage("Không lấy được GPS để sắp xếp điểm gần nhất. Hãy bật quyền vị trí rồi thử lại."),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 }
+      (position) => beginWithLocation({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      }),
+      () => setMessage("Không lấy được GPS để bắt đầu tuyến. Hãy bật quyền vị trí cho trình duyệt rồi thử lại."),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   };
 
