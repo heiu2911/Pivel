@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import PivelMark from "../../components/PivelMark";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
@@ -157,7 +158,7 @@ export default function PersonalProfilePage() {
     <main className="min-h-screen bg-[#faf9f1] px-4 pb-12 text-[#123f3a]">
       <div className="mx-auto max-w-3xl">
         <header className="flex items-center justify-between py-5">
-          <Link href="/" className="flex items-center gap-2 text-sm font-bold text-[#075b52]"><span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[#075b52] text-lg text-white">✈</span> Pivel</Link>
+          <Link href="/" aria-label="Pivel - Trang chủ" className="flex items-center gap-2 text-sm font-bold text-[#075b52]"><PivelMark className="h-7 w-7" /> Pivel</Link>
           <button onClick={() => router.push("/")} className="rounded-full border border-[#dce3d2] bg-white px-4 py-2 text-sm font-bold">← Về trang chủ</button>
         </header>
 
