@@ -1,5 +1,7 @@
 "use client";
 
+import PivelMark from "../components/PivelMark";
+
 import {
   useEffect,
   useMemo,
@@ -6257,7 +6259,7 @@ export default function Home() {
             <header className="sticky top-0 z-30 border-b border-[#dce3d2] bg-[#faf9f1]/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.8rem)] backdrop-blur-xl">
               <div className="flex items-center justify-between gap-3">
                 <button type="button" onClick={() => setActiveTab("home")} className="flex items-center gap-2 text-left" aria-label="Pivel - Trang chủ">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#245b43] text-xl text-[#fff7df]">✈</span>
+                  <PivelMark className="h-7 w-7" />
                   <span><span className="block text-xl font-black tracking-tight text-[#1d604b]">Pivel</span><span className="block text-[9px] font-bold tracking-[0.18em] text-[#7b8977]">CÙNG NHAU KHÁM PHÁ VIỆT NAM</span></span>
                 </button>
                 <div className="flex items-center gap-2">
