@@ -4161,10 +4161,14 @@ export default function Home() {
   };
 
   const startJourney = () => {
-    if (journeyCheckpointIds.length === 0) return;
-    setJourneyStarted(true);
+    if (journeyCheckpointIds.length === 0) {
+      setMessage("Hãy chọn ít nhất một checkpoint trước khi bắt đầu hành trình.");
+      return;
+    }
+
+    // Dùng chung luồng GPS cho nút bắt đầu hành trình và Route Planner.
     setJourneyOpen(false);
-    setMessage(`🧭 Đã bắt đầu ${journeyName.trim() || "hành trình của bạn"}.`);
+    startGpsNavigation();
   };
 
   const finishJourney = () => {
