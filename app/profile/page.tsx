@@ -175,8 +175,8 @@ export default function PersonalProfilePage() {
                 </div>
                 <div className="min-w-0 flex-1 pb-1">
                   <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#81907c]">Trang cá nhân</p>
-                  <h1 className="mt-1 break-words [overflow-wrap:anywhere] text-2xl font-black leading-tight sm:text-3xl">{displayName}</h1>
-                  <p className="mt-1 break-all text-xs leading-5 text-[#7b8977] sm:text-sm">{user?.email ?? "Cùng lưu lại những hành trình đáng nhớ."}</p>
+                  <h1 className="mt-1 max-w-full whitespace-normal break-words [overflow-wrap:anywhere] text-2xl font-black leading-tight sm:text-3xl">{displayName}</h1>
+                  <p className="mt-1 max-w-full break-all text-xs leading-5 text-[#7b8977] sm:text-sm">{user?.email ?? "Cùng lưu lại những hành trình đáng nhớ."}</p>
                 </div>
               </div>
               <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto sm:justify-end">
