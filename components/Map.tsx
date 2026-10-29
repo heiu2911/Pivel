@@ -3194,9 +3194,6 @@ export default function Map({
 
         if (existingModal) existingModal.remove();
 
-        // Ẩn popup/card nổi của checkpoint khi mở trang chi tiết để không bị chồng giao diện.
-        mapInstance.getContainer().querySelectorAll(".mapboxgl-popup").forEach((popup) => popup.remove());
-
         const overlay = createCheckpointDetailsModal({
           checkpoint,
           details,
