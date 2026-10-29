@@ -2851,6 +2851,99 @@ export default function Map({
     const cityGroups = buildCityGroups();
     // When a city is selected, show only its checkpoint markers until the user zooms back out.
     let selectedCityKey: string | null = null;
+    let preserveCitySelectionDuringFlyTo = false;
+    const edgeCheckpointMarkers: mapboxgl.Marker[] = [];
+    let edgeIndicatorUpdateAttached = false;
+
+    const clearEdgeCheckpointMarkers = () => {
+      edgeCheckpointMarkers.forEach((marker) => marker.remove());
+      edgeCheckpointMarkers.length = 0;
+      if (edgeIndicatorUpdateAttached) {
+        mapInstance.off("move", updateEdgeCheckpointIndicators);
+        mapInstance.off("resize", updateEdgeCheckpointIndicators);
+        edgeIndicatorUpdateAttached = false;
+      }
+    };
+
+    const updateEdgeCheckpointIndicators = () => {
+      const width = mapContainer.current?.clientWidth ?? 0;
+      const height = mapContainer.current?.clientHeight ?? 0;
+      if (width < 80 || height < 80) return;
+      const margin = 34;
+      edgeCheckpointMarkers.forEach((marker) => {
+        const element = marker.getElement();
+        const rawCheckpoint = (element as HTMLElement & { __tqCheckpoint?: Checkpoint }).__tqCheckpoint;
+        const arrow = element.querySelector<HTMLElement>("[data-tq-edge-arrow]");
+        if (!rawCheckpoint) return;
+        const point = mapInstance.project([rawCheckpoint.longitude, rawCheckpoint.latitude]);
+        const isInside = point.x >= margin && point.x <= width - margin && point.y >= margin && point.y <= height - margin;
+        if (isInside) {
+          element.style.display = "none";
+          return;
+        }
+        const x = Math.max(margin, Math.min(width - margin, point.x));
+        const y = Math.max(margin, Math.min(height - margin, point.y));
+        marker.setLngLat(mapInstance.unproject([x, y]));
+        element.style.display = "flex";
+        const angle = Math.atan2(point.y - y, point.x - x) * 180 / Math.PI;
+        if (arrow) arrow.style.transform = `rotate(${angle}deg)`;
+      });
+    };
+
+    const createEdgeCheckpointMarker = (checkpoint: Checkpoint) => {
+      const element = document.createElement("button");
+      element.type = "button";
+      element.setAttribute("aria-label", `Đi tới checkpoint ${checkpoint.name}`);
+      element.title = `${checkpoint.name} — nhấn để xem trên bản đồ`;
+      element.style.width = "38px";
+      element.style.height = "38px";
+      element.style.display = "none";
+      element.style.alignItems = "center";
+      element.style.justifyContent = "center";
+      element.style.position = "relative";
+      element.style.border = "2px solid white";
+      element.style.borderRadius = "50%";
+      element.style.background = "#183d32";
+      element.style.color = "white";
+      element.style.boxShadow = "0 3px 12px rgba(0,0,0,.35)";
+      element.style.cursor = "pointer";
+      element.style.pointerEvents = "auto";
+      (element as HTMLElement & { __tqCheckpoint?: Checkpoint }).__tqCheckpoint = checkpoint;
+      const arrow = document.createElement("span");
+      arrow.dataset.tqEdgeArrow = "true";
+      arrow.textContent = "➤";
+      arrow.style.display = "block";
+      arrow.style.fontSize = "20px";
+      arrow.style.lineHeight = "1";
+      element.appendChild(arrow);
+      const label = document.createElement("span");
+      label.textContent = checkpoint.icon?.trim() || "📍";
+      label.style.position = "absolute";
+      label.style.right = "-5px";
+      label.style.bottom = "-5px";
+      label.style.width = "19px";
+      label.style.height = "19px";
+      label.style.display = "flex";
+      label.style.alignItems = "center";
+      label.style.justifyContent = "center";
+      label.style.borderRadius = "50%";
+      label.style.background = "#f7f4e8";
+      label.style.fontSize = "11px";
+      label.style.boxShadow = "0 1px 4px rgba(0,0,0,.25)";
+      element.appendChild(label);
+      element.addEventListener("click", (event) => {
+        event.stopPropagation();
+        mapInstance.flyTo({
+          center: [checkpoint.longitude, checkpoint.latitude],
+          zoom: Math.max(mapInstance.getZoom(), 14),
+          duration: 800,
+          essential: true,
+        });
+      });
+      return new mapboxgl.Marker({ element, anchor: "center" })
+        .setLngLat([checkpoint.longitude, checkpoint.latitude])
+        .addTo(mapInstance);
+    };
 
     const clearCityMarkers = () => {
       cityMarkers.current.forEach(
@@ -2942,6 +3035,7 @@ export default function Map({
       const openCity = (event?: Event) => {
         event?.stopPropagation();
         selectedCityKey = city.key;
+        preserveCitySelectionDuringFlyTo = true;
         mapInstance.flyTo({
           center: [city.longitude, city.latitude],
           zoom: 12.5,
@@ -3113,6 +3207,7 @@ export default function Map({
       if (!showCheckpoints) {
         clearCityMarkers();
         clearCheckpointMarkers();
+        clearEdgeCheckpointMarkers();
         currentMapMode.current = "hidden";
         return;
       }
@@ -3131,8 +3226,9 @@ export default function Map({
       currentMapMode.current = nextMode;
 
       if (showCities) {
-        selectedCityKey = null;
+        if (!preserveCitySelectionDuringFlyTo) selectedCityKey = null;
         clearCheckpointMarkers();
+        clearEdgeCheckpointMarkers();
         clearCityMarkers();
 
         cityGroups.forEach((city) => {
@@ -3145,8 +3241,10 @@ export default function Map({
           `TravelQuest: zoom xa → ${cityGroups.length} khu vực thành phố.`
         );
       } else {
+        preserveCitySelectionDuringFlyTo = false;
         clearCityMarkers();
         clearCheckpointMarkers();
+        clearEdgeCheckpointMarkers();
 
         const visibleCheckpoints = selectedCityKey
           ? cityGroups.find((city) => city.key === selectedCityKey)?.checkpoints ?? []
@@ -3165,7 +3263,17 @@ export default function Map({
           checkpointMarkers.current.push(
             createCheckpointMarker(checkpoint)
           );
+          if (selectedCityKey) {
+            edgeCheckpointMarkers.push(createEdgeCheckpointMarker(checkpoint));
+          }
         });
+
+        if (selectedCityKey && edgeCheckpointMarkers.length > 0) {
+          mapInstance.on("move", updateEdgeCheckpointIndicators);
+          mapInstance.on("resize", updateEdgeCheckpointIndicators);
+          edgeIndicatorUpdateAttached = true;
+          updateEdgeCheckpointIndicators();
+        }
 
         console.log(
           `TravelQuest: zoom gần → ${visibleCheckpoints.length} checkpoint.`
@@ -3190,6 +3298,7 @@ export default function Map({
       mapInstance.off("zoomend", renderMode);
       clearCityMarkers();
       clearCheckpointMarkers();
+      clearEdgeCheckpointMarkers();
       currentMapMode.current = null;
     };
   }, [checkpoints, showCheckpoints, forceCheckpointView]);
