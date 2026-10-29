@@ -176,3 +176,20 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* Keep modal close controls reachable while the modal content is scrolled. */
+[role="dialog"] button:has(svg.lucide-x),
+[class*="fixed"][class*="inset-0"] button:has(svg.lucide-x) {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 10000;
+  flex-shrink: 0;
+}
+
+/* Dialog surfaces should keep their own stacking context above page content. */
+[role="dialog"],
+[class*="fixed"][class*="inset-0"] {
+  isolation: isolate;
+}
