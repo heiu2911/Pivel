@@ -6411,7 +6411,7 @@ export default function Home() {
                 {friendProfiles.slice(0, 12).map((friend) => (
                   <button key={friend.user_id} type="button" onClick={() => { setActiveTab("ugc"); selectUgcTraveller(friend.user_id); }} className="w-[68px] shrink-0 text-center">
                     <span className="mx-auto flex h-[62px] w-[62px] items-center justify-center overflow-hidden rounded-full border-[3px] border-[#e78328] bg-white p-0.5">
-                      <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#e8eee0] text-xl">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : "🧭"}</span>
+                      <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[#e8eee0]">{friend.avatar_url ? <img src={friend.avatar_url} alt="" className="h-full w-full object-cover" /> : null}</span>
                     </span>
                     <span className="mt-1.5 block truncate text-[10px] font-bold">{friend.display_name}</span>
                   </button>
@@ -6503,7 +6503,7 @@ export default function Home() {
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
                       {comments.filter((comment) => comment.post_id === commentOpenPostId).map((comment) => (
                         <div key={comment.id} className="flex gap-3 border-b border-[#e7e9e0] py-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eee0]">🧭</div>
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eee0]"></div>
                           <div className="min-w-0 flex-1">
                             <p className="text-[11px] font-bold text-[#849184]">{commentAuthorNames[comment.user_id] || (comment.user_id === user?.id ? profileName : "Traveller")}</p>
                             <p className="mt-1 text-sm leading-5">{comment.content}</p>
@@ -6556,7 +6556,7 @@ export default function Home() {
                   return (
                     <article key={post.id} className="overflow-hidden rounded-[1.6rem] border border-[#e2e5d9] bg-white shadow-[0_8px_28px_rgba(36,66,46,0.06)]">
                       <div className="flex items-center gap-3 px-4 py-3.5">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eee0] text-lg">{authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" /> : "🧭"}</div>
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#e8eee0]">{authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" /> : null}</div>
                         <div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{authorName}</p><p className="mt-0.5 truncate text-[11px] text-[#849184]">{checkpoint ? `📍 ${checkpoint.name} · ` : ""}{formatPostTime(post.created_at)}</p></div>
                         <button type="button" onClick={() => setUgcMorePostId(post.id)} className="flex h-9 w-9 items-center justify-center rounded-full text-xl text-[#7d8b7d]" aria-label="Tùy chọn bài viết">···</button>
                       </div>
@@ -8671,7 +8671,7 @@ export default function Home() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white/10 text-base shadow-lg">
-                              {authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" draggable={false} /> : "🧭"}
+                              {authorAvatar ? <img src={authorAvatar} alt="" className="h-full w-full object-cover" draggable={false} /> : null}
                             </div>
                             <div className="min-w-0">
                               <p className="truncate text-sm font-black">{authorName}</p>
