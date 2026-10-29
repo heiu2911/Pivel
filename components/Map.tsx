@@ -3546,14 +3546,9 @@ export default function Map({
       }
     }
 
-    mapInstance.flyTo({
-      center: [
-        longitude,
-        latitude,
-      ],
-      zoom: 15,
-      duration: 1000,
-    });
+    // Keep the GPS marker in sync, but do not move the camera on every GPS update.
+    // Users can explore other areas without the map snapping back to their location.
+    // Re-centering should only happen from an explicit user action (e.g. the GPS button).
   }, [
     userLocation,
     checkpoints,
