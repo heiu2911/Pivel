@@ -1760,6 +1760,7 @@ function createCheckpointDetailsModal({
 
       const data = (await response.json()) as {
         code?: string;
+        message?: string;
         routes?: Array<{
           distance: number;
           duration: number;
