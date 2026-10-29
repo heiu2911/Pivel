@@ -6713,6 +6713,7 @@ export default function Home() {
                 navigationActive={navigationActive}
                 onNavigationStop={() => { setNavigationActive(false); setJourneyStarted(false); setMessage("Đã dừng dẫn đường GPS."); }}
                 showNearbyPanel={showNearbyPanel}
+                onCloseNearbyPanel={() => setShowNearbyPanel(false)}
                 avatarUrl={
                   avatarImageUrl
                 }
@@ -7046,7 +7047,7 @@ export default function Home() {
               </div>
             )}
 
-            {selectedCheckpoint && showCheckpointCard && (
+            {selectedCheckpoint && showCheckpointCard && !checkpointDetailOpen && (
               <div className="fixed inset-x-0 bottom-0 z-[200] pointer-events-none flex justify-center px-3 pb-[calc(82px+env(safe-area-inset-bottom))] sm:px-4 sm:pb-4">
                 <div
                   className="pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-[#dce3d2] bg-[#fffef9]/98 shadow-[0_12px_35px_rgba(0,0,0,.42)] backdrop-blur-2xl touch-manipulation select-none"
