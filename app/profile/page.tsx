@@ -134,6 +134,7 @@ export default function PersonalProfilePage() {
         if (avatarError) throw new Error("Tên đã lưu nhưng chưa thể lưu ảnh đại diện. Kiểm tra bảng travelquest_profile_avatars.");
         setAvatarUrl(avatarDraft);
         try { window.localStorage.setItem("travelquest-avatar-image:" + user.id, avatarDraft); } catch {}
+        window.dispatchEvent(new Event("travelquest-avatar-updated"));
       }
       setDisplayName(name);
       setAvatarDraft(null);
