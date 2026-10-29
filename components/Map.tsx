@@ -2343,6 +2343,19 @@ export default function Map({
       "bottom-right"
     );
 
+    // Nút định vị GPS độc lập: xin quyền vị trí và đưa camera về tọa độ hiện tại.
+    // Dùng control chuẩn của Mapbox để xử lý trạng thái loading, lỗi quyền GPS và cập nhật vị trí.
+    mapInstance.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 },
+        trackUserLocation: false,
+        showUserLocation: true,
+        showAccuracyCircle: true,
+        fitBoundsOptions: { maxZoom: 16 },
+      }),
+      "bottom-right"
+    );
+
     return () => {
       checkpointMarkers.current.forEach(
         (marker) => marker.remove()
