@@ -27,7 +27,7 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-2xl">
         <header className="mb-6 flex items-center justify-between">
           <button type="button" onClick={() => router.push("/profile")} className="rounded-full border border-[#dce3d2] bg-white px-4 py-2 text-sm font-bold">← Trang cá nhân</button>
-          <span className="text-lg font-black text-[#075b52]">Pivel</span>
+          <span className="flex items-center gap-2 text-lg font-black text-[#075b52]"><PivelMark className="h-7 w-7" />Pivel</span>
         </header>
         <section className="overflow-hidden rounded-3xl border border-[#dce5d7] bg-[#fffef9] shadow-sm">
           <div className="bg-gradient-to-r from-[#b8cbb0] via-[#e6e8d3] to-[#d4dfc8] p-6">
