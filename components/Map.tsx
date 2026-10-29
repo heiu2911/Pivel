@@ -2563,8 +2563,9 @@ export default function Map({
     }
 
     const getCurrentOrigin = async (): Promise<UserLocation> => {
+      const fallbackLocation = latestUserLocation.current ?? userLocation;
       if (!navigator.geolocation) {
-        if (userLocation && isValidCoordinate(userLocation.latitude, userLocation.longitude)) return userLocation;
+        if (fallbackLocation && isValidCoordinate(fallbackLocation.latitude, fallbackLocation.longitude)) return fallbackLocation;
         throw new Error("Trình duyệt không hỗ trợ GPS. Không thể bắt đầu tuyến từ vị trí hiện tại.");
       }
 
@@ -2584,7 +2585,7 @@ export default function Map({
           );
         });
       } catch (error) {
-        if (userLocation && isValidCoordinate(userLocation.latitude, userLocation.longitude)) return userLocation;
+        if (fallbackLocation && isValidCoordinate(fallbackLocation.latitude, fallbackLocation.longitude)) return fallbackLocation;
         throw error;
       }
     };
@@ -2667,7 +2668,7 @@ export default function Map({
       cancelled = true;
       removePlannedRoute();
     };
-  }, [mapReady, plannedRouteKey, navigationActive, userLocation]);
+  }, [mapReady, plannedRouteKey, navigationActive]);
 
   // ========================================
   // DẪN ĐƯỜNG GPS TRỰC TIẾP CHO HÀNH TRÌNH
