@@ -664,43 +664,61 @@ function createCheckpointDetailsModal({
           "&gsrnamespace=6&gsrlimit=3&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=1400&format=json&origin=*"
       );
 
-      if (!response.ok) throw new Error("Không tải được ảnh");
-
-      const data = (await response.json()) as {
-        query?: {
-          pages?: Record<string, {
-            imageinfo?: Array<{
-              thumburl?: string;
-              url?: string;
+      if (response.ok) {
+        const data = (await response.json()) as {
+          query?: {
+            pages?: Record<string, {
+              imageinfo?: Array<{
+                thumburl?: string;
+                url?: string;
+              }>;
             }>;
-          }>;
+          };
         };
-      };
-
-      const pages = data.query?.pages
-        ? Object.values(data.query.pages)
-        : [];
-
-      galleryImages = pages
-        .map(
-          (page) =>
-            page.imageinfo?.[0]?.thumburl ??
-            page.imageinfo?.[0]?.url
-        )
-        .filter(
-          (url): url is string =>
-            typeof url === "string" && url.length > 0
-        )
-        .slice(0, 3);
-
-      if (!galleryImages.length) {
-        throw new Error("Không tìm thấy ảnh");
+        const pages = data.query?.pages ? Object.values(data.query.pages) : [];
+        galleryImages = pages
+          .map((page) => page.imageinfo?.[0]?.thumburl ?? page.imageinfo?.[0]?.url)
+          .filter((url): url is string => typeof url === "string" && url.length > 0)
+          .slice(0, 3);
       }
 
+      // Nếu Commons không có ảnh, thử ảnh đại diện từ Wikipedia tiếng Việt rồi tiếng Anh.
+      if (!galleryImages.length) {
+        const wikiQuery = encodeURIComponent(
+          CHECKPOINT_IMAGE_QUERIES[checkpoint.name] ?? (checkpoint.name + " Việt Nam")
+        );
+        const wikiEndpoints = [
+          "https://vi.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" +
+            wikiQuery +
+            "&gsrnamespace=0&gsrlimit=3&prop=pageimages&piprop=thumbnail&pithumbsize=1400&format=json&origin=*",
+          "https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=" +
+            query +
+            "&gsrnamespace=0&gsrlimit=3&prop=pageimages&piprop=thumbnail&pithumbsize=1400&format=json&origin=*",
+        ];
+        for (const endpoint of wikiEndpoints) {
+          try {
+            const wikiResponse = await fetch(endpoint);
+            if (!wikiResponse.ok) continue;
+            const wikiData = await wikiResponse.json() as {
+              query?: { pages?: Record<string, { thumbnail?: { source?: string } }> };
+            };
+            const wikiPages = wikiData.query?.pages ? Object.values(wikiData.query.pages) : [];
+            galleryImages = wikiPages
+              .map((page) => page.thumbnail?.source)
+              .filter((url): url is string => typeof url === "string" && url.length > 0)
+              .slice(0, 3);
+            if (galleryImages.length) break;
+          } catch {
+            // Thử nguồn Wikipedia tiếp theo nếu nguồn hiện tại lỗi.
+          }
+        }
+      }
+
+      if (!galleryImages.length) throw new Error("Không tìm thấy ảnh");
       activeImageIndex = 0;
       renderGallery();
     } catch {
-      loading.textContent = "Chưa có hình ảnh cho địa danh này";
+      loading.textContent = "Chưa tìm được ảnh phù hợp; hãy thử lại sau";
     }
   };
 
