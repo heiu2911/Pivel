@@ -972,6 +972,30 @@ export default function Home() {
   const [savedPostIds, setSavedPostIds] = useState<number[]>([]);
   const [avatarEmoji, setAvatarEmoji] = useState("🧭");
   const [avatarImageUrl, setAvatarImageUrl] = useState<string | null>(null);
+
+  // Keep the avatar used across the map, posts, chats and profile in sync
+  // when the profile page updates it in the same tab or another tab.
+  useEffect(() => {
+    if (!user?.id) return;
+    const storageKey = `travelquest-avatar-image:${user.id}`;
+    const syncAvatar = () => {
+      try {
+        const saved = window.localStorage.getItem(storageKey);
+        setAvatarImageUrl(saved?.startsWith("data:image/") ? saved : null);
+      } catch {
+        // Keep the current avatar if local storage is unavailable.
+      }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === storageKey) syncAvatar();
+    };
+    window.addEventListener("travelquest-avatar-updated", syncAvatar);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("travelquest-avatar-updated", syncAvatar);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [user?.id]);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [dailyMissionClaims, setDailyMissionClaims] = useState<Record<string, string>>({});
