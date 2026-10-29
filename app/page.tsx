@@ -6019,8 +6019,8 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#102f26]/95 via-[#153b2d]/45 to-[#153b2d]/10" />
               <div className="absolute left-8 top-8 flex items-center gap-3 text-white">
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3a65a] text-2xl shadow-lg">✦</span>
-                <span className="text-xl font-black tracking-tight">TravelQuest</span>
+                <PivelMark containerClassName="border-white/20 bg-white/10 text-white" />
+                <span className="text-xl font-black tracking-tight">Pivel</span>
               </div>
               <div className="absolute bottom-10 left-8 right-8 text-white">
                 <p className="mb-4 inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-bold tracking-[0.18em] backdrop-blur">YOUR NEXT CHAPTER</p>
@@ -6046,8 +6046,8 @@ export default function Home() {
               <div className="mx-auto w-full max-w-md">
                 <div className="mb-7 md:hidden">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3a65a] text-2xl text-[#123f3a]">✦</span>
-                    <span className="text-xl font-black tracking-tight text-[#123f3a]">TravelQuest</span>
+                    <PivelMark />
+                    <span className="text-xl font-black tracking-tight text-[#123f3a]">Pivel</span>
                   </div>
                 </div>
 
