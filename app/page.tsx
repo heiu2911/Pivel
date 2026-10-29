@@ -1175,7 +1175,7 @@ export default function Home() {
           .in("user_id", contactIds);
         if (active && !contactsError && contacts) {
           setFriendProfiles((current) => {
-            const merged = new Map(current.map((item) => [item.user_id, item]));
+            const merged = new globalThis.Map<string, PublicProfile>(current.map((item): [string, PublicProfile] => [item.user_id, item]));
             for (const contact of contacts as PublicProfile[]) merged.set(contact.user_id, { ...merged.get(contact.user_id), ...contact });
             return Array.from(merged.values());
           });
