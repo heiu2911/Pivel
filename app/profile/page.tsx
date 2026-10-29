@@ -192,6 +192,21 @@ export default function PersonalProfilePage() {
               </div>
             )}
 
+            <div className="mt-5 grid grid-cols-5 gap-2">
+              {[
+                { icon: "🧭", label: "Hành trình", href: "/recap" },
+                { icon: "🏅", label: "Huy hiệu", href: "/badges" },
+                { icon: "➤", label: "Đã đến", href: "/recap" },
+                { icon: "🔖", label: "Đã lưu", href: "/?filter=saved" },
+                { icon: "▤", label: "Bài viết", href: "#posts" },
+              ].map((action) => (
+                <button key={action.label} type="button" onClick={() => action.label === "Bài viết" ? document.getElementById("posts")?.scrollIntoView({ behavior: "smooth" }) : router.push(action.href)} className="flex min-w-0 flex-col items-center gap-2 rounded-2xl bg-[#f6f4e9] px-1 py-3 text-center transition hover:-translate-y-0.5 hover:bg-[#e8eee0]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#e5ead9] text-xl text-[#075b52]">{action.icon}</span>
+                  <span className="text-[10px] font-bold leading-tight text-[#4f6254] sm:text-xs">{action.label}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
               <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{checkinCount}</p><p className="mt-1 text-xs font-semibold text-[#687c70]">Checkpoint</p><p className="mt-1 text-[10px] text-[#81907c]">đã chinh phục</p></div>
               <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{posts.length}</p><p className="mt-1 text-xs font-semibold text-[#687c70]">UGC</p><p className="mt-1 text-[10px] text-[#81907c]">bài đã đăng</p></div>
@@ -210,7 +225,27 @@ export default function PersonalProfilePage() {
           </div>
         </section>
 
-        <section className="mt-6">
+        <section className="mt-7">
+          <div className="mb-3 flex items-end justify-between">
+            <div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#8a947e]">Pivel collection</p><h2 className="mt-1 text-lg font-black text-[#123f3a]">Bộ sưu tập nổi bật</h2></div>
+            <button type="button" onClick={() => router.push("/badges")} className="text-xs font-bold text-[#075b52]">Xem tất cả ›</button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { name: "Hà Giang", detail: "Núi non & cung đường", image: "photo-1500530855697-b586d89ba3ee" },
+              { name: "Tây Bắc", detail: "Sắc xanh đại ngàn", image: "photo-1464822759023-fed622ff2c3b" },
+              { name: "Miền Trung", detail: "Biển & nắng", image: "photo-1500375592092-40eb2168fd21" },
+              { name: "Đảo xanh", detail: "Chuyến đi tiếp theo", image: "photo-1510414842594-a61c69b5ae57" },
+            ].map((place) => (
+              <button key={place.name} type="button" onClick={() => router.push("/")} className="group overflow-hidden rounded-2xl border border-[#e0e5d8] bg-[#fffef9] text-left shadow-sm transition hover:-translate-y-0.5">
+                <div className="h-24 bg-cover bg-center transition group-hover:scale-[1.02]" style={{ backgroundImage: `linear-gradient(0deg, rgba(18,63,58,.14), rgba(18,63,58,0)), url(https://images.unsplash.com/${place.image}?auto=format&fit=crop&w=600&q=80)` }} />
+                <div className="p-3"><p className="text-sm font-black text-[#123f3a]">{place.name}</p><p className="mt-1 text-[10px] text-[#7c8976]">{place.detail}</p></div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section id="posts" className="mt-6">
           <div className="mb-4 flex items-end justify-between">
             <div><p className="text-xs font-bold uppercase tracking-[0.18em] text-[#84917e]">Nhật ký hành trình</p><h2 className="mt-1 text-xl font-black">Bài đăng của tớ</h2></div>
             <div className="flex items-center gap-2">

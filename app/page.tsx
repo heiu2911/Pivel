@@ -834,6 +834,7 @@ export default function Home() {
 
   const [notificationsOpen, setNotificationsOpen] =
     useState(false);
+  const [notificationCategory, setNotificationCategory] = useState<"all" | "interaction" | "system" | "badge">("all");
 
   const [notificationsLoading, setNotificationsLoading] =
     useState(false);
@@ -9056,7 +9057,7 @@ export default function Home() {
                   🔔 Thông báo
                 </p>
                 <p className="text-[10px] text-[#81907c] mt-1">
-                  Các hoạt động mới trên TravelQuest
+                  Các hoạt động mới trên Pivel
                 </p>
               </div>
 
@@ -9070,6 +9071,17 @@ export default function Home() {
                 ✕
               </button>
 
+            </div>
+
+            <div className="flex gap-1.5 overflow-x-auto border-b border-[#e7e8dc] px-4 py-3">
+              {([
+                ["all", "Tất cả"],
+                ["interaction", "Tương tác"],
+                ["system", "Hệ thống"],
+                ["badge", "Huy hiệu"],
+              ] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => setNotificationCategory(value)} className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold transition ${notificationCategory === value ? "bg-[#075b52] text-white" : "bg-[#f1f3e8] text-[#6f7b68] hover:bg-[#e8eee0]"}`}>{label}</button>
+              ))}
             </div>
 
             <div className="max-h-[65vh] overflow-y-auto">
@@ -9095,7 +9107,12 @@ export default function Home() {
 
                 </div>
               ) : (
-                notifications.map(
+                notifications.filter((notification) => {
+                  if (notificationCategory === "all") return true;
+                  if (notificationCategory === "interaction") return ["follow", "like", "comment"].includes(notification.type);
+                  if (notificationCategory === "badge") return /huy hiệu|badge|checkpoint|xp|chinh phục/i.test(notification.message);
+                  return !["follow", "like", "comment"].includes(notification.type);
+                }).map(
                   (notification) => (
                     <div
                       key={notification.id}
