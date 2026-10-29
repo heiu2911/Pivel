@@ -75,19 +75,20 @@ const CHECKIN_RADIUS = 150;
 const CITY_ZOOM_LIMIT = 10.5;
 
 const CITY_IMAGE_QUERIES: Record<string, string> = {
-  "ha-noi": "Hanoi Vietnam",
-  "ha-long": "Ha Long Vietnam",
-  "ninh-binh": "Ninh Binh Vietnam",
-  "hue": "Hue Vietnam",
-  "da-nang": "Da Nang Vietnam",
-  "phong-nha": "Phong Nha Vietnam",
-  "cao-bang": "Cao Bang Vietnam",
-  "sapa": "Sapa Vietnam",
-  "nha-trang": "Nha Trang Vietnam",
-  "ho-chi-minh": "Ho Chi Minh City Vietnam",
-  "tay-ninh": "Tay Ninh Vietnam",
-  "can-tho": "Can Tho Vietnam",
-  "da-lat": "Da Lat Vietnam",
+  // Search for the city's best-known landmark rather than a generic city photo.
+  "ha-noi": "Hoan Kiem Lake Turtle Tower Hanoi Vietnam landmark",
+  "ha-long": "Ha Long Bay limestone karsts Vietnam UNESCO landmark",
+  "ninh-binh": "Trang An landscape limestone mountains Ninh Binh Vietnam",
+  "hue": "Imperial City Citadel Hue Vietnam Ngo Mon Gate",
+  "da-nang": "Dragon Bridge Da Nang Vietnam landmark",
+  "phong-nha": "Phong Nha Cave underground river Vietnam landmark",
+  "cao-bang": "Ban Gioc Waterfall Cao Bang Vietnam landmark",
+  "sapa": "Sapa Stone Church Fansipan mountain Vietnam landmark",
+  "nha-trang": "Po Nagar Cham Towers Nha Trang Vietnam landmark",
+  "ho-chi-minh": "Ben Thanh Market Ho Chi Minh City Vietnam landmark",
+  "tay-ninh": "Ba Den Mountain Tay Ninh Vietnam landmark",
+  "can-tho": "Cai Rang Floating Market Can Tho Vietnam landmark",
+  "da-lat": "Xuan Huong Lake Da Lat Vietnam landmark",
 };
 
 type CheckpointDetails = {
