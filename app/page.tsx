@@ -923,6 +923,7 @@ export default function Home() {
 
   const [comments, setComments] =
     useState<PostComment[]>([]);
+  const [commentAuthorNames, setCommentAuthorNames] = useState<Record<string, string>>({});
 
   const [commentInputs, setCommentInputs] =
     useState<Record<number, string>>({});
@@ -1052,6 +1053,7 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatStatusMessage, setChatStatusMessage] = useState("");
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [ugcSelectedUserId, setUgcSelectedUserId] = useState<string | null>(null);
   const [friendProfiles, setFriendProfiles] = useState<PublicProfile[]>([]);
@@ -1104,11 +1106,6 @@ export default function Home() {
           const parsed: unknown = JSON.parse(journeysRaw);
           if (Array.isArray(parsed)) setJourneys(parsed as JourneyRecord[]);
         }
-        const chatRaw = window.localStorage.getItem("travelquest-chat");
-        if (chatRaw) {
-          const parsed: unknown = JSON.parse(chatRaw);
-          if (Array.isArray(parsed)) setChatMessages(parsed as ChatMessage[]);
-        }
     } catch {
       // Ignore invalid local feature data.
     }
@@ -1126,29 +1123,72 @@ export default function Home() {
       );
       window.localStorage.setItem("travelquest-daily-missions", JSON.stringify({ claims: dailyMissionClaims, bonusXP: missionBonusXP }));
       window.localStorage.setItem("travelquest-journeys", JSON.stringify(journeys));
-      window.localStorage.setItem("travelquest-chat", JSON.stringify(chatMessages.slice(-100)));
     } catch {
       // Ignore localStorage failures.
     }
-  }, [user?.id, savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, chatMessages, localDataLoadedUserId]);
+  }, [user?.id, savedPostIds, avatarEmoji, dailyMissionClaims, missionBonusXP, journeys, localDataLoadedUserId]);
 
+  // Persistent messages are loaded for the current account and refreshed while chat is open.
   useEffect(() => {
     if (!chatOpen || !user?.id) return;
-    const channel = supabase.channel("travelquest-traveller-chat", { config: { broadcast: { self: false } } });
-    channel.on("broadcast", { event: "message" }, ({ payload }) => {
-      if (!payload || typeof payload !== "object") return;
-      const data = payload as Partial<ChatMessage>;
-      if (
-        typeof data.id !== "string" ||
-        typeof data.text !== "string" ||
-        typeof data.sender !== "string" ||
-        typeof data.senderId !== "string" ||
-        typeof data.recipientId !== "string"
-      ) return;
-      if (data.recipientId !== user.id) return;
-      setChatMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data as ChatMessage].slice(-100));
-    }).subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    let active = true;
+
+    const loadChatData = async () => {
+      const { data: rows, error } = await supabase
+        .from("travelquest_chat_messages")
+        .select("id, sender_id, recipient_id, sender_name, content, created_at")
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .order("created_at", { ascending: true })
+        .limit(500);
+
+      if (!active) return;
+      if (error) {
+        console.error("Không tải được Traveller Chat:", error.message);
+        setChatStatusMessage("Chưa tải được tin nhắn. Hãy chạy tệp supabase/traveller-chat.sql trong Supabase SQL Editor.");
+        return;
+      }
+
+      setChatStatusMessage("");
+      const mapped: ChatMessage[] = (rows ?? []).map((row) => ({
+        id: String(row.id),
+        text: row.content,
+        sender: row.sender_name || "Traveller",
+        senderId: row.sender_id,
+        recipientId: row.recipient_id,
+        createdAt: row.created_at,
+      }));
+      setChatMessages(mapped);
+
+      const conversationIds = mapped.map((message) =>
+        message.senderId === user.id ? message.recipientId : message.senderId
+      ).filter((id): id is string => Boolean(id) && id !== user.id);
+      const { data: followingRows } = await supabase
+        .from("user_follows")
+        .select("following_id")
+        .eq("follower_id", user.id);
+      const followingIds = (followingRows ?? []).map((row) => row.following_id).filter((id): id is string => Boolean(id));
+      const contactIds = Array.from(new Set([...conversationIds, ...followingIds]));
+      if (contactIds.length) {
+        const { data: contacts, error: contactsError } = await supabase
+          .from("travelquest_public_profiles")
+          .select("user_id, display_name, checkpoint_count, post_count, follower_count, following_count, xp, level")
+          .in("user_id", contactIds);
+        if (active && !contactsError && contacts) {
+          setFriendProfiles((current) => {
+            const merged = new Map(current.map((item) => [item.user_id, item]));
+            for (const contact of contacts as PublicProfile[]) merged.set(contact.user_id, { ...merged.get(contact.user_id), ...contact });
+            return Array.from(merged.values());
+          });
+        }
+      }
+    };
+
+    void loadChatData();
+    const intervalId = window.setInterval(() => { void loadChatData(); }, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
   }, [chatOpen, user?.id]);
 
   const [imagePreview, setImagePreview] =
@@ -3006,6 +3046,33 @@ export default function Home() {
     authReady,
     user?.id,
   ]);
+
+  useEffect(() => {
+    const ids = Array.from(new Set(comments.map((comment) => comment.user_id).filter(Boolean)));
+    if (!ids.length) {
+      setCommentAuthorNames({});
+      return;
+    }
+    let active = true;
+    void (async () => {
+      const { data, error } = await supabase
+        .from("travelquest_public_profiles")
+        .select("user_id, display_name")
+        .in("user_id", ids);
+      if (!active) return;
+      if (error) {
+        console.warn("Không tải được tên người bình luận:", error.message);
+        return;
+      }
+      const names: Record<string, string> = {};
+      for (const row of data ?? []) {
+        if (row.user_id && row.display_name?.trim()) names[row.user_id] = row.display_name.trim();
+      }
+      if (user?.id && profileName.trim()) names[user.id] = profileName.trim();
+      setCommentAuthorNames(names);
+    })();
+    return () => { active = false; };
+  }, [comments, user?.id, profileName]);
 
   // ============================================
   // LOAD UGC LIKES
@@ -5969,25 +6036,37 @@ export default function Home() {
     setChatOpen(true);
   };
 
-  const sendChatMessage = () => {
+  const sendChatMessage = async () => {
     const text = chatInput.trim();
     if (!text || !user?.id || !selectedChatFriend) return;
+    setChatStatusMessage("");
+
+    const { data, error } = await supabase
+      .from("travelquest_chat_messages")
+      .insert({
+        sender_id: user.id,
+        recipient_id: selectedChatFriend.user_id,
+        sender_name: profileName || "Traveller",
+        content: text,
+      })
+      .select("id, sender_id, recipient_id, sender_name, content, created_at")
+      .single();
+
+    if (error || !data) {
+      console.error("Không gửi được tin nhắn:", error?.message);
+      setChatStatusMessage("Chưa gửi được tin nhắn. Hãy kiểm tra bảng và quyền truy cập Traveller Chat trong Supabase.");
+      return;
+    }
 
     const message: ChatMessage = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      text,
-      sender: profileName,
-      senderId: user.id,
-      recipientId: selectedChatFriend.user_id,
-      createdAt: new Date().toISOString(),
+      id: String(data.id),
+      text: data.content,
+      sender: data.sender_name || profileName || "Traveller",
+      senderId: data.sender_id,
+      recipientId: data.recipient_id,
+      createdAt: data.created_at,
     };
-
-    setChatMessages((current) => [...current, message].slice(-100));
-    void supabase.channel("travelquest-traveller-chat").send({
-      type: "broadcast",
-      event: "message",
-      payload: message,
-    });
+    setChatMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message].slice(-500));
     setChatInput("");
   };
 
@@ -6386,7 +6465,7 @@ export default function Home() {
                         <div key={comment.id} className="flex gap-3 border-b border-[#e7e9e0] py-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eee0]">🧭</div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-[11px] font-bold text-[#849184]">{comment.user_id === user?.id ? profileName : "Traveller"}</p>
+                            <p className="text-[11px] font-bold text-[#849184]">{commentAuthorNames[comment.user_id] || (comment.user_id === user?.id ? profileName : "Traveller")}</p>
                             <p className="mt-1 text-sm leading-5">{comment.content}</p>
                             <span className="mt-1.5 block text-[10px] text-[#849184]">{formatPostTime(comment.created_at)}</span>
                           </div>
@@ -9800,14 +9879,16 @@ export default function Home() {
                       </button>
                     );
                   })}
-                  {!friendProfiles.length && <p className="py-10 text-center text-sm text-white/40">Chưa có bạn bè.</p>}
+                  {chatStatusMessage && <p className="mb-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-200">{chatStatusMessage}</p>}
+                  {!friendProfiles.length && <p className="py-10 text-center text-sm text-white/40">Chưa có cuộc trò chuyện. Hãy theo dõi Traveller để bắt đầu nhắn tin.</p>}
                 </div>
               ) : (
                 <div className="flex h-full flex-col">
                   <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
                     <div className="h-10 w-10 overflow-hidden rounded-full bg-white/10">{selectedChatFriend.avatar_url ? <img src={selectedChatFriend.avatar_url} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center">🧭</span>}</div>
-                    <div><p className="font-bold">{selectedChatFriend.display_name}</p><p className="text-xs text-white/40">Bạn bè</p></div>
+                    <div><p className="font-bold">{selectedChatFriend.display_name}</p><p className="text-xs text-white/40">Tin nhắn riêng</p></div>
                   </div>
+                  {chatStatusMessage && <p className="mb-2 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-200">{chatStatusMessage}</p>}
                   <div className="flex-1 space-y-2 overflow-y-auto">
                     {chatMessages.filter((message) => (message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id)).map((message) => <div key={message.id} className={`max-w-[78%] rounded-2xl px-3 py-2 ${message.senderId === user?.id ? "ml-auto bg-blue-500" : "bg-white/10"}`}><p className="text-sm">{message.text}</p></div>)}
                     {!chatMessages.some((message) => (message.senderId === user?.id && message.recipientId === selectedChatFriend.user_id) || (message.senderId === selectedChatFriend.user_id && message.recipientId === user?.id)) && <p className="py-10 text-center text-sm text-white/40">Chưa có tin nhắn. Bắt đầu trò chuyện!</p>}
