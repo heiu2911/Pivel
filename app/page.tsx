@@ -4836,7 +4836,7 @@ export default function Home() {
             );
 
             setPostMessage(
-              "⚠️ Không thể tải ảnh lên. Hãy kiểm tra bucket post-images."
+              `⚠️ Không thể tải ảnh lên: ${uploadError.message}. Kiểm tra Storage bucket "post-images" và quyền upload.`
             );
 
             setPosting(false);
