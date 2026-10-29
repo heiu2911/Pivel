@@ -6641,7 +6641,14 @@ export default function Home() {
               <button
                 key={value}
                 type="button"
-                onClick={() => setMapFilter((current) => current === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved")}
+                onClick={() => {
+                  const nextFilter = mapFilter === value ? "none" : value as "all" | "nearby" | "unvisited" | "saved";
+                  setMapFilter(nextFilter);
+                  if (nextFilter === "nearby") {
+                    updateLocation();
+                    startWatchingGPS();
+                  }
+                }}
                 className={`tq-map-chip shrink-0 ${mapFilter === value ? "tq-map-chip-active" : ""}`}
               >
                 {label}
