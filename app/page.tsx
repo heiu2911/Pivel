@@ -5788,10 +5788,10 @@ export default function Home() {
       .map((id) => checkpoints.find((checkpoint) => checkpoint.id === id))
       .filter((checkpoint): checkpoint is Checkpoint => Boolean(checkpoint));
     if (selected.length < 2) return "";
-    const origin = selected[0];
     const destination = selected[selected.length - 1];
-    const waypoints = selected.slice(1, -1).map((checkpoint) => `${checkpoint.latitude},${checkpoint.longitude}`).join("|");
-    return `https://www.google.com/maps/dir/?api=1&origin=${origin.latitude},${origin.longitude}&destination=${destination.latitude},${destination.longitude}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ""}`;
+    // Start from the traveller's live location, not the first saved checkpoint.
+    const waypoints = selected.slice(0, -1).map((checkpoint) => `${checkpoint.latitude},${checkpoint.longitude}`).join("|");
+    return `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${destination.latitude},${destination.longitude}${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ""}`;
   };
 
   const startNewJourney = () => {
