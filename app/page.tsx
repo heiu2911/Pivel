@@ -9278,6 +9278,31 @@ export default function Home() {
                             )}
                           </p>
 
+                          {notification.type === "follow" &&
+                            notification.actor_id &&
+                            notification.actor_id !== user?.id && (
+                              <div className="mt-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    void toggleFollow(notification.actor_id as string);
+                                  }}
+                                  disabled={Boolean(followLoading[notification.actor_id])}
+                                  className={`rounded-full px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                                    followingUserIds.includes(notification.actor_id)
+                                      ? "border border-[#dce5d7] bg-white text-[#687c70]"
+                                      : "bg-[#075b52] text-white hover:bg-[#06483f]"
+                                  }`}
+                                >
+                                  {followLoading[notification.actor_id]
+                                    ? "Đang cập nhật..."
+                                    : followingUserIds.includes(notification.actor_id)
+                                      ? "Đang theo dõi"
+                                      : "Theo dõi lại"}
+                                </button>
+                              </div>
+                            )}
+
                         </div>
 
                       </div>
