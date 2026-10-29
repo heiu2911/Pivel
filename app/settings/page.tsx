@@ -1,5 +1,7 @@
 "use client";
 
+import PivelMark from "../../components/PivelMark";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
