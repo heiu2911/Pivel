@@ -2275,6 +2275,7 @@ export default function Map({
   const [mapReady, setMapReady] = useState(false);
   const plannedRouteKey = plannedRoute.map((stop) => stop.id).join(",");
   const [mapError, setMapError] = useState<string | null>(null);
+  const [plannedRouteError, setPlannedRouteError] = useState<string | null>(null);
   const [nearbyCategory, setNearbyCategory] = useState<"food" | "rest" | "toilets" | "fuel" | "shops" | "pharmacy" | "parking" | "attractions">("food");
   const [nearbyOrigin, setNearbyOrigin] = useState<UserLocation | null>(userLocation);
   const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
@@ -2549,6 +2550,7 @@ export default function Map({
       if (mapInstance.getSource(sourceId)) mapInstance.removeSource(sourceId);
     };
 
+    setPlannedRouteError(null);
     if (!mapInstance || !mapReady || navigationActive || plannedRoute.length < 1 || !token) {
       removePlannedRoute();
       return;
@@ -2644,6 +2646,7 @@ export default function Map({
         if (cancelled) return;
 
         removePlannedRoute();
+        setPlannedRouteError(null);
         mapInstance.addSource(sourceId, {
           type: "geojson",
           data: { type: "Feature", properties: {}, geometry: route.geometry },
@@ -2659,7 +2662,11 @@ export default function Map({
         route.geometry.coordinates.forEach(([longitude, latitude]) => bounds.extend([longitude, latitude]));
         mapInstance.fitBounds(bounds, { padding: 90, maxZoom: 15, duration: 800 });
       } catch (error) {
-        if (!cancelled) console.error("TravelQuest planned route error:", error);
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : "Không thể lập tuyến từ GPS.";
+          console.error("TravelQuest planned route error:", error);
+          setPlannedRouteError(message);
+        }
       }
     };
 
@@ -3809,6 +3816,11 @@ export default function Map({
               Nếu bạn đang mở bằng địa chỉ IP của máy tính, hãy kiểm tra Mapbox token có cho phép địa chỉ đó.
             </p>
           </div>
+        </div>
+      ) : null}
+      {plannedRouteError && !navigationActive ? (
+        <div role="alert" className="absolute left-3 right-3 top-3 z-[900] mx-auto max-w-xl rounded-xl border border-red-200 bg-white/95 px-4 py-3 text-sm font-semibold text-red-700 shadow-lg">
+          Không thể lập tuyến GPS: {plannedRouteError}
         </div>
       ) : null}
       {showNearbyPanel ? <div className="absolute left-3 top-20 sm:top-24 z-[80] w-[min(360px,calc(100%-24px))] max-h-[calc(100%-104px)] overflow-hidden rounded-2xl border border-[#b8d5a5] bg-[#f4faf3]/95 text-[#183d32] shadow-xl backdrop-blur-md">
