@@ -23,6 +23,7 @@ export default function PersonalProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [posts, setPosts] = useState<ProfilePost[]>([]);
   const [checkinCount, setCheckinCount] = useState(0);
+  const [followerCount, setFollowerCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState(false);
@@ -46,11 +47,12 @@ export default function PersonalProfilePage() {
         return;
       }
 
-      const [profileResult, avatarResult, postsResult, checkinsResult] = await Promise.all([
+      const [profileResult, avatarResult, postsResult, checkinsResult, followersResult] = await Promise.all([
         supabase.from("profiles").select("display_name").eq("id", currentUser.id).maybeSingle(),
         supabase.from("travelquest_profile_avatars").select("avatar_url").eq("user_id", currentUser.id).maybeSingle(),
         supabase.from("posts").select("id, content, image_url, created_at, likes, checkpoint_id").eq("user_id", currentUser.id).order("created_at", { ascending: false }),
         supabase.from("checkins").select("checkpoint_id", { count: "exact", head: true }).eq("user_id", currentUser.id),
+        supabase.from("user_follows").select("follower_id", { count: "exact", head: true }).eq("following_id", currentUser.id),
       ]);
       if (!alive) return;
       if (profileResult.data?.display_name) { setDisplayName(profileResult.data.display_name); setNameDraft(profileResult.data.display_name); }
@@ -64,6 +66,7 @@ export default function PersonalProfilePage() {
       }
       if (!postsResult.error) setPosts((postsResult.data ?? []) as ProfilePost[]);
       if (!checkinsResult.error) setCheckinCount(checkinsResult.count ?? 0);
+      if (!followersResult.error) setFollowerCount(followersResult.count ?? 0);
       if (postsResult.error) setMessage("Chưa tải được bài đăng. Hãy thử tải lại trang.");
       setLoading(false);
     };
@@ -205,7 +208,7 @@ export default function PersonalProfilePage() {
               <button type="button" onClick={async () => { await supabase.auth.signOut(); router.push("/login"); router.refresh(); }} className="flex-1 rounded-xl border border-[#f0cfc5] bg-[#fff3ef] px-4 py-3 text-sm font-bold text-[#b94d3b] hover:bg-[#ffebe4]">🚪 Đăng xuất</button>
             </div>}
             <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{posts.length}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Bài đăng</p></div>
+              <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{followerCount}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Người theo dõi</p></div>
               <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{checkinCount}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt check-in</p></div>
               <div className="rounded-2xl bg-[#f1f3e8] p-3 text-center"><p className="text-2xl font-black">{totalLikes}</p><p className="mt-1 text-xs font-semibold text-[#71816e]">Lượt thích</p></div>
             </div>
