@@ -2533,6 +2533,7 @@ export default function Map({
 
   // ========================================
   // TUYẾN ĐƯỜNG ĐÃ LẬP TRONG TRAVELQUEST
+  // Luôn bắt đầu tuyến từ GPS hiện tại, sau đó đi qua các checkpoint đã chọn.
   // ========================================
 
   useEffect(() => {
@@ -2548,36 +2549,99 @@ export default function Map({
       if (mapInstance.getSource(sourceId)) mapInstance.removeSource(sourceId);
     };
 
-    if (!mapInstance || !mapReady || navigationActive || plannedRoute.length < 2 || !token) {
+    if (!mapInstance || !mapReady || navigationActive || plannedRoute.length < 1 || !token) {
       removePlannedRoute();
       return;
     }
 
     const validStops = plannedRoute
       .filter((stop) => isValidCoordinate(stop.latitude, stop.longitude))
-      .slice(0, 25);
-    if (validStops.length < 2) {
+      .slice(0, 24);
+    if (validStops.length < 1) {
       removePlannedRoute();
       return;
     }
 
+    const getCurrentOrigin = async (): Promise<UserLocation> => {
+      if (!navigator.geolocation) {
+        if (userLocation && isValidCoordinate(userLocation.latitude, userLocation.longitude)) return userLocation;
+        throw new Error("Trình duyệt không hỗ trợ GPS. Không thể bắt đầu tuyến từ vị trí hiện tại.");
+      }
+
+      try {
+        return await new Promise<UserLocation>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            }),
+            (error) => reject(new Error(
+              error.code === 1
+                ? "GPS bị từ chối. Hãy cấp quyền vị trí cho TravelQuest."
+                : "Chưa lấy được GPS hiện tại. Hãy bật vị trí và thử lại."
+            )),
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 3000 }
+          );
+        });
+      } catch (error) {
+        if (userLocation && isValidCoordinate(userLocation.latitude, userLocation.longitude)) return userLocation;
+        throw error;
+      }
+    };
+
     const drawRoute = async () => {
       try {
         if (!mapInstance.isStyleLoaded()) {
-          await new Promise<void>((resolve) => mapInstance.once("load", () => resolve()));
+          await new Promise<void>((resolve, reject) => {
+            const checkReady = () => {
+              if (!mapInstance.isStyleLoaded()) return;
+              window.clearTimeout(timeout);
+              mapInstance.off("idle", checkReady);
+              resolve();
+            };
+            const timeout = window.setTimeout(() => {
+              mapInstance.off("idle", checkReady);
+              reject(new Error("Bản đồ chưa sẵn sàng. Hãy thử lại sau."));
+            }, 15000);
+            mapInstance.on("idle", checkReady);
+            checkReady();
+          });
         }
         if (cancelled) return;
-        const coordinates = validStops.map((stop) => String(stop.longitude) + "," + String(stop.latitude)).join(";");
+
+        const origin = await getCurrentOrigin();
+        if (cancelled) return;
+
+        const stops = validStops.filter((stop, index) => {
+          if (index !== 0) return true;
+          return (calculateDistance(origin.latitude, origin.longitude, stop.latitude, stop.longitude) ?? Infinity) > 25;
+        });
+        const routeStops = [origin, ...stops];
+        if (routeStops.length < 2) {
+          removePlannedRoute();
+          console.info("TravelQuest: GPS đang ở sát checkpoint đầu tiên; không cần vẽ đoạn đường.");
+          return;
+        }
+
+        const coordinates = routeStops
+          .map((stop) => String(stop.longitude) + "," + String(stop.latitude))
+          .join(";");
         const response = await fetch(
           "https://api.mapbox.com/directions/v5/mapbox/driving/" + coordinates +
           "?overview=full&geometries=geojson&steps=false&access_token=" + encodeURIComponent(token)
         );
-        if (!response.ok) throw await createMapboxHttpError(response, "Không lấy được tuyến đường từ Mapbox");
+        if (!response.ok) throw await createMapboxHttpError(response, "Không lấy được tuyến đường từ GPS hiện tại");
         const data = await response.json() as {
+          code?: string;
+          message?: string;
           routes?: Array<{ distance: number; duration: number; geometry: { type: "LineString"; coordinates: number[][] } }>;
         };
         const route = data.routes?.[0];
-        if (!route?.geometry?.coordinates?.length || cancelled) return;
+        if (!route?.geometry?.coordinates?.length) {
+          throw new Error("Mapbox không tìm được đường đi từ GPS đến các checkpoint đã chọn." + (data.code ? " (" + data.code + ")" : ""));
+        }
+        if (cancelled) return;
+
         removePlannedRoute();
         mapInstance.addSource(sourceId, {
           type: "geojson",
@@ -2597,12 +2661,13 @@ export default function Map({
         if (!cancelled) console.error("TravelQuest planned route error:", error);
       }
     };
+
     void drawRoute();
     return () => {
       cancelled = true;
       removePlannedRoute();
     };
-  }, [mapReady, plannedRouteKey, navigationActive]);
+  }, [mapReady, plannedRouteKey, navigationActive, userLocation]);
 
   // ========================================
   // DẪN ĐƯỜNG GPS TRỰC TIẾP CHO HÀNH TRÌNH
