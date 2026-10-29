@@ -6239,7 +6239,7 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => { setHomeSearchOpen(true); setHomeSearchQuery(""); }} className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3d2] bg-white text-lg text-[#245b43]" aria-label="Tìm kiếm">⌕</button>
                   <button type="button" onClick={toggleNotifications} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#dce3d2] bg-white text-lg" aria-label="Thông báo">♧{notifications.some((item) => !item.is_read) && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-[#e78328]" />}</button>
-                  <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#dce3d2] bg-[#e9eddf] text-lg" aria-label="Tài khoản">{user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span>{user ? avatarEmoji : "👤"}</span>}</button>
+
                 </div>
               </div>
             </header>
@@ -6478,11 +6478,7 @@ export default function Home() {
                   {notifications.some((item) => !item.is_read) && <span className="absolute right-0.5 top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#fffef9] bg-red-400" />}
                 </button>
               )}
-              {authReady && (
-                <button type="button" onClick={() => user ? setAuthOpen(true) : openAuth("login")} className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#b8d5a5] bg-[#e8eee0] shadow-lg backdrop-blur-xl transition hover:scale-[1.03]" title={user ? "Tài khoản" : "Đăng nhập"}>
-                  {user && avatarImageUrl ? <img src={avatarImageUrl} alt="" className="h-full w-full object-cover" /> : <span className="text-base">{user ? avatarEmoji : "🔐"}</span>}
-                </button>
-              )}
+
             </div>
           </div>
 
