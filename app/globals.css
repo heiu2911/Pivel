@@ -176,3 +176,91 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* Pivel motion system: subtle, consistent and accessible across every route. */
+:root {
+  --pivel-motion-fast: 150ms;
+  --pivel-motion: 220ms;
+  --pivel-ease: cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+@keyframes pivel-page-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pivel-soft-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Keep page transitions gentle; main is used by the app's page layouts. */
+main {
+  animation: pivel-page-enter 360ms var(--pivel-ease) both;
+}
+
+button, a, [role="button"], input, textarea, select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a, [role="button"] {
+  transition:
+    color var(--pivel-motion-fast) ease,
+    background-color var(--pivel-motion-fast) ease,
+    border-color var(--pivel-motion-fast) ease,
+    box-shadow var(--pivel-motion) var(--pivel-ease),
+    transform var(--pivel-motion-fast) var(--pivel-ease),
+    opacity var(--pivel-motion-fast) ease;
+}
+
+button:not(:disabled):active, [role="button"]:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+a:focus-visible, button:focus-visible, [role="button"]:focus-visible,
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: 3px solid rgba(226, 137, 52, 0.72);
+  outline-offset: 3px;
+}
+
+/* Soft lift for interactive cards without changing static layout containers. */
+a[class*="rounded-2xl"], button[class*="rounded-2xl"],
+[role="button"][class*="rounded-2xl"] {
+  transform-origin: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a[class*="rounded-2xl"]:hover,
+  button[class*="rounded-2xl"]:not(:disabled):hover,
+  [role="button"][class*="rounded-2xl"]:hover {
+    box-shadow: 0 8px 22px rgba(18, 63, 58, 0.09);
+  }
+}
+
+input, textarea, select {
+  transition: border-color var(--pivel-motion-fast) ease, box-shadow var(--pivel-motion-fast) ease;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #6f9b82;
+  box-shadow: 0 0 0 3px rgba(111, 155, 130, 0.15);
+}
+
+[role="dialog"], dialog {
+  animation: pivel-soft-in 180ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
