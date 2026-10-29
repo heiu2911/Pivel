@@ -6698,6 +6698,63 @@ export default function Home() {
               />
             </div>
 
+            {mapFilter !== "none" && (
+              <aside className="absolute left-3 right-3 top-24 z-[70] mx-auto max-h-[min(52dvh,440px)] w-auto max-w-[380px] overflow-hidden rounded-2xl border border-[#dce5d7] bg-[#fffef9]/95 text-[#3f3428] shadow-[0_16px_48px_rgba(24,61,50,.2)] backdrop-blur-xl sm:left-5 sm:right-auto">
+                <div className="flex items-center justify-between border-b border-[#e4e9dd] px-4 py-3">
+                  <div>
+                    <p className="text-sm font-black">{({
+                      all: "Tất cả checkpoint",
+                      nearby: "Checkpoint gần bạn",
+                      unvisited: "Chưa check-in",
+                      saved: "Địa điểm đã lưu",
+                      none: "",
+                    } as Record<string, string>)[mapFilter]}</p>
+                    <p className="mt-0.5 text-xs text-[#786b5b]">
+                      {mapFilter === "nearby" && !userLocation
+                        ? "Đang chờ quyền truy cập vị trí GPS…"
+                        : `${mapDisplayCheckpoints.length} địa điểm`}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => setMapFilter("none")} className="rounded-full px-2.5 py-1 text-sm font-bold text-[#075b52] hover:bg-[#e8eee0]" aria-label="Đóng danh sách checkpoint">✕</button>
+                </div>
+                <div className="max-h-[min(42dvh,340px)] overflow-y-auto p-2">
+                  {mapFilter === "nearby" && !userLocation ? (
+                    <p className="px-3 py-4 text-sm text-[#786b5b]">Hãy cho phép trình duyệt truy cập vị trí, rồi chọn “Gần tôi” lần nữa.</p>
+                  ) : mapDisplayCheckpoints.length === 0 ? (
+                    <p className="px-3 py-4 text-sm text-[#786b5b]">
+                      {mapFilter === "saved"
+                        ? "Cậu chưa lưu địa điểm nào."
+                        : mapFilter === "unvisited"
+                          ? "Không còn checkpoint chưa check-in."
+                          : "Không tìm thấy checkpoint phù hợp."}
+                    </p>
+                  ) : (
+                    mapDisplayCheckpoints.slice(0, 60).map((checkpoint) => (
+                      <button
+                        key={checkpoint.id}
+                        type="button"
+                        onClick={() => {
+                          setFocusedMapCheckpoint(checkpoint);
+                          setMapFilter("none");
+                          setMapSearchQuery("");
+                          setMapSearchActive(false);
+                          setMessage(`Đang mở ${checkpoint.name}`);
+                        }}
+                        className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-[#edf2e7]"
+                      >
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8eee0] text-lg">📍</span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-bold text-[#3f3428]">{checkpoint.name}</span>
+                          <span className="mt-0.5 block text-xs text-[#786b5b]">{isCheckedIn(checkpoint.id) ? "Đã check-in" : "Chưa check-in"}</span>
+                        </span>
+                        <span className="text-lg text-[#075b52]">›</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </aside>
+            )}
+
             {/* MAP CONTROL PANEL / KHÁM PHÁ */}
             {showExplorePanel ? (
               <div className="fixed left-1/2 top-1/2 z-[80] w-[min(380px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 pointer-events-none">
