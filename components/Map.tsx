@@ -2849,6 +2849,8 @@ export default function Map({
     }
 
     const cityGroups = buildCityGroups();
+    // When a city is selected, show only its checkpoint markers until the user zooms back out.
+    let selectedCityKey: string | null = null;
 
     const clearCityMarkers = () => {
       cityMarkers.current.forEach(
@@ -2931,9 +2933,23 @@ export default function Map({
       label.style.color = "white";
       label.style.fontSize = "11px";
       label.style.fontWeight = "700";
-      label.style.pointerEvents = "none";
+      label.style.pointerEvents = "auto";
+      label.style.cursor = "pointer";
+      label.title = `Xem checkpoint tại ${city.name}`;
       label.textContent = `${city.name} · ${city.checkpoints.length}`;
       markerElement.appendChild(label);
+
+      const openCity = (event?: Event) => {
+        event?.stopPropagation();
+        selectedCityKey = city.key;
+        mapInstance.flyTo({
+          center: [city.longitude, city.latitude],
+          zoom: 12.5,
+          duration: 900,
+          essential: true,
+        });
+      };
+      label.addEventListener("click", openCity);
 
       markerElement.addEventListener("mouseenter", () => {
         icon.style.transform = "scale(1.08)";
@@ -2943,14 +2959,7 @@ export default function Map({
         icon.style.transform = "scale(1)";
       });
 
-      markerElement.addEventListener("click", () => {
-        mapInstance.flyTo({
-          center: [city.longitude, city.latitude],
-          zoom: 12.5,
-          duration: 900,
-          essential: true,
-        });
-      });
+      markerElement.addEventListener("click", openCity);
 
       const popup = new mapboxgl.Popup({
         offset: 34,
@@ -3122,6 +3131,7 @@ export default function Map({
       currentMapMode.current = nextMode;
 
       if (showCities) {
+        selectedCityKey = null;
         clearCheckpointMarkers();
         clearCityMarkers();
 
@@ -3138,7 +3148,11 @@ export default function Map({
         clearCityMarkers();
         clearCheckpointMarkers();
 
-        checkpoints.forEach((checkpoint) => {
+        const visibleCheckpoints = selectedCityKey
+          ? cityGroups.find((city) => city.key === selectedCityKey)?.checkpoints ?? []
+          : checkpoints;
+
+        visibleCheckpoints.forEach((checkpoint) => {
           if (
             !isValidCoordinate(
               checkpoint.latitude,
@@ -3154,7 +3168,7 @@ export default function Map({
         });
 
         console.log(
-          `TravelQuest: zoom gần → ${checkpoints.length} checkpoint.`
+          `TravelQuest: zoom gần → ${visibleCheckpoints.length} checkpoint.`
         );
       }
     };
