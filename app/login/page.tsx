@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import PivelMark from "../../components/PivelMark";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -91,7 +92,7 @@ export default function LoginPage() {
   return <main className="flex min-h-screen items-center justify-center bg-[#faf9f1] px-4 py-10 text-[#123f3a]">
     <div className="grid w-full max-w-5xl overflow-hidden rounded-[2rem] border border-[#e0e5d8] bg-[#fffef9] shadow-xl md:grid-cols-2">
       <section className="flex min-h-64 flex-col justify-between bg-[#245b43] p-8 text-white sm:p-10 md:min-h-[580px]">
-        <Link href="/" className="text-xl font-black">Pivel<span className="text-[#d9e7b5]">.</span></Link>
+        <Link href="/" aria-label="Pivel - Trang chủ" className="flex items-center gap-3 text-xl font-black"><PivelMark containerClassName="border-white/20 bg-white/10 text-white" /><span>Pivel<span className="text-[#d9e7b5]">.</span></span></Link>
         <div className="my-10"><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#d9e7b5]">Travel · Explore · Remember</p><h1 className="mt-4 text-4xl font-black leading-tight sm:text-5xl">Mỗi hành trình đều có câu chuyện.</h1><p className="mt-5 max-w-sm text-sm leading-7 text-white/80">Khám phá địa điểm mới, lưu giữ kỷ niệm và kết nối với cộng đồng yêu du lịch.</p></div>
         <p className="text-xs text-white/60">Khám phá theo cách của riêng cậu.</p>
       </section>
