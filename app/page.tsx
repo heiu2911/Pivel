@@ -975,6 +975,7 @@ export default function Home() {
   const [savedPostIds, setSavedPostIds] = useState<number[]>([]);
   const [avatarEmoji, setAvatarEmoji] = useState("🧭");
   const [avatarImageUrl, setAvatarImageUrl] = useState<string | null>(null);
+  const [postAuthorProfiles, setPostAuthorProfiles] = useState<Record<string, { display_name: string; avatar_url: string | null }>>({});
 
   // Keep the avatar used across the map, posts, chats and profile in sync
   // when the profile page updates it in the same tab or another tab.
@@ -1407,13 +1408,28 @@ export default function Home() {
         data?.display_name?.trim() ||
         "Traveller";
 
-      setProfileName(
-        name
-      );
+      setProfileName(name);
+      setProfileNameInput(name);
 
-      setProfileNameInput(
-        name
-      );
+      // Tải avatar từ Supabase để trang chủ đồng bộ với trang cá nhân trên mọi thiết bị.
+      const { data: avatarData, error: avatarLoadError } = await supabase
+        .from("travelquest_profile_avatars")
+        .select("avatar_url")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (avatarLoadError) {
+        console.error("Lỗi tải avatar hồ sơ:", avatarLoadError);
+      } else if (avatarData?.avatar_url) {
+        setAvatarImageUrl(avatarData.avatar_url);
+        try {
+          window.localStorage.setItem(`travelquest-avatar-image:${userId}`, avatarData.avatar_url);
+        } catch {
+          // Avatar vẫn hiển thị từ Supabase nếu localStorage không khả dụng.
+        }
+      } else {
+        setAvatarImageUrl(null);
+      }
     } catch (error) {
       console.error(
         "Lỗi load profile:",
@@ -2953,9 +2969,33 @@ export default function Home() {
           }
         );
 
-      setPosts(
-        normalizedPosts
+      setPosts(normalizedPosts);
+
+      // Tải tên và avatar cho mọi tác giả trên bảng tin, không chỉ người đang theo dõi.
+      const authorIds = Array.from(
+        new Set(normalizedPosts.map((post) => post.user_id).filter((id): id is string => Boolean(id)))
       );
+      if (authorIds.length > 0) {
+        const [{ data: authorRows, error: authorError }, { data: avatarRows, error: avatarError }] = await Promise.all([
+          supabase.from("profiles").select("id, display_name").in("id", authorIds),
+          supabase.from("travelquest_profile_avatars").select("user_id, avatar_url").in("user_id", authorIds),
+        ]);
+        if (authorError) console.error("Lỗi tải tên tác giả bài viết:", authorError);
+        if (avatarError) console.error("Lỗi tải avatar tác giả bài viết:", avatarError);
+
+        const avatarByUserId = new globalThis.Map<string, string | null>(
+          (avatarRows ?? []).map((row) => [row.user_id as string, (row.avatar_url as string | null) ?? null])
+        );
+        const nextAuthors: Record<string, { display_name: string; avatar_url: string | null }> = {};
+        for (const author of authorRows ?? []) {
+          const authorId = author.id as string;
+          nextAuthors[authorId] = {
+            display_name: (author.display_name as string | null)?.trim() || "Traveller",
+            avatar_url: avatarByUserId.get(authorId) ?? null,
+          };
+        }
+        setPostAuthorProfiles((current) => ({ ...current, ...nextAuthors }));
+      }
     } catch (error) {
       console.error(
         "Lỗi load UGC:",
@@ -6509,8 +6549,9 @@ export default function Home() {
               <div className="mt-3 space-y-4">
                 {visiblePosts.map((post) => {
                   const friend = friendProfiles.find((item) => item.user_id === post.user_id);
-                  const authorName = post.user_id === user?.id ? profileName : friend?.display_name ?? "Traveller";
-                  const authorAvatar = post.user_id === user?.id ? avatarImageUrl : friend?.avatar_url ?? null;
+                  const authorProfile = post.user_id ? postAuthorProfiles[post.user_id] : undefined;
+                  const authorName = post.user_id === user?.id ? profileName : authorProfile?.display_name ?? friend?.display_name ?? "Traveller";
+                  const authorAvatar = post.user_id === user?.id ? avatarImageUrl : authorProfile?.avatar_url ?? friend?.avatar_url ?? null;
                   const checkpoint = post.checkpoint ?? checkpoints.find((item) => item.id === post.checkpoint_id) ?? null;
                   return (
                     <article key={post.id} className="overflow-hidden rounded-[1.6rem] border border-[#e2e5d9] bg-white shadow-[0_8px_28px_rgba(36,66,46,0.06)]">
@@ -8614,8 +8655,9 @@ export default function Home() {
 
               {visiblePosts.map((post) => {
                 const friend = friendProfiles.find((item) => item.user_id === post.user_id);
-                const authorName = post.user_id === user?.id ? profileName : friend?.display_name ?? "Traveller";
-                const authorAvatar = post.user_id === user?.id ? avatarImageUrl : friend?.avatar_url ?? null;
+                const authorProfile = post.user_id ? postAuthorProfiles[post.user_id] : undefined;
+                const authorName = post.user_id === user?.id ? profileName : authorProfile?.display_name ?? friend?.display_name ?? "Traveller";
+                const authorAvatar = post.user_id === user?.id ? avatarImageUrl : authorProfile?.avatar_url ?? friend?.avatar_url ?? null;
                 const isOwnPost = post.user_id === user?.id;
                 return (
                   <article key={post.id} className="relative h-[100dvh] min-h-[100dvh] snap-start bg-black touch-manipulation" onPointerUp={() => handleUgcTap(post)}>
