@@ -58,6 +58,7 @@ type MapProps = {
   navigationActive?: boolean;
   onNavigationStop?: () => void;
   showNearbyPanel?: boolean;
+  onCloseNearbyPanel?: () => void;
 };
 
 type CityDefinition = {
@@ -2265,6 +2266,7 @@ export default function Map({
   navigationActive = false,
   onNavigationStop,
   showNearbyPanel = false,
+  onCloseNearbyPanel,
 }: MapProps) {
   const mapContainer =
     useRef<HTMLDivElement | null>(null);
@@ -3825,7 +3827,7 @@ export default function Map({
       ) : null}
       {showNearbyPanel ? <div className="absolute left-3 top-20 sm:top-24 z-[80] w-[min(360px,calc(100%-24px))] max-h-[calc(100%-104px)] overflow-hidden rounded-2xl border border-[#b8d5a5] bg-[#f4faf3]/95 text-[#183d32] shadow-xl backdrop-blur-md">
         <div className="p-3">
-          <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-extrabold tracking-wider text-[#43875b]">KHÁM PHÁ QUANH ĐÂY</p><p className="text-sm font-black">Ăn uống · Nghỉ ngơi · Tiện ích</p></div><button type="button" onClick={() => { if (!navigator.geolocation) { setNearbyError("Trình duyệt không hỗ trợ GPS."); return; } setNearbyLoading(true); navigator.geolocation.getCurrentPosition((position) => { const location = { latitude: position.coords.latitude, longitude: position.coords.longitude }; setNearbyOrigin(location); map.current?.flyTo({ center: [location.longitude, location.latitude], zoom: 14, duration: 700 }); setNearbyError(""); }, () => { setNearbyLoading(false); setNearbyError("Chưa cấp quyền GPS. Hãy cho phép vị trí trong trình duyệt rồi thử lại."); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }); }} className="shrink-0 rounded-full border border-[#b8d5a5] bg-white px-2.5 py-2 text-[10px] font-extrabold text-[#285b43]">📍 GPS của tôi</button><span className="text-[10px] font-bold text-[#526b59]">{nearbyPlaces.length} nơi</span></div>
+          <div className="flex items-start justify-between gap-2"><div className="min-w-0 flex-1"><p className="text-[10px] font-extrabold tracking-wider text-[#43875b]">KHÁM PHÁ QUANH ĐÂY</p><p className="text-sm font-black">Ăn uống · Nghỉ ngơi · Tiện ích</p></div><div className="flex shrink-0 items-center gap-1.5"><span className="text-[10px] font-bold text-[#526b59]">{nearbyPlaces.length} nơi</span><button type="button" onClick={onCloseNearbyPanel} className="flex h-8 w-8 items-center justify-center rounded-full border border-[#b8d5a5] bg-white text-lg font-bold text-[#285b43] hover:bg-[#e7f1e8]" aria-label="Đóng khám phá quanh đây" title="Đóng">×</button></div></div><div className="mt-2 flex justify-end"><button type="button" onClick={() => { if (!navigator.geolocation) { setNearbyError("Trình duyệt không hỗ trợ GPS."); return; } setNearbyLoading(true); navigator.geolocation.getCurrentPosition((position) => { const location = { latitude: position.coords.latitude, longitude: position.coords.longitude }; setNearbyOrigin(location); map.current?.flyTo({ center: [location.longitude, location.latitude], zoom: 14, duration: 700 }); setNearbyError(""); setNearbyLoading(false); }, () => { setNearbyLoading(false); setNearbyError("Chưa cấp quyền GPS. Hãy cho phép vị trí trong trình duyệt rồi thử lại."); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }); }} className="shrink-0 rounded-full border border-[#b8d5a5] bg-white px-2.5 py-2 text-[10px] font-extrabold text-[#285b43]">📍 GPS của tôi</button></div>
           <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
             {([{id:"food",label:"🍜 Ăn uống"},{id:"rest",label:"🛏️ Nghỉ ngơi"},{id:"attractions",label:"🏞️ Tham quan"},{id:"parking",label:"🅿️ Bãi đỗ xe"},{id:"pharmacy",label:"💊 Nhà thuốc"},{id:"toilets",label:"🚻 WC"},{id:"fuel",label:"⛽ Xăng"},{id:"shops",label:"🛒 Cửa hàng"}] as const).map((item) => <button key={item.id} type="button" onClick={() => setNearbyCategory(item.id)} className={"shrink-0 rounded-full border px-2.5 py-2 text-[11px] font-extrabold " + (nearbyCategory === item.id ? "border-[#285b43] bg-[#285b43] text-white" : "border-[#cbdcc7] bg-white text-[#285b43]")}>{item.label}</button>)}
           </div>
