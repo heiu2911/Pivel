@@ -364,6 +364,30 @@ function isValidCoordinate(
   );
 }
 
+async function createMapboxHttpError(response: Response, fallback: string): Promise<Error> {
+  let detail = "";
+  try {
+    const body = await response.clone().json() as {
+      message?: string;
+      code?: string;
+    };
+    detail = [body.code, body.message].filter(Boolean).join(": ");
+  } catch {
+    try {
+      detail = (await response.clone().text()).slice(0, 240);
+    } catch {
+      // Keep the fallback when the response body is unavailable.
+    }
+  }
+  return new Error(
+    fallback + " (HTTP " + response.status + ")" +
+    (detail ? " — " + detail : "") +
+    (response.status === 401 || response.status === 403
+      ? ". Kiểm tra token Mapbox và quyền truy cập Directions API."
+      : "")
+  );
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -1730,7 +1754,7 @@ function createCheckpointDetailsModal({
       );
 
       if (!response.ok) {
-        throw new Error("Không thể lấy tuyến đường từ Mapbox.");
+        throw await createMapboxHttpError(response, "Không thể lấy tuyến đường từ Mapbox");
       }
 
       const data = (await response.json()) as {
@@ -1760,7 +1784,12 @@ function createCheckpointDetailsModal({
       const route = data.routes?.[0];
 
       if (!route) {
-        throw new Error("Không tìm thấy tuyến đường phù hợp.");
+        throw new Error(
+          "Mapbox không trả về tuyến đường" +
+          (data.code ? " (" + data.code + ")" : "") +
+          (data.message ? ": " + data.message : "") +
+          ". Hãy thử đổi phương tiện hoặc kiểm tra tọa độ điểm đến."
+        );
       }
 
       latestOrigin = origin;
@@ -2543,7 +2572,7 @@ export default function Map({
           "https://api.mapbox.com/directions/v5/mapbox/driving/" + coordinates +
           "?overview=full&geometries=geojson&steps=false&access_token=" + encodeURIComponent(token)
         );
-        if (!response.ok) throw new Error("Không lấy được tuyến đường từ Mapbox.");
+        if (!response.ok) throw await createMapboxHttpError(response, "Không lấy được tuyến đường từ Mapbox");
         const data = await response.json() as {
           routes?: Array<{ distance: number; duration: number; geometry: { type: "LineString"; coordinates: number[][] } }>;
         };
@@ -2689,11 +2718,11 @@ export default function Map({
         if (!activeStop) return;
         const coords = String(origin.longitude) + "," + String(origin.latitude) + ";" + String(activeStop.longitude) + "," + String(activeStop.latitude);
         const response = await fetch("https://api.mapbox.com/directions/v5/mapbox/driving/" + coords + "?overview=full&geometries=geojson&steps=true&language=vi&access_token=" + encodeURIComponent(token || ""));
-        if (!response.ok) throw new Error("Không lấy được tuyến đường. Kiểm tra kết nối hoặc Mapbox token.");
+        if (!response.ok) throw await createMapboxHttpError(response, "Không lấy được tuyến đường");
         const data = await response.json() as { routes?: Array<{ distance: number; duration: number; geometry: { type: "LineString"; coordinates: [number, number][] }; legs?: Array<{ steps?: Array<{ distance: number; duration: number; name?: string; maneuver?: { instruction?: string } }> }> }> };
         if (disposed || thisRequest !== requestId) return;
         const route = data.routes?.[0];
-        if (!route?.geometry?.coordinates?.length) throw new Error("Không tìm thấy tuyến đường phù hợp.");
+        if (!route?.geometry?.coordinates?.length) throw new Error("Mapbox không trả về tuyến đường hợp lệ. Hãy kiểm tra tọa độ các checkpoint.");
         // The initial load event may already have fired before GPS returns.
         // Wait for styledata/idle rather than waiting for "load" a second time.
         if (mapInstance && !mapInstance.isStyleLoaded()) {
