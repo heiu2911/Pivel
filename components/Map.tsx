@@ -942,6 +942,10 @@ function createCheckpointDetailsModal({
   header.style.borderBottom = "1px solid #dce7d2";
   header.style.background = "#f1f5e9";
   header.style.flexShrink = "0";
+  // Giữ tiêu đề và nút đóng luôn nhìn thấy khi người dùng cuộn nội dung chi tiết.
+  header.style.position = "sticky";
+  header.style.top = "0";
+  header.style.zIndex = "5";
   header.innerHTML =
     "<div style=\"display:flex;align-items:flex-start;gap:14px;\">" +
       "<div style=\"min-width:0;flex:1;\">" +
@@ -3189,6 +3193,9 @@ export default function Map({
         );
 
         if (existingModal) existingModal.remove();
+
+        // Ẩn popup/card nổi của checkpoint khi mở trang chi tiết để không bị chồng giao diện.
+        mapInstance.getContainer().querySelectorAll(".mapboxgl-popup").forEach((popup) => popup.remove());
 
         const overlay = createCheckpointDetailsModal({
           checkpoint,
