@@ -2591,7 +2591,8 @@ export default function Map({
 
     if (!navigationActive || !mapInstance || !mapReady || plannedRoute.length === 0) {
       stopWatch();
-      if (banner) banner.remove();
+      const existingBanner = banner as HTMLDivElement | null;
+      if (existingBanner) existingBanner.remove();
       banner = null;
       removeRoute();
       return;
