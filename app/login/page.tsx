@@ -61,7 +61,12 @@ export default function LoginPage() {
         else { setMessage("Đăng ký thành công! Hãy kiểm tra email để xác nhận tài khoản."); setMode("login"); setPassword(""); }
       } else if (mode === "reset") {
         const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, { redirectTo: window.location.origin + "/login?mode=update" });
-        setMessage(error ? "Chưa thể gửi email đặt lại mật khẩu. Hãy thử lại sau." : "Nếu email đã đăng ký, liên kết đặt lại mật khẩu sẽ được gửi tới hộp thư.");
+        if (error) {
+          console.error("Password reset email error:", { message: error.message, status: error.status, code: error.code });
+          setMessage(authErrorMessage(error.message) + " (Chi tiết: " + error.message + ")");
+        } else {
+          setMessage("Nếu email đã đăng ký, liên kết đặt lại mật khẩu sẽ được gửi tới hộp thư.");
+        }
       } else {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) setMessage("Chưa thể cập nhật mật khẩu. Hãy mở lại liên kết khôi phục mới nhất và thử lại.");
