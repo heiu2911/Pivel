@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         })).filter((item: { text: string }) => item.text)
       : [];
     const historyText = history.length
-      ? history.map((item: { role: string; text: string }) => `${item.role}: ${item.text}`).join("\\n")
+      ? history.map((item: { role: string; text: string }) => `${item.role}: ${item.text}`).join("\n")
       : "Chưa có hội thoại trước đó.";
     const prompt = `Bạn là TravelQuest AI, một trợ lý lập kế hoạch du lịch chuyên nghiệp, thân thiện, luôn nói tiếng Việt tự nhiên và xưng "tớ - cậu".
 
