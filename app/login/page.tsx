@@ -37,12 +37,53 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("mode") === "update") {
-      setMode("update");
-      setMessage("Hãy nhập mật khẩu mới cho tài khoản của cậu.");
-    }
-  }, []);
+    let active = true;
+
+    const handleAuthRedirect = async () => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("mode") === "update") {
+        setMode("update");
+        setMessage("Hãy nhập mật khẩu mới cho tài khoản của cậu.");
+        return;
+      }
+
+      const authError = params.get("error_description") || params.get("error");
+      if (authError) {
+        setMessage("Google chưa thể hoàn tất đăng nhập. Cậu kiểm tra lại cấu hình OAuth và URL chuyển hướng nhé.");
+        return;
+      }
+
+      const code = params.get("code");
+      if (code) {
+        setBusy(true);
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!active) return;
+        if (error) {
+          console.error("Google OAuth callback error:", error.message);
+          setMessage("Xác thực Google thành công nhưng TravelQuest chưa tạo được phiên đăng nhập. Cậu thử lại nhé.");
+          setBusy(false);
+          return;
+        }
+        if (data.session) {
+          window.history.replaceState({}, "", "/login");
+          router.replace("/");
+          router.refresh();
+          return;
+        }
+        setBusy(false);
+      }
+
+      const { data } = await supabase.auth.getSession();
+      if (!active) return;
+      if (data.session) {
+        router.replace("/");
+        router.refresh();
+      }
+    };
+
+    void handleAuthRedirect();
+    return () => { active = false; };
+  }, [router]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
