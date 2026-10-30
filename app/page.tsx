@@ -6048,7 +6048,7 @@ export default function Home() {
       if (!response.ok) throw new Error(result.error || "Không thể kết nối TravelQuest AI.");
       const reply = result.reply || "Tớ chưa tạo được câu trả lời. Cậu thử hỏi lại nhé.";
       setAssistantReply(reply);
-      setAssistantConversation((current) => [...current, { role: "user", text: question }, { role: "assistant", text: reply }].slice(-20));
+      setAssistantConversation((current) => [...current, { role: "user" as const, text: question }, { role: "assistant" as const, text: reply }].slice(-20));
       setAssistantInput("");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi khi kết nối Gemini.";
