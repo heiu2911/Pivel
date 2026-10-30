@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: "TravelQuest AI chưa được cấu hình GEMINI_API_KEY trên Vercel." },
+        { error: "Pivel chưa được cấu hình GEMINI_API_KEY trên Vercel." },
         { status: 503 }
       );
     }
@@ -30,14 +30,14 @@ export async function POST(request: Request) {
     const safeContext = JSON.stringify(context).slice(0, 14000);
     const history = Array.isArray(body.history)
       ? body.history.slice(-8).map((item: { role?: string; text?: string }) => ({
-          role: item.role === "assistant" ? "TravelQuest AI" : "Người dùng",
+          role: item.role === "assistant" ? "Pivel" : "Người dùng",
           text: typeof item.text === "string" ? item.text.slice(0, 1800) : "",
         })).filter((item: { text: string }) => item.text)
       : [];
     const historyText = history.length
       ? history.map((item: { role: string; text: string }) => `${item.role}: ${item.text}`).join("\n")
       : "Chưa có hội thoại trước đó.";
-    const prompt = `Bạn là TravelQuest AI, một trợ lý lập kế hoạch du lịch chuyên nghiệp, thân thiện, luôn nói tiếng Việt tự nhiên và xưng "tớ - cậu".
+    const prompt = `Bạn là Pivel, một trợ lý lập kế hoạch du lịch chuyên nghiệp, thân thiện, luôn nói tiếng Việt tự nhiên và xưng "tớ - cậu".
 
 MỤC TIÊU:
 Giúp người dùng biến yêu cầu ngắn thành kế hoạch du lịch hữu ích, cụ thể và dễ thực hiện. Không trả lời qua loa hoặc chỉ chào hỏi khi người dùng đang yêu cầu lịch trình.
@@ -115,7 +115,7 @@ Hãy đưa ra câu trả lời hữu ích, có cấu trúc rõ ràng và cụ th
 
     return NextResponse.json({ reply });
   } catch (error) {
-    console.error("TravelQuest AI route error:", error);
+    console.error("Pivel route error:", error);
     return NextResponse.json(
       { error: "Có lỗi khi xử lý câu hỏi. Cậu thử lại sau nhé." },
       { status: 500 }
