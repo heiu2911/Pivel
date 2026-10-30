@@ -6045,7 +6045,7 @@ export default function Home() {
         }),
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "Không thể kết nối TravelQuest AI.");
+      if (!response.ok) throw new Error(result.error || "Không thể kết nối Pivel.");
       const reply = result.reply || "Tớ chưa tạo được câu trả lời. Cậu thử hỏi lại nhé.";
       setAssistantReply(reply);
       setAssistantConversation((current) => [...current, { role: "user" as const, text: question }, { role: "assistant" as const, text: reply }].slice(-20));
@@ -9961,12 +9961,12 @@ export default function Home() {
         {aiChatOpen && (
           <section className="flex w-[min(92vw,420px)] max-h-[min(72dvh,680px)] flex-col overflow-hidden rounded-3xl border border-[#b8d5a5] bg-[#faf9f1] text-[#3f3428] shadow-2xl">
             <header className="flex items-center justify-between gap-3 bg-[#075b52] px-4 py-3 text-white">
-              <div><p className="text-sm font-black">TravelQuest AI</p><p className="text-[10px] text-white/75">Trợ lý du lịch · Gemini</p></div>
+              <div><p className="text-sm font-black">Pivel</p><p className="text-[10px] text-white/75">Trợ lý du lịch · Gemini</p></div>
               <div className="flex items-center gap-3"><button type="button" onClick={() => { setAssistantConversation([]); setAssistantReply(""); }} className="text-[10px] font-semibold text-white/80">Xóa chat</button><button type="button" onClick={() => setAiChatOpen(false)} aria-label="Đóng chatbot" className="text-xl leading-none">×</button></div>
             </header>
             <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
               {assistantConversation.length === 0 && <div className="rounded-2xl border border-[#cfe2ce] bg-white p-3 text-xs leading-5 text-[#526b59]">Chào cậu! Tớ có thể lập lịch trình theo ngày, gợi ý điểm tham quan, ăn uống và nghỉ ngơi. Ví dụ: <button type="button" onClick={() => setAssistantInput("Lên lịch trình Hà Giang 2 ngày 1 đêm, ưu tiên cảnh đẹp và trải nghiệm địa phương.")} className="font-bold text-[#075b52] underline">Lên lịch trình Hà Giang 2 ngày 1 đêm</button>.</div>}
-              {assistantConversation.map((message, index) => <div key={`${index}-${message.role}`} className={`max-w-[94%] rounded-2xl p-3 text-xs leading-5 whitespace-pre-wrap break-words ${message.role === "user" ? "ml-auto bg-[#dcebd8] text-[#3f3428]" : "mr-auto border border-[#cfe2ce] bg-white text-[#075b52]"}`}><p className="mb-1 text-[9px] font-bold uppercase opacity-60">{message.role === "user" ? "Cậu" : "TravelQuest AI"}</p>{message.text}</div>)}
+              {assistantConversation.map((message, index) => <div key={`${index}-${message.role}`} className={`max-w-[94%] rounded-2xl p-3 text-xs leading-5 whitespace-pre-wrap break-words ${message.role === "user" ? "ml-auto bg-[#dcebd8] text-[#3f3428]" : "mr-auto border border-[#cfe2ce] bg-white text-[#075b52]"}`}><p className="mb-1 text-[9px] font-bold uppercase opacity-60">{message.role === "user" ? "Cậu" : "Pivel"}</p>{message.text}</div>)}
               {assistantLoading && <p className="rounded-xl bg-white p-3 text-xs text-[#71816e]">Gemini đang xây dựng câu trả lời chi tiết...</p>}
               {assistantReply && assistantConversation.length === 0 && <p className="whitespace-pre-wrap text-xs leading-5 text-[#075b52]">{assistantReply}</p>}
             </div>
@@ -9976,7 +9976,7 @@ export default function Home() {
             </div>
           </section>
         )}
-        <button type="button" onClick={() => setAiChatOpen((open) => !open)} className="flex h-14 items-center gap-2 rounded-full bg-[#075b52] px-5 text-sm font-bold text-white shadow-xl ring-2 ring-white/80 hover:bg-[#064b44]" aria-label="Mở TravelQuest AI"><span className="text-xl">✦</span><span>{aiChatOpen ? "Đóng AI" : "Hỏi TravelQuest AI"}</span></button>
+        <button type="button" onClick={() => setAiChatOpen((open) => !open)} className="flex h-14 items-center gap-2 rounded-full bg-[#075b52] px-5 text-sm font-bold text-white shadow-xl ring-2 ring-white/80 hover:bg-[#064b44]" aria-label="Mở Pivel"><span className="text-xl">✦</span><span>{aiChatOpen ? "Đóng AI" : "Hỏi Pivel"}</span></button>
       </div>
 
       {chatOpen && (
