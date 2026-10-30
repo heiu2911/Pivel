@@ -1051,6 +1051,7 @@ export default function Home() {
   const [smartTravelOpen, setSmartTravelOpen] = useState(false);
   const [assistantInput, setAssistantInput] = useState("");
   const [assistantReply, setAssistantReply] = useState("");
+  const [assistantLoading, setAssistantLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -5993,21 +5994,59 @@ export default function Home() {
     setPostMessage("👋 Đã ẩn moment khỏi feed của cậu.");
   };
 
-  const askTravelAssistant = () => {
-    const question = assistantInput.trim().toLowerCase();
-    if (!question) return;
+  const askTravelAssistant = async () => {
+    const question = assistantInput.trim();
+    if (!question || assistantLoading) return;
+    setAssistantLoading(true);
+    setAssistantReply("");
     const nearest = checkpoints
       .map((checkpoint) => ({ checkpoint, distance: userLocation ? getValidGpsDistance(userLocation, checkpoint) : null }))
       .filter((item) => item.distance !== null)
       .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))[0];
-    if (question.includes("thời tiết") || question.includes("weather")) {
-      setAssistantReply(weather ? `${weatherDescription(weather.current.weatherCode).icon} ${weatherDescription(weather.current.weatherCode).label}, ${weather.current.temperature}°C tại checkpoint đang chọn.` : "Hãy mở một checkpoint để tớ tải thời tiết trước nhé.");
-    } else if (question.includes("tiếp theo") || question.includes("gần")) {
-      setAssistantReply(nearest ? `📍 Tớ gợi ý ${nearest.checkpoint.name}, cách vị trí hiện tại khoảng ${Math.round(nearest.distance ?? 0)}m.` : "Bật GPS để tớ tìm checkpoint gần bạn.");
-    } else if (question.includes("huy hiệu")) {
-      setAssistantReply(missingAchievements.length ? `🏆 Bạn còn ${missingAchievements.length} huy hiệu cơ bản chưa mở. Gần nhất: ${missingAchievements[0].name}.` : "👑 Bạn đã mở hết huy hiệu cơ bản!");
-    } else {
-      setAssistantReply(`🧭 Bạn đã chinh phục ${checkins.length}/${checkpoints.length} checkpoint, streak hiện tại ${currentStreak} ngày và level Traveller ${currentLevel}.`);
+
+    try {
+      const response = await fetch("/api/travel-assistant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          context: {
+            progress,
+            currentLevel,
+            currentStreak,
+            checkins: checkins.length,
+            totalCheckpoints: checkpoints.length,
+            nextCheckpoint: checkpoints.find((checkpoint) => !isCheckedIn(checkpoint.id))?.name ?? null,
+            nearestCheckpoint: nearest ? {
+              name: nearest.checkpoint.name,
+              distanceMeters: Math.round(nearest.distance ?? 0),
+            } : null,
+            missingAchievements: missingAchievements.slice(0, 8).map((item) => item.name),
+            currentLocation: userLocation ? {
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+            } : null,
+            weather: weather ? {
+              temperature: weather.current.temperature,
+              description: weatherDescription(weather.current.weatherCode).label,
+            } : null,
+            checkpoints: checkpoints.slice(0, 80).map((checkpoint) => ({
+              name: checkpoint.name,
+              description: checkpoint.description,
+              badge: checkpoint.badge,
+              latitude: checkpoint.latitude,
+              longitude: checkpoint.longitude,
+            })),
+          },
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Không thể kết nối TravelQuest AI.");
+      setAssistantReply(result.reply || "Tớ chưa tạo được câu trả lời. Cậu thử hỏi lại nhé.");
+    } catch (error) {
+      setAssistantReply(error instanceof Error ? error.message : "Đã xảy ra lỗi khi kết nối Gemini.");
+    } finally {
+      setAssistantLoading(false);
     }
   };
 
@@ -9904,7 +9943,7 @@ export default function Home() {
             </div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Gợi ý lịch trình</p><div className="mt-2 space-y-2">{checkpoints.filter((checkpoint) => !isCheckedIn(checkpoint.id)).slice(0, 4).map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 text-sm"><span className="w-7 h-7 rounded-full bg-[#dcebd8] flex items-center justify-center text-xs">{index + 1}</span><span>{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">🏆 Huy hiệu còn thiếu</p><p className="text-sm mt-1">{missingAchievements.length ? missingAchievements.map((item) => item.name).slice(0, 3).join(" · ") : "Bạn đã mở hết huy hiệu cơ bản."}</p></div>
-            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI Assistant</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") askTravelAssistant(); }} placeholder="Ví dụ: checkpoint tiếp theo?" className="flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#3f3428] px-3 py-2 text-xs outline-none" /><button onClick={askTravelAssistant} className="rounded-xl bg-[#075b52] text-[#3f3428] px-3 text-xs font-bold">Hỏi</button></div>{assistantReply && <p className="text-xs text-[#075b52] mt-3">{assistantReply}</p>}</div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI · Gemini</p><p className="mt-1 text-[10px] text-[#71816e]">Hỏi về điểm đến, lịch trình và thông tin chuyến đi của cậu.</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void askTravelAssistant(); }} placeholder="Ví dụ: gợi ý lịch trình Hà Nội 1 ngày" className="min-w-0 flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#3f3428] px-3 py-2 text-xs outline-none" /><button disabled={assistantLoading || !assistantInput.trim()} onClick={() => void askTravelAssistant()} className="rounded-xl bg-[#075b52] px-3 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">{assistantLoading ? "Đang hỏi..." : "Hỏi"}</button></div>{assistantReply && <p className="whitespace-pre-wrap text-xs leading-5 text-[#075b52] mt-3">{assistantReply}</p>}</div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Journey Summary</p><p className="text-sm font-bold mt-1">{journeyName} · {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint · {journeyProgress}%</p><p className="text-[10px] text-[#71816e] mt-1">{journeyStartDate || "Chưa có ngày bắt đầu"} → {journeyEndDate || "Chưa có ngày kết thúc"}</p></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Travel services</p><div className="grid grid-cols-2 gap-2 mt-2">{bookingOptions.map((option) => <div key={option.title} className="rounded-xl bg-[#faf9f1] border border-[#cfe2ce] p-3"><p className="text-sm font-bold">{option.icon} {option.title}</p><div className="flex flex-wrap gap-2 mt-2">{option.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="text-[10px] text-[#43875b] hover:text-[#075b52]">{link.label}</a>)}</div></div>)}</div></div>
           </div>
