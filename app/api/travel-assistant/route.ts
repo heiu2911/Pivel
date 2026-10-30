@@ -44,7 +44,7 @@ Giúp người dùng biến yêu cầu ngắn thành kế hoạch du lịch hữ
 
 CÁCH LẬP LỊCH TRÌNH:
 - Khi người dùng nêu địa điểm và số ngày (ví dụ "Hà Giang 2 ngày"), hãy chủ động lập lịch trình mẫu đầy đủ ngay, không hỏi lại nếu có thể đưa ra giả định hợp lý.
-- Chia rõ từng ngày; mỗi ngày có buổi sáng, trưa, chiều, tối nếu phù hợp. Với yêu cầu lập lịch trình, viết đầy đủ khoảng 500-900 từ tùy số ngày, không trả lời bằng một đoạn giới thiệu ngắn.
+- Chia rõ từng ngày; mỗi ngày có buổi sáng, trưa, chiều, tối nếu phù hợp. Với yêu cầu lập lịch trình, viết đầy đủ khoảng 800-1.500 từ tùy số ngày nếu yêu cầu cần thiết, không trả lời bằng một đoạn giới thiệu ngắn. Ưu tiên hoàn thành toàn bộ các ngày và mục quan trọng trước khi mở rộng mô tả.
 - Mỗi điểm dừng phải có tên, lý do ghé thăm và thời lượng tham khảo; sắp xếp các điểm theo tuyến địa lý hợp lý, tránh đi vòng.
 - Gợi ý ăn uống, nghỉ ngơi và nơi lưu trú theo khu vực; nếu không có dữ liệu đã xác minh thì chỉ gợi ý loại hình/khu vực, không bịa tên cơ sở.
 - Nêu phương án di chuyển, độ dài hành trình ở mức ước lượng khi có cơ sở; không tự bịa số km hoặc thời gian chính xác.
@@ -85,7 +85,7 @@ Hãy đưa ra câu trả lời hữu ích, có cấu trúc rõ ràng và cụ th
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 4000,
+            maxOutputTokens: 12000,
           },
         }),
         cache: "no-store",
@@ -95,13 +95,21 @@ Hãy đưa ra câu trả lời hữu ích, có cấu trúc rõ ràng và cụ th
     const payload = await geminiResponse.json();
     if (!geminiResponse.ok) {
       console.error("Gemini API error:", payload?.error?.message ?? geminiResponse.status);
+      const providerMessage = typeof payload?.error?.message === "string"
+        ? payload.error.message.slice(0, 500)
+        : "Không có thông tin chi tiết từ Gemini.";
       return NextResponse.json(
-        { error: "Gemini chưa phản hồi được. Cậu kiểm tra API key và trạng thái API trong Google AI Studio nhé." },
+        {
+          error: "Gemini API trả về lỗi HTTP " + geminiResponse.status + ": " + providerMessage,
+          providerStatus: geminiResponse.status,
+        },
         { status: 502 }
       );
     }
 
-    const reply = payload?.candidates?.[0]?.content?.parts
+    const candidate = payload?.candidates?.[0];
+    const finishReason = candidate?.finishReason;
+    const reply = candidate?.content?.parts
       ?.map((part: { text?: string }) => part.text ?? "")
       .join("")
       .trim();
@@ -113,7 +121,7 @@ Hãy đưa ra câu trả lời hữu ích, có cấu trúc rõ ràng và cụ th
       );
     }
 
-    return NextResponse.json({ reply });
+    return NextResponse.json({ reply, truncated: finishReason === "MAX_TOKENS", finishReason: finishReason ?? null });
   } catch (error) {
     console.error("Pivel route error:", error);
     return NextResponse.json(
