@@ -1052,6 +1052,7 @@ export default function Home() {
   const [assistantInput, setAssistantInput] = useState("");
   const [assistantReply, setAssistantReply] = useState("");
   const [assistantLoading, setAssistantLoading] = useState(false);
+  const [assistantConversation, setAssistantConversation] = useState<{ role: "user" | "assistant"; text: string }[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -5999,6 +6000,7 @@ export default function Home() {
     if (!question || assistantLoading) return;
     setAssistantLoading(true);
     setAssistantReply("");
+    const previousConversation = assistantConversation.slice(-8);
     const nearest = checkpoints
       .map((checkpoint) => ({ checkpoint, distance: userLocation ? getValidGpsDistance(userLocation, checkpoint) : null }))
       .filter((item) => item.distance !== null)
@@ -6010,6 +6012,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question,
+          history: previousConversation,
           context: {
             progress,
             currentLevel,
@@ -6042,9 +6045,13 @@ export default function Home() {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Không thể kết nối TravelQuest AI.");
-      setAssistantReply(result.reply || "Tớ chưa tạo được câu trả lời. Cậu thử hỏi lại nhé.");
+      const reply = result.reply || "Tớ chưa tạo được câu trả lời. Cậu thử hỏi lại nhé.";
+      setAssistantReply(reply);
+      setAssistantConversation((current) => [...current, { role: "user", text: question }, { role: "assistant", text: reply }].slice(-20));
+      setAssistantInput("");
     } catch (error) {
-      setAssistantReply(error instanceof Error ? error.message : "Đã xảy ra lỗi khi kết nối Gemini.");
+      const errorMessage = error instanceof Error ? error.message : "Đã xảy ra lỗi khi kết nối Gemini.";
+      setAssistantReply(errorMessage);
     } finally {
       setAssistantLoading(false);
     }
@@ -9943,7 +9950,7 @@ export default function Home() {
             </div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Gợi ý lịch trình</p><div className="mt-2 space-y-2">{checkpoints.filter((checkpoint) => !isCheckedIn(checkpoint.id)).slice(0, 4).map((checkpoint, index) => <div key={checkpoint.id} className="flex items-center gap-3 text-sm"><span className="w-7 h-7 rounded-full bg-[#dcebd8] flex items-center justify-center text-xs">{index + 1}</span><span>{checkpoint.icon ?? "📍"} {checkpoint.name}</span></div>)}</div></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">🏆 Huy hiệu còn thiếu</p><p className="text-sm mt-1">{missingAchievements.length ? missingAchievements.map((item) => item.name).slice(0, 3).join(" · ") : "Bạn đã mở hết huy hiệu cơ bản."}</p></div>
-            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">TravelQuest AI · Gemini</p><p className="mt-1 text-[10px] text-[#71816e]">Hỏi về điểm đến, lịch trình và thông tin chuyến đi của cậu.</p><div className="flex gap-2 mt-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void askTravelAssistant(); }} placeholder="Ví dụ: gợi ý lịch trình Hà Nội 1 ngày" className="min-w-0 flex-1 rounded-xl bg-white border border-[#cfe2ce] text-[#3f3428] px-3 py-2 text-xs outline-none" /><button disabled={assistantLoading || !assistantInput.trim()} onClick={() => void askTravelAssistant()} className="rounded-xl bg-[#075b52] px-3 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">{assistantLoading ? "Đang hỏi..." : "Hỏi"}</button></div>{assistantReply && <p className="whitespace-pre-wrap text-xs leading-5 text-[#075b52] mt-3">{assistantReply}</p>}</div>
+            <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-bold text-[#526b59]">TravelQuest AI · Gemini</p><button type="button" onClick={() => { setAssistantConversation([]); setAssistantReply(""); }} className="text-[10px] font-semibold text-[#71816e]">Xóa hội thoại</button></div><p className="mt-1 text-[10px] text-[#71816e]">Lập lịch trình, tìm điểm tham quan, ăn uống, nghỉ ngơi và hỏi tiếp để điều chỉnh chuyến đi.</p>{assistantConversation.length > 0 && <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1">{assistantConversation.map((message, index) => <div key={`${index}-${message.role}`} className={`rounded-xl p-3 text-xs leading-5 whitespace-pre-wrap ${message.role === "user" ? "ml-5 bg-[#dcebd8] text-[#3f3428]" : "mr-3 border border-[#cfe2ce] bg-white text-[#075b52]"}`}><p className="mb-1 text-[9px] font-bold uppercase opacity-60">{message.role === "user" ? "Cậu" : "TravelQuest AI"}</p>{message.text}</div>)}</div>}{assistantLoading && <p className="mt-3 text-xs text-[#71816e]">Gemini đang xây dựng câu trả lời...</p>}{assistantReply && assistantConversation.length === 0 && <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-[#075b52]">{assistantReply}</p>}<div className="mt-3 flex gap-2"><input value={assistantInput} onChange={(event) => setAssistantInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void askTravelAssistant(); }} placeholder="Ví dụ: Lên lịch trình Hà Giang 2 ngày" className="min-w-0 flex-1 rounded-xl border border-[#cfe2ce] bg-white px-3 py-2 text-xs text-[#3f3428] outline-none" /><button disabled={assistantLoading || !assistantInput.trim()} onClick={() => void askTravelAssistant()} className="rounded-xl bg-[#075b52] px-3 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">{assistantLoading ? "Đang hỏi..." : "Gửi"}</button></div><div className="mt-2 flex flex-wrap gap-2">{["Lịch trình 2 ngày","Địa điểm ăn uống","Điểm check-in đẹp"].map((suggestion) => <button key={suggestion} type="button" onClick={() => setAssistantInput(suggestion)} className="rounded-full border border-[#cfe2ce] px-2.5 py-1 text-[10px] text-[#526b59]">{suggestion}</button>)}</div></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Journey Summary</p><p className="text-sm font-bold mt-1">{journeyName} · {journeyCompletedCount}/{journeyCheckpoints.length} checkpoint · {journeyProgress}%</p><p className="text-[10px] text-[#71816e] mt-1">{journeyStartDate || "Chưa có ngày bắt đầu"} → {journeyEndDate || "Chưa có ngày kết thúc"}</p></div>
             <div className="rounded-2xl bg-[#f1f3e8] border border-[#cfe2ce] p-4 mt-3"><p className="text-xs text-[#526b59]">Travel services</p><div className="grid grid-cols-2 gap-2 mt-2">{bookingOptions.map((option) => <div key={option.title} className="rounded-xl bg-[#faf9f1] border border-[#cfe2ce] p-3"><p className="text-sm font-bold">{option.icon} {option.title}</p><div className="flex flex-wrap gap-2 mt-2">{option.links.map((link) => <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="text-[10px] text-[#43875b] hover:text-[#075b52]">{link.label}</a>)}</div></div>)}</div></div>
           </div>
