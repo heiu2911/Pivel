@@ -23,8 +23,8 @@ export async function POST(request: Request) {
     if (!question) {
       return NextResponse.json({ error: "Cậu hãy nhập câu hỏi trước nhé." }, { status: 400 });
     }
-    if (question.length > 2000) {
-      return NextResponse.json({ error: "Câu hỏi tối đa 2.000 ký tự." }, { status: 400 });
+    if (question.length > 4000) {
+      return NextResponse.json({ error: "Câu hỏi tối đa 4.000 ký tự." }, { status: 400 });
     }
 
     const safeContext = JSON.stringify(context).slice(0, 14000);
@@ -44,7 +44,7 @@ Giúp người dùng biến yêu cầu ngắn thành kế hoạch du lịch hữ
 
 CÁCH LẬP LỊCH TRÌNH:
 - Khi người dùng nêu địa điểm và số ngày (ví dụ "Hà Giang 2 ngày"), hãy chủ động lập lịch trình mẫu đầy đủ ngay, không hỏi lại nếu có thể đưa ra giả định hợp lý.
-- Chia rõ từng ngày; mỗi ngày có buổi sáng, trưa, chiều, tối nếu phù hợp.
+- Chia rõ từng ngày; mỗi ngày có buổi sáng, trưa, chiều, tối nếu phù hợp. Với yêu cầu lập lịch trình, viết đầy đủ khoảng 500-900 từ tùy số ngày, không trả lời bằng một đoạn giới thiệu ngắn.
 - Mỗi điểm dừng phải có tên, lý do ghé thăm và thời lượng tham khảo; sắp xếp các điểm theo tuyến địa lý hợp lý, tránh đi vòng.
 - Gợi ý ăn uống, nghỉ ngơi và nơi lưu trú theo khu vực; nếu không có dữ liệu đã xác minh thì chỉ gợi ý loại hình/khu vực, không bịa tên cơ sở.
 - Nêu phương án di chuyển, độ dài hành trình ở mức ước lượng khi có cơ sở; không tự bịa số km hoặc thời gian chính xác.
@@ -71,7 +71,7 @@ ${historyText}
 YÊU CẦU MỚI NHẤT:
 ${question}
 
-Hãy đưa ra câu trả lời hữu ích, có cấu trúc rõ ràng và cụ thể tương xứng với yêu cầu.`;
+Hãy đưa ra câu trả lời hữu ích, có cấu trúc rõ ràng và cụ thể tương xứng với yêu cầu. Không kết thúc giữa câu hoặc bỏ dở ý; nếu không đủ dữ liệu cho một chi tiết thì nói rõ thay vì lặp lại lời chào.`;
 
     const geminiResponse = await fetch(
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
@@ -85,7 +85,7 @@ Hãy đưa ra câu trả lời hữu ích, có cấu trúc rõ ràng và cụ th
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 2200,
+            maxOutputTokens: 4000,
           },
         }),
         cache: "no-store",
